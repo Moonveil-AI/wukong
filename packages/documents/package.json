@@ -1,0 +1,37 @@
+{
+  "name": "@wukong/documents",
+  "version": "0.1.0",
+  "description": "Document processing utilities for Wukong",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@wukong/agent": "workspace:*",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.8.0",
+    "marked": "^15.0.4",
+    "jsdom": "^25.0.1"
+  },
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^20.17.6",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "keywords": ["documents", "pdf", "docx", "markdown", "wukong"],
+  "license": "MIT"
+}

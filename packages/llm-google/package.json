@@ -1,0 +1,33 @@
+{
+  "name": "@wukong/llm-google",
+  "version": "0.1.0",
+  "description": "Google Gemini LLM adapter for Wukong",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@wukong/agent": "workspace:*",
+    "@google/generative-ai": "^0.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "keywords": ["google", "gemini", "llm", "wukong"],
+  "license": "MIT"
+}

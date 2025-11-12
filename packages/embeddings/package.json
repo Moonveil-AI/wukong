@@ -1,0 +1,33 @@
+{
+  "name": "@wukong/embeddings",
+  "version": "0.1.0",
+  "description": "Embedding generation utilities for Wukong",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@wukong/agent": "workspace:*",
+    "openai": "^4.72.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.6",
+    "tsup": "^8.3.5",
+    "typescript": "^5.7.2"
+  },
+  "keywords": ["embeddings", "vector", "openai", "wukong"],
+  "license": "MIT"
+}
