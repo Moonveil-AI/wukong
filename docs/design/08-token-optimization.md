@@ -1,5 +1,7 @@
 # Token Optimization Mechanisms
 
+> **Note:** Wukong's token optimization is a key reason we built a custom knowledge base. See [Why Not Use mem0?](../why-not-mem0.md) for details on architectural decisions.
+
 ## Table of Contents
 - [Three Major Savings Strategies](#three-major-savings-strategies)
 - [MCP Code Execution](#mcp-code-execution)

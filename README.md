@@ -38,6 +38,9 @@
 - [Appendix B-UI Component Package](./docs/design/appendix-ui-components.md) - Ready-to-Use React Components
 - [Appendix C-Adapter Architecture](./docs/design/appendix-adapters.md) - Platform-Agnostic Storage Adapters
 
+### Implementation Guides
+- [Recommended Libraries](./docs/implementation/recommended-libraries.md) - Essential and Optional Dependencies Guide
+
 ### Technical Decisions
 - [Why Not Use mem0?](./docs/why-not-mem0.md) - Analysis of mem0 vs Custom Knowledge Base
 
@@ -123,6 +126,7 @@ Key Difference:
 ## Next Steps
 
 - Read [Core Design Principles](./docs/design/01-core-concepts.md) to understand design philosophy
+- Review [Recommended Libraries](./docs/implementation/recommended-libraries.md) to choose your adapters
 - Check [Core Interface Design](./docs/design/03-interfaces.md) to start using
 - Refer to [Usage Examples](./docs/design/11-examples.md) for quick start
 

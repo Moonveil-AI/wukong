@@ -1,5 +1,7 @@
 # Knowledge Base System
 
+> **Note:** For an analysis of why we built a custom knowledge base instead of using existing solutions like mem0, see [Why Not Use mem0?](../why-not-mem0.md)
+
 ## Table of Contents
 - [Knowledge Integration](#knowledge-integration)
 - [Auto-Indexing](#auto-indexing)
