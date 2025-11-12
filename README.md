@@ -38,6 +38,9 @@
 - [Appendix B-UI Component Package](./docs/design/appendix-ui-components.md) - Ready-to-Use React Components
 - [Appendix C-Adapter Architecture](./docs/design/appendix-adapters.md) - Platform-Agnostic Storage Adapters
 
+### Technical Decisions
+- [Why Not Use mem0?](./docs/why-not-mem0.md) - Analysis of mem0 vs Custom Knowledge Base
+
 ---
 
 ## Quick Start
