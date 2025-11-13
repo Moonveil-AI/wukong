@@ -5,7 +5,7 @@
  * allowing the system to work with different backends (Vercel, Local, AWS, etc.)
  */
 
-import type { Checkpoint, Session, Step, Todo } from './index';
+import type { Checkpoint, ForkAgentTask, ParallelToolCall, Session, Step, Todo } from './index';
 
 // ==========================================
 // Storage Adapter
@@ -131,6 +131,61 @@ export interface StorageAdapter {
    * Batch update todos
    */
   batchUpdateTodos(updates: Array<{ id: string; updates: Partial<Todo> }>): Promise<Todo[]>;
+
+  // ==========================================
+  // Parallel Tool Call Operations
+  // ==========================================
+
+  /**
+   * Create a parallel tool call
+   */
+  createParallelToolCall(
+    call: Omit<ParallelToolCall, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ParallelToolCall>;
+
+  /**
+   * Get a parallel tool call by ID
+   */
+  getParallelToolCall(callId: number): Promise<ParallelToolCall | null>;
+
+  /**
+   * Update a parallel tool call
+   */
+  updateParallelToolCall(
+    callId: number,
+    updates: Partial<ParallelToolCall>,
+  ): Promise<ParallelToolCall>;
+
+  /**
+   * List parallel tool calls for a step
+   */
+  listParallelToolCalls(stepId: number): Promise<ParallelToolCall[]>;
+
+  // ==========================================
+  // Fork Agent Task Operations
+  // ==========================================
+
+  /**
+   * Create a fork agent task
+   */
+  createForkAgentTask(
+    task: Omit<ForkAgentTask, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ForkAgentTask>;
+
+  /**
+   * Get a fork agent task by ID
+   */
+  getForkAgentTask(taskId: string): Promise<ForkAgentTask | null>;
+
+  /**
+   * Update a fork agent task
+   */
+  updateForkAgentTask(taskId: string, updates: Partial<ForkAgentTask>): Promise<ForkAgentTask>;
+
+  /**
+   * List fork agent tasks for a session
+   */
+  listForkAgentTasks(sessionId: string): Promise<ForkAgentTask[]>;
 
   // ==========================================
   // Checkpoint Operations

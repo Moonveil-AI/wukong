@@ -30,6 +30,14 @@ export type {
   CreateCheckpointOptions,
 } from './session/SessionManager';
 
+// Export executor components
+export { StepExecutor } from './executor/StepExecutor';
+export type {
+  StepExecutorOptions,
+  StepExecutionResult,
+  ToolRegistry,
+} from './executor/StepExecutor';
+
 // Version
 export const version = '0.1.0';
 

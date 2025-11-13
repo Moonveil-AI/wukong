@@ -129,6 +129,111 @@ export interface Step {
 }
 
 // ==========================================
+// Parallel Tool Call Types
+// ==========================================
+
+/**
+ * Parallel tool call status
+ */
+export type ParallelToolCallStatus = 'pending' | 'running' | 'completed' | 'failed' | 'timeout';
+
+/**
+ * Individual tool call in parallel execution
+ */
+export interface ParallelToolCall {
+  /** Unique identifier */
+  id: number;
+
+  /** Associated step ID */
+  stepId: number;
+
+  /** Tool identification */
+  toolId: string;
+  toolName: string;
+  parameters: Record<string, any>;
+
+  /** Execution status */
+  status: ParallelToolCallStatus;
+  result?: any;
+  errorMessage?: string;
+
+  /** Progress tracking */
+  progressPercentage: number;
+  statusMessage?: string;
+
+  /** External API tracking (for async tools) */
+  externalTaskId?: string;
+  externalStatus?: string;
+
+  /** Timing */
+  startedAt?: Date;
+  completedAt?: Date;
+  executionDurationMs?: number;
+
+  /** Retry tracking */
+  retryCount: number;
+  maxRetries: number;
+
+  /** Audit fields */
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ==========================================
+// Fork Agent Task Types
+// ==========================================
+
+/**
+ * Fork agent task status
+ */
+export type ForkAgentTaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'timeout';
+
+/**
+ * Agent fork task for sub-agent execution
+ */
+export interface ForkAgentTask {
+  /** Unique identifier */
+  id: string;
+
+  /** Parent relationship */
+  parentSessionId: string;
+  parentStepId?: number;
+
+  /** Sub-agent information */
+  subSessionId?: string;
+  goal: string;
+  contextSummary?: string;
+  depth: number;
+
+  /** Execution configuration */
+  maxSteps: number;
+  timeoutSeconds: number;
+
+  /** Status tracking */
+  status: ForkAgentTaskStatus;
+  resultSummary?: string;
+  errorMessage?: string;
+
+  /** Resource tracking */
+  stepsExecuted: number;
+  tokensUsed: number;
+  toolsCalled: number;
+
+  /** Timing */
+  startedAt?: Date;
+  completedAt?: Date;
+  executionDurationMs?: number;
+
+  /** Retry tracking */
+  retryCount: number;
+  maxRetries: number;
+
+  /** Audit fields */
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ==========================================
 // Todo Types
 // ==========================================
 
