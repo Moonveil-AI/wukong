@@ -7,33 +7,80 @@ on:
     branches: [main, develop]
 
 jobs:
-  check:
+  test:
+    name: Test on ${{ matrix.os }} with Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [18, 20, 22]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'pnpm'
+      
+      # Linux/macOS: better-sqlite3 has prebuilt binaries
+      - name: Install dependencies (Unix)
+        if: runner.os != 'Windows'
+        run: pnpm install --frozen-lockfile
+      
+      # Windows: Need build tools for better-sqlite3
+      - name: Setup Windows Build Tools
+        if: runner.os == 'Windows'
+        run: |
+          npm install --global node-gyp@latest
+          npm config set msvs_version 2019
+      
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: pnpm install --frozen-lockfile
+      
+      - name: Type check
+        run: pnpm typecheck
+      
+      - name: Lint
+        run: pnpm lint
+      
+      - name: Test
+        run: pnpm test
+      
+      - name: Build
+        run: pnpm build
+
+  # 快速检查 job（只在 Linux + Node 20 上运行）
+  quick-check:
+    name: Quick Check
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
+      
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
-
-      - name: Setup Node.js
+          version: 10
+      
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 20
           cache: 'pnpm'
-
+      
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
-      - name: Run check (typecheck + lint)
+      
+      - name: Run checks
         run: pnpm check
-
-      - name: Run tests
-        run: pnpm test:ci
-
-      - name: Build
-        run: pnpm build
-
