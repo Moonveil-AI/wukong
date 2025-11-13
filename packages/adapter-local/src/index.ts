@@ -6,8 +6,11 @@
 // Export migration utilities
 export { MigrationRunner, type MigrationInfo, type MigrationResult } from './migrations.js';
 
-// This is a placeholder file created during project initialization
-// TODO: Implement local storage adapter as per Task 2.3
+// Export adapters
+export { LocalStorageAdapter, type LocalStorageAdapterConfig } from './LocalStorageAdapter.js';
+export { LocalCacheAdapter } from './LocalCacheAdapter.js';
+export { LocalFilesAdapter, type LocalFilesAdapterConfig } from './LocalFilesAdapter.js';
+export { LocalAdapter, type LocalAdapterConfig } from './LocalAdapter.js';
 
 export const version = '0.1.0';
 
