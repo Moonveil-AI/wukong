@@ -32,6 +32,7 @@
 1. Initialize pnpm workspace with the following packages:
    - `packages/agent` (core library)
    - `packages/llm-openai`
+   - `packages/llm-anthropic`
    - `packages/llm-google`
    - `packages/adapter-vercel`
    - `packages/adapter-local`
@@ -138,20 +139,6 @@ pnpm migrate
 pnpm migrate:status
 ```
 
-**Completed Implementation:**
-- ✅ Created 4 Postgres migration files in `packages/adapter-vercel/migrations/`
-- ✅ Created 4 SQLite migration files in `packages/adapter-local/migrations/`
-- ✅ Implemented `MigrationRunner` class for both adapters with:
-  - Run pending migrations
-  - Check migration status
-  - Track applied migrations
-  - Prevent re-running migrations
-- ✅ Added CLI tools (`src/cli/migrate.ts`) for both adapters
-- ✅ Added npm scripts (`migrate`, `migrate:status`) to package.json
-- ✅ Created comprehensive README files for both migration directories
-- ✅ Exported MigrationRunner from main entry points
-- ✅ Created test suite for local adapter migrations
-- ✅ Both packages build successfully without TypeScript errors
 
 ---
 
@@ -199,30 +186,6 @@ agent.on('step:completed', (step) => {
 await agent.execute({ goal: 'test' })
 ```
 
-**Completed Implementation:**
-- ✅ Created `WukongEventEmitter` class in `packages/agent/src/EventEmitter.ts`
-- ✅ Extended EventEmitter3 with type-safe event handling
-- ✅ Implemented typed event methods (`on`, `once`, `off`, `emit`, `emitAsync`)
-- ✅ Added error handling for listeners (errors in one listener don't affect others)
-- ✅ Created WeakMap-based listener tracking for proper removal
-- ✅ Implemented async event emission with `emitAsync` method
-- ✅ Added utility methods: `listenerCount`, `eventNames`, `listeners`, `removeAllListeners`, `destroy`
-- ✅ Created factory function `createEventEmitter` for convenience
-- ✅ All event types already defined in `src/types/events.ts` (from Task 1.2)
-- ✅ Exported from main package entry point
-- ✅ Created comprehensive test suite with 18 tests covering:
-  - Basic event emission
-  - Multiple listeners
-  - Different event types
-  - Once listeners
-  - Listener removal
-  - Error handling (sync and async)
-  - Custom error handlers
-  - Async emission
-  - Utility methods
-  - Memory management
-- ✅ All tests passing
-- ✅ Package builds successfully with no TypeScript errors
 
 ---
 
@@ -272,35 +235,6 @@ const session = await adapter.getSession(sessionId)
 expect(session.goal).toBe('test')
 ```
 
-**Completed Implementation:**
-- ✅ Created `VercelStorageAdapter` with full `StorageAdapter` interface implementation
-  - All session CRUD operations (create, get, update, delete, list)
-  - All step CRUD operations (create, get, update, list, markAsDiscarded, getLastStep)
-  - All todo CRUD operations (create, get, update, delete, list, batch operations)
-  - All checkpoint operations (create, get, list, delete)
-  - Transaction support (basic implementation)
-  - Proper JSONB handling for complex fields (toolsConfig, parameters, etc.)
-  - Date handling with ISO string conversion for Vercel Postgres compatibility
-- ✅ Created `VercelCacheAdapter` with full `CacheAdapter` interface implementation
-  - Basic cache operations (get, set, delete, exists)
-  - Increment/decrement operations
-  - Batch operations (mget, mset, mdel)
-  - Key pattern matching with SCAN support
-  - Queue operations (push, pop, length) for async task tracking
-  - Lock operations (acquire, release, withLock) for concurrency control
-- ✅ Created `VercelBlobAdapter` with full `FilesAdapter` interface implementation
-  - File upload/download operations
-  - File metadata retrieval
-  - File deletion, copy, move operations
-  - File listing with prefix support
-  - Signed URL generation (via head URL)
-- ✅ Created `VercelAdapter` combined adapter class
-  - Implements `CombinedAdapter` interface
-  - Delegates all operations to specialized adapters
-  - Convenient single-class interface for users
-- ✅ Exported all adapters from main entry point
-- ✅ Package builds successfully without TypeScript errors
-- ✅ All type definitions properly exported
 
 ---
 
@@ -337,41 +271,6 @@ const adapter = new LocalStorageAdapter({
 const sessionId = await adapter.createSession({ goal: 'test' })
 ```
 
-**Completed Implementation:**
-- ✅ Created `LocalStorageAdapter` with full `StorageAdapter` interface implementation
-  - All session CRUD operations (create, get, update, delete, list)
-  - All step CRUD operations (create, get, update, list, markAsDiscarded, getLastStep)
-  - All todo CRUD operations (create, get, update, delete, list, batch operations)
-  - All checkpoint operations (create, get, list, delete)
-  - Transaction support using better-sqlite3 transactions
-  - Proper JSON handling for complex fields (toolsConfig, parameters, result, snapshotData)
-  - Boolean fields stored as INTEGER (0/1) for SQLite compatibility
-  - Date handling with ISO string conversion
-- ✅ Created `LocalCacheAdapter` with full `CacheAdapter` interface implementation
-  - Basic cache operations (get, set, delete, exists)
-  - Increment/decrement operations
-  - Batch operations (mget, mset, mdel)
-  - Key pattern matching with regex support
-  - Queue operations (push, pop, length) for async task tracking
-  - Lock operations (acquire, release, withLock) for concurrency control
-  - Automatic cleanup of expired entries
-  - All operations in-memory for fast performance
-- ✅ Created `LocalFilesAdapter` with full `FilesAdapter` interface implementation
-  - File upload/download operations using Node.js fs/promises
-  - File metadata stored as separate .metadata.json files
-  - File deletion, copy, move operations
-  - File listing with recursive directory support
-  - Signed URL generation (basic token-based implementation)
-  - Content type detection based on file extensions
-  - Path sanitization to prevent directory traversal
-- ✅ Created `LocalAdapter` combined adapter class
-  - Implements `CombinedAdapter` interface
-  - Delegates all operations to specialized adapters
-  - Convenient single-class interface for users
-  - Proper cleanup with close() method
-- ✅ Exported all adapters from main entry point
-- ✅ Package builds successfully without TypeScript errors
-- ✅ All type definitions properly exported
 
 ---
 
@@ -418,41 +317,74 @@ await llm.callWithStreaming('Test', {
 expect(chunks.length).toBeGreaterThan(0)
 ```
 
-**Completed Implementation:**
-- ✅ Created `OpenAIAdapter` class implementing `LLMAdapter` interface
-  - Full support for chat completion API
-  - Simple `call()` method for basic prompts
-  - `callWithMessages()` for chat format with system/user/assistant roles
-  - `callWithStreaming()` with real-time chunk callbacks
-  - Comprehensive error handling for OpenAI API errors
-- ✅ Token counting with tiktoken
-  - Accurate token counting for all GPT models
-  - Automatic model mapping (gpt-5.1, gpt-4o, gpt-4, gpt-3.5)
-  - Fallback estimation if tiktoken fails
-- ✅ Rate limiting and retry support
-  - Built-in retry with exponential backoff via OpenAI SDK
-  - Configurable max retries (default: 3)
-  - Configurable timeout (default: 60s)
-- ✅ Model capabilities detection
-  - Automatic detection of context window size
-  - Function calling support detection
-  - Vision capability detection
-  - Streaming support (all models)
-- ✅ Comprehensive configuration options
-  - Custom base URL support (for proxies)
-  - Organization ID support
-  - Temperature, max tokens, top-p, penalties
-  - Stop sequences
-- ✅ Factory function `createOpenAIAdapter()` for convenience
-- ✅ Full TypeScript type definitions
-- ✅ Comprehensive test suite with unit and integration tests
-- ✅ Complete README with usage examples
-- ✅ Package builds successfully without errors
-- ✅ All exports properly configured
 
 ---
 
-### Task 2.5: LLM Integration - Google Gemini
+### Task 2.5: LLM Integration - Anthropic Claude
+
+**Purpose:** Implement Anthropic Claude as premium LLM provider with best-in-class coding capabilities.
+
+**Referenced Documentation:**
+- `docs/design/10-implementation.md` - LLM streaming output
+- `docs/design/14-implementation-patterns.md` - Multi-model calling
+
+**Implementation:**
+1. Create `packages/llm-anthropic/src/ClaudeAdapter.ts`:
+   - Implement `LLMAdapter` interface
+   - Use `@anthropic-ai/sdk` official SDK
+   - Support streaming responses
+   - Handle Claude-specific features (200K context window)
+   - Support both Claude Sonnet 4.5 and Haiku 4.5
+
+2. Add response parsing utilities
+3. Handle rate limits and retries
+
+**Tests:**
+- Call Anthropic API successfully
+- Streaming chunks are emitted correctly
+- Retries on rate limits
+- Token counting is accurate
+- Error handling for invalid API keys
+- Both Sonnet and Haiku models work
+
+**Verify Steps:**
+```typescript
+const llm = new ClaudeAdapter({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  model: 'claude-sonnet-4.5'
+})
+
+const response = await llm.call('Test prompt')
+expect(response).toBeDefined()
+
+// Test streaming
+let chunks = []
+await llm.callWithStreaming('Test', {
+  onChunk: (chunk) => chunks.push(chunk),
+  onComplete: (full) => console.log('Done')
+})
+expect(chunks.length).toBeGreaterThan(0)
+
+// Test Haiku model
+const haikuLLM = new ClaudeAdapter({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+  model: 'claude-haiku-4.5'
+})
+const haikuResponse = await haikuLLM.call('Quick test')
+expect(haikuResponse).toBeDefined()
+```
+
+**Key Features:**
+- Claude Sonnet 4.5: Best coding performance (82% on SWE-bench)
+- Claude Haiku 4.5: 2x faster, 1/3 cost of Sonnet
+- 200K context window support
+- Extended autonomous working time (30+ hours)
+- Message batching support
+- System prompt support
+
+---
+
+### Task 2.6: LLM Integration - Google Gemini
 
 **Purpose:** Implement Google Gemini as alternative LLM provider.
 
@@ -482,7 +414,7 @@ expect(response).toBeDefined()
 
 ---
 
-### Task 2.6: Multi-Model LLM Caller
+### Task 2.7: Multi-Model LLM Caller
 
 **Purpose:** Implement fallback mechanism for calling multiple LLM providers.
 
@@ -506,18 +438,19 @@ expect(response).toBeDefined()
 ```typescript
 const caller = new MultiModelLLMCaller({
   models: [
-    new GeminiAdapter({ apiKey: '...' }),
-    new OpenAIAdapter({ apiKey: '...' })
+    new ClaudeAdapter({ apiKey: '...', model: 'claude-sonnet-4.5' }),
+    new GeminiAdapter({ apiKey: '...', model: 'gemini-2.0-flash-exp' }),
+    new OpenAIAdapter({ apiKey: '...', model: 'gpt-5.1-instant' })
   ]
 })
 
-// Should try Gemini first, fall back to OpenAI if needed
+// Should try Claude first, fall back to Gemini, then OpenAI if needed
 const response = await caller.call('Test prompt')
 ```
 
 ---
 
-### Task 2.7: Prompt Builder
+### Task 2.8: Prompt Builder
 
 **Purpose:** Build structured prompts for LLM with all required context.
 
@@ -568,7 +501,7 @@ expect(prompt).toContain('<history>')
 
 ---
 
-### Task 2.8: Agent Response Parser
+### Task 2.9: Agent Response Parser
 
 **Purpose:** Parse and validate LLM responses to extract agent decisions.
 
@@ -614,7 +547,7 @@ expect(parsed.selected_tool).toBe('test_tool')
 
 ---
 
-### Task 2.9: Session Manager
+### Task 2.10: Session Manager
 
 **Purpose:** Manage agent session lifecycle (create, resume, stop, restore).
 
@@ -659,7 +592,7 @@ await manager.createCheckpoint(session.id, { name: 'Test checkpoint' })
 
 ---
 
-### Task 2.10: Step Executor
+### Task 2.11: Step Executor
 
 **Purpose:** Execute individual steps including tool calls and LLM interactions.
 
@@ -702,7 +635,7 @@ expect(result.success).toBe(true)
 
 ---
 
-### Task 2.11: Stop Controller
+### Task 2.12: Stop Controller
 
 **Purpose:** Allow users to safely stop agent execution at any time.
 
@@ -744,7 +677,7 @@ if (controller.hasStopRequest()) {
 
 ---
 
-### Task 2.12: InteractiveAgent Implementation
+### Task 2.13: InteractiveAgent Implementation
 
 **Purpose:** Implement the interactive agent that requires user confirmation after each step.
 
@@ -782,7 +715,7 @@ expect(confirmations).toBeGreaterThan(0)
 
 ---
 
-### Task 2.13: AutoAgent Implementation
+### Task 2.14: AutoAgent Implementation
 
 **Purpose:** Implement the autonomous agent that runs continuously until completion.
 
@@ -821,7 +754,7 @@ expect(result.status).toBe('completed')
 
 ---
 
-### Task 2.14: Main WukongAgent Class
+### Task 2.15: Main WukongAgent Class
 
 **Purpose:** Create the main agent class that ties everything together.
 
@@ -1886,19 +1819,6 @@ Test complete user scenarios:
 
 ---
 
-## Estimated Timeline
-
-| Phase | Tasks | Estimated Time |
-|-------|-------|----------------|
-| Phase 1 | 1.1 - 1.3 (3 tasks) | 1 week |
-| Phase 2 | 2.1 - 2.14 (14 tasks) | 4 weeks |
-| Phase 3 | 3.1 - 3.10 (10 tasks) | 3 weeks |
-| Phase 4 | 4.1 - 4.6 (6 tasks) | 2 weeks |
-| Phase 5 | 5.1 - 5.7 (7 tasks) | 2 weeks |
-| Phase 6 | 6.1 - 6.4 (4 tasks) | 1 week |
-| **Total** | **44 tasks** | **~13 weeks** |
-
-**Note:** Timeline assumes one full-time developer. Can be parallelized with multiple developers.
 
 ---
 
@@ -1906,7 +1826,7 @@ Test complete user scenarios:
 
 ### P0 (Must Have - Minimum Viable Product)
 - Phase 1: All tasks
-- Phase 2: Tasks 2.1-2.14
+- Phase 2: Tasks 2.1-2.15
 - Phase 3: Tasks 3.1-3.3, 3.9
 - Core agent functionality without advanced features
 
