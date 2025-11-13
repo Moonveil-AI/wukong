@@ -15,7 +15,14 @@
         "noUselessLabel": "error",
         "noUselessRename": "error",
         "noUselessSwitchCase": "error",
-        "noWith": "error"
+        "noWith": "error",
+        "noForEach": "warn",
+        "noUselessFragments": "error",
+        "noUselessTypeConstraint": "error",
+        "useFlatMap": "warn",
+        "useLiteralKeys": "error",
+        "useOptionalChain": "warn",
+        "useSimplifiedLogicExpression": "warn"
       },
       "correctness": {
         "noConstAssign": "error",
@@ -33,7 +40,12 @@
         "noUnusedLabels": "error",
         "noUnusedVariables": "error",
         "useIsNan": "error",
-        "useValidForDirection": "error"
+        "useValidForDirection": "error",
+        "noUnusedImports": "error",
+        "noUnusedPrivateClassMembers": "warn",
+        "useArrayLiterals": "error",
+        "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "error"
       },
       "style": {
         "noNamespace": "error",
@@ -53,7 +65,28 @@
         "useNumberNamespace": "error",
         "useShorthandAssign": "error",
         "useSingleVarDeclarator": "error",
-        "useTemplate": "error"
+        "useTemplate": "error",
+        "noNegationElse": "warn",
+        "noParameterAssign": "warn",
+        "noShoutyConstants": "warn",
+        "noUnusedTemplateLiteral": "warn",
+        "noVar": "error",
+        "useConst": "error",
+        "useDefaultParameterLast": "warn",
+        "useEnumInitializers": "warn",
+        "useExponentiationOperator": "warn",
+        "useFragmentSyntax": "error",
+        "useLiteralEnumMembers": "error",
+        "useNamingConvention": {
+          "level": "warn",
+          "options": {
+            "strictCase": false,
+            "requireAscii": false,
+            "enumMemberCase": "CONSTANT_CASE"
+          }
+        },
+        "useSelfClosingElements": "error",
+        "useShorthandFunctionType": "error"
       },
       "suspicious": {
         "noAsyncPromiseExecutor": "error",
@@ -81,7 +114,28 @@
         "noUnsafeNegation": "error",
         "useDefaultSwitchClauseLast": "error",
         "useGetterReturn": "error",
-        "useValidTypeof": "error"
+        "useValidTypeof": "error",
+        "noArrayIndexKey": "warn",
+        "noAssignInExpressions": "warn",
+        "noCommentText": "error",
+        "noConfusingVoidType": "warn",
+        "noConsoleLog": "off",
+        "noDoubleEquals": "warn",
+        "noDuplicateJsxProps": "error",
+        "noEmptyInterface": "warn",
+        "noMisleadingInstantiator": "error",
+        "noSparseArray": "warn",
+        "noThenProperty": "error",
+        "useAwait": "warn",
+        "useNamespaceKeyword": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "warn",
+        "noDelete": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error",
+        "noDangerouslySetInnerHtmlWithChildren": "error"
       }
     }
   },

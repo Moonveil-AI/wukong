@@ -41,6 +41,9 @@
 ### Implementation Guides
 - [Recommended Libraries](./docs/implementation/recommended-libraries.md) - Essential and Optional Dependencies Guide
 
+### User Guides
+- [Database Adapters Guide](./docs/user-guide/db-adapters.md) - Understanding SQLite, PostgreSQL, and Adapters
+
 ### Technical Decisions
 - [Why Not Use mem0?](./docs/why-not-mem0.md) - Analysis of mem0 vs Custom Knowledge Base
 

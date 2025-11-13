@@ -17,7 +17,9 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "migrate": "tsx src/cli/migrate.ts migrate",
+    "migrate:status": "tsx src/cli/migrate.ts status"
   },
   "dependencies": {
     "@wukong/agent": "workspace:*",

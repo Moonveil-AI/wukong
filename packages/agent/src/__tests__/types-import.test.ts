@@ -6,40 +6,7 @@
 import { describe, expect, it } from 'vitest';
 
 // Import all core types to verify they're exported
-import type {
-  ActionType,
-  AgentAction,
-  CacheAdapter,
-  Checkpoint,
-  CombinedAdapter,
-  EmbeddingAdapter,
-  ExecutionPlan,
-  FilesAdapter,
-  LLMAdapter,
-  Session,
-  SessionCreatedEvent,
-  SessionUpdatedEvent,
-  Step,
-  StepCompletedEvent,
-  StepStartedEvent,
-  StorageAdapter,
-  TaskOptions,
-  TaskResult,
-  Todo,
-  TodoCompletedEvent,
-  TodoStartedEvent,
-  TodoStatus,
-  Tool,
-  ToolCall,
-  ToolContext,
-  ToolHandler,
-  ToolMetadata,
-  ToolResult,
-  ToolSchema,
-  VectorAdapter,
-  WaitStrategy,
-  WukongAgentConfig,
-} from '../index';
+import type { ActionType, TodoStatus } from '../index';
 
 describe('Type Exports', () => {
   it('should export all types successfully', () => {

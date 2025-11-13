@@ -100,7 +100,7 @@ import { Session, Step, Todo, Tool } from '@wukong/agent'
 
 ---
 
-### Task 1.3: Database Schema Implementation
+### Task 1.3: Database Schema Implementation ✅
 
 **Purpose:** Create database tables and indexes for data persistence.
 
@@ -127,14 +127,31 @@ import { Session, Step, Todo, Tool } from '@wukong/agent'
 **Verify Steps:**
 ```bash
 # Test with Vercel Postgres
-pnpm migrate:up --adapter vercel
+cd packages/adapter-vercel
+pnpm migrate
 
 # Test with local SQLite
-pnpm migrate:up --adapter local
+cd packages/adapter-local
+pnpm migrate
 
 # Verify schema
 pnpm migrate:status
 ```
+
+**Completed Implementation:**
+- ✅ Created 4 Postgres migration files in `packages/adapter-vercel/migrations/`
+- ✅ Created 4 SQLite migration files in `packages/adapter-local/migrations/`
+- ✅ Implemented `MigrationRunner` class for both adapters with:
+  - Run pending migrations
+  - Check migration status
+  - Track applied migrations
+  - Prevent re-running migrations
+- ✅ Added CLI tools (`src/cli/migrate.ts`) for both adapters
+- ✅ Added npm scripts (`migrate`, `migrate:status`) to package.json
+- ✅ Created comprehensive README files for both migration directories
+- ✅ Exported MigrationRunner from main entry points
+- ✅ Created test suite for local adapter migrations
+- ✅ Both packages build successfully without TypeScript errors
 
 ---
 
