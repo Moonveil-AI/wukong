@@ -22,6 +22,14 @@ export type { PromptContext, PromptBuilderOptions } from './prompt/PromptBuilder
 // Export response parser
 export { ResponseParser, schemas } from './prompt/ResponseParser';
 
+// Export session manager
+export { SessionManager } from './session/SessionManager';
+export type {
+  CreateSessionOptions,
+  ResumeSessionOptions,
+  CreateCheckpointOptions,
+} from './session/SessionManager';
+
 // Version
 export const version = '0.1.0';
 
