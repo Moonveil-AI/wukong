@@ -19,6 +19,9 @@ export type { MultiModelCallerConfig } from './llm/MultiModelCaller';
 export { PromptBuilder, createPromptBuilder } from './prompt/PromptBuilder';
 export type { PromptContext, PromptBuilderOptions } from './prompt/PromptBuilder';
 
+// Export response parser
+export { ResponseParser, schemas } from './prompt/ResponseParser';
+
 // Version
 export const version = '0.1.0';
 

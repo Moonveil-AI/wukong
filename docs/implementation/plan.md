@@ -532,7 +532,7 @@ expect(prompt).toContain('<history>')
 
 ---
 
-### Task 2.9: Agent Response Parser
+### Task 2.9: Agent Response Parser ✅
 
 **Purpose:** Parse and validate LLM responses to extract agent decisions.
 
