@@ -27,7 +27,7 @@ import { OpenAIAdapter } from '@wukong/llm-openai';
 
 const adapter = new OpenAIAdapter({
   apiKey: process.env.OPENAI_API_KEY!,
-  model: 'gpt-4o-mini',
+  model: 'gpt-5.1-instant',
 });
 
 // Simple call
@@ -101,7 +101,7 @@ interface OpenAIAdapterConfig {
   /** OpenAI API key (required) */
   apiKey: string;
 
-  /** Default model to use (default: 'gpt-4o-mini') */
+  /** Default model to use (default: 'gpt-5.1-instant') */
   model?: string;
 
   /** Organization ID (optional) */
@@ -128,15 +128,15 @@ interface OpenAIAdapterConfig {
 
 The adapter supports all OpenAI models, including:
 
-- **GPT-4o** - Latest and most capable model
+- **GPT-5.1** - Latest generation models (Released Nov 2024)
+  - `gpt-5.1-instant` - Most commonly used, friendly tone, highly intelligent
+  - `gpt-5.1-thinking` - Advanced reasoning model for complex tasks
+  - `gpt-5.1-pro` - Research-grade intelligence (Coming Nov 24, 2024)
+  - `gpt-5.1-codex` - Specialized for long-running programming tasks
+  - `gpt-5.1-codex-mini` - Lighter version of codex
+- **GPT-4o** - Previous generation flagship
   - `gpt-4o` - 128K context window
   - `gpt-4o-mini` - Fast and cost-effective
-- **GPT-4** - Powerful reasoning model
-  - `gpt-4` - 8K context window
-  - `gpt-4-turbo` - 128K context window
-  - `gpt-4-vision` - With vision capabilities
-- **GPT-3.5** - Fast and cost-effective
-  - `gpt-3.5-turbo` - 16K context window
 
 ## Error Handling
 
@@ -196,7 +196,7 @@ import { createOpenAIAdapter } from '@wukong/llm-openai';
 
 const adapter = createOpenAIAdapter({
   apiKey: process.env.OPENAI_API_KEY!,
-  model: 'gpt-4o-mini',
+  model: 'gpt-5.1-instant',
 });
 ```
 

@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-11-13
+
+### Added
+
+- Support for GPT-5.1 model series
+  - `gpt-5.1-instant` - Default model, most commonly used
+  - `gpt-5.1-thinking` - Advanced reasoning model
+  - `gpt-5.1-pro` - Research-grade intelligence
+  - `gpt-5.1-codex` and `gpt-5.1-codex-mini` - Programming-specialized models
+- Enhanced model capabilities detection for GPT-5.1 (200K context window)
+- Updated default model from `gpt-4o-mini` to `gpt-5.1-instant`
+
+### Changed
+
+- Updated tiktoken model mapping for GPT-5.1 models (using gpt-4o tokenizer)
+- Improved model capability detection logic
+- Updated documentation with latest model information
+
 ## [0.1.0] - 2025-11-13
 
 ### Added
@@ -13,7 +31,7 @@ All notable changes to this project will be documented in this file.
 - Automatic retry logic with exponential backoff
 - Rate limit handling via OpenAI SDK
 - Model capabilities detection (context window, function calling, vision)
-- Support for all GPT models (GPT-4o, GPT-4, GPT-3.5)
+- Support for all GPT models (GPT-5.1, GPT-4o, GPT-4, GPT-3.5)
 - Comprehensive TypeScript type definitions
 - Complete test suite with unit and integration tests
 - Full API documentation and README

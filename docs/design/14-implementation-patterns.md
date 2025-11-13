@@ -205,7 +205,7 @@ async function callLLMWithFallback(
     parseJson?: boolean
   } = {}
 ): Promise<string> {
-  const modelsToTry = options.models || ['gemini-flash', 'gpt-4o-mini', 'gpt-4o']
+  const modelsToTry = options.models || ['gpt-5.1-instant', 'gemini-flash', 'gpt-4o-mini', 'gpt-4o']
   
   let lastError: Error | null = null
   

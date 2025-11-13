@@ -216,7 +216,7 @@ while (!isTaskComplete()) {
   
   // 3.5 Call LLM (streaming with multi-model fallback)
   const response = await llm.callWithStreaming(prompt, {
-    models: ['gemini-2.0-flash', 'gpt-4o'],  // Try in order
+    models: ['gpt-5.1-instant', 'gemini-2.0-flash', 'gpt-4o'],  // Try in order
     stream: true,
     onChunk: (chunk) => emit('llm:streaming', chunk),
     temperature: 0.7

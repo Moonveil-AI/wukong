@@ -108,7 +108,7 @@ Extract user preferences from the conversation.
   }]
 }
 `,
-  model: 'gpt-4o'
+  model: 'gpt-5.1-instant'
 })
 ```
 

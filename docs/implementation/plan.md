@@ -403,7 +403,7 @@ const sessionId = await adapter.createSession({ goal: 'test' })
 ```typescript
 const llm = new OpenAILLMAdapter({
   apiKey: process.env.OPENAI_API_KEY,
-  model: 'gpt-4o-mini'
+  model: 'gpt-5.1-instant'
 })
 
 const response = await llm.call('Test prompt')
@@ -427,7 +427,7 @@ expect(chunks.length).toBeGreaterThan(0)
   - Comprehensive error handling for OpenAI API errors
 - ✅ Token counting with tiktoken
   - Accurate token counting for all GPT models
-  - Automatic model mapping (gpt-4o, gpt-4, gpt-3.5)
+  - Automatic model mapping (gpt-5.1, gpt-4o, gpt-4, gpt-3.5)
   - Fallback estimation if tiktoken fails
 - ✅ Rate limiting and retry support
   - Built-in retry with exponential backoff via OpenAI SDK

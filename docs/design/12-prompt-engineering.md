@@ -670,7 +670,7 @@ const relevantContext = {
 ### 2. Token Optimization
 
 ```
-Total Prompt Budget: ~8,000 tokens (for GPT-4o-mini)
+Total Prompt Budget: ~12,000 tokens (for GPT-5.1-instant with 200K context)
 
 Breakdown:
 - System Instructions: ~2,000 tokens

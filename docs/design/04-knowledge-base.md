@@ -354,7 +354,7 @@ ${conversationText}
   }]
 }
 `,
-    model: 'gpt-4o'
+    model: 'gpt-5.1-instant'
   })
   
   // Generate embeddings for each knowledge piece
@@ -431,7 +431,7 @@ ${similarKnowledge.map(k => k.content).join('\n---\n')}
   "to_remove_ids": [indices of existing knowledge to remove]
 }
 `,
-    model: 'gpt-4o'
+    model: 'gpt-5.1-instant'
   })
   
   // 4. Execute decision

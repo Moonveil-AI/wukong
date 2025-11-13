@@ -68,7 +68,7 @@ export class OpenAIAdapter implements LLMAdapter {
 
     this.config = {
       apiKey: config.apiKey,
-      model: config.model || 'gpt-4o-mini',
+      model: config.model || 'gpt-5.1-instant',
       temperature: config.temperature ?? 0.7,
       maxTokens: config.maxTokens ?? 4096,
       maxRetries: config.maxRetries ?? 3,
@@ -280,6 +280,10 @@ export class OpenAIAdapter implements LLMAdapter {
    */
   private getTiktokenModel(model: string): TiktokenModel {
     // Map common OpenAI models to tiktoken models
+    // GPT-5.1 models use gpt-4o tokenizer for now
+    if (model.startsWith('gpt-5.1')) {
+      return 'gpt-4o';
+    }
     if (model.startsWith('gpt-4o')) {
       return 'gpt-4o';
     }
@@ -298,6 +302,15 @@ export class OpenAIAdapter implements LLMAdapter {
    * Get model-specific capabilities
    */
   private getModelCapabilities(model: string) {
+    // GPT-5.1 models
+    if (model.includes('gpt-5.1')) {
+      return {
+        contextWindow: 200000, // 200K context window for GPT-5.1
+        supportsFunctionCalling: true,
+        supportsVision: true,
+      };
+    }
+
     // GPT-4o models
     if (model.includes('gpt-4o')) {
       return {
@@ -370,7 +383,7 @@ export class OpenAIAdapter implements LLMAdapter {
  * ```typescript
  * const adapter = createOpenAIAdapter({
  *   apiKey: process.env.OPENAI_API_KEY!,
- *   model: 'gpt-4o-mini'
+ *   model: 'gpt-5.1-instant'
  * });
  *
  * const response = await adapter.call('Hello, world!');

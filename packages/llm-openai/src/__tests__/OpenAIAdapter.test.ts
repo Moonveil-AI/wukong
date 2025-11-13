@@ -20,7 +20,7 @@ describe('OpenAIAdapter', () => {
       });
 
       const config = adapter.getConfig();
-      expect(config.model).toBe('gpt-4o-mini');
+      expect(config.model).toBe('gpt-5.1-instant');
       expect(config.temperature).toBe(0.7);
       expect(config.maxTokens).toBe(4096);
       expect(config.maxRetries).toBe(3);
@@ -42,6 +42,19 @@ describe('OpenAIAdapter', () => {
   });
 
   describe('getCapabilities', () => {
+    it('should return correct capabilities for gpt-5.1', () => {
+      const adapter = new OpenAIAdapter({
+        apiKey: 'test-key',
+        model: 'gpt-5.1-instant',
+      });
+
+      const capabilities = adapter.getCapabilities();
+      expect(capabilities.maxTokens).toBe(200000);
+      expect(capabilities.supportsStreaming).toBe(true);
+      expect(capabilities.supportsFunctionCalling).toBe(true);
+      expect(capabilities.supportsVision).toBe(true);
+    });
+
     it('should return correct capabilities for gpt-4o', () => {
       const adapter = new OpenAIAdapter({
         apiKey: 'test-key',
@@ -129,7 +142,7 @@ describe('OpenAIAdapter', () => {
         if (!apiKey) throw new Error('API key required');
         const adapter = new OpenAIAdapter({
           apiKey: apiKey,
-          model: 'gpt-4o-mini',
+          model: 'gpt-5.1-instant',
         });
 
         const response = await adapter.call('Say "Hello, test!"', {
@@ -152,7 +165,7 @@ describe('OpenAIAdapter', () => {
         if (!apiKey) throw new Error('API key required');
         const adapter = new OpenAIAdapter({
           apiKey: apiKey,
-          model: 'gpt-4o-mini',
+          model: 'gpt-5.1-instant',
         });
 
         const messages: LLMMessage[] = [
@@ -183,7 +196,7 @@ describe('OpenAIAdapter', () => {
         if (!apiKey) throw new Error('API key required');
         const adapter = new OpenAIAdapter({
           apiKey: apiKey,
-          model: 'gpt-4o-mini',
+          model: 'gpt-5.1-instant',
         });
 
         const chunks: string[] = [];
@@ -216,7 +229,7 @@ describe('OpenAIAdapter', () => {
     it('should handle invalid API key gracefully', async () => {
       const adapter = new OpenAIAdapter({
         apiKey: 'invalid-key',
-        model: 'gpt-4o-mini',
+        model: 'gpt-5.1-instant',
       });
 
       await expect(adapter.call('Test prompt')).rejects.toThrow();
