@@ -157,7 +157,7 @@ pnpm migrate:status
 
 ## Phase 2: Core Agent System
 
-### Task 2.1: Event System
+### Task 2.1: Event System ✅
 
 **Purpose:** Implement the event emission and listening system for agent visibility.
 
@@ -198,6 +198,31 @@ agent.on('step:completed', (step) => {
 // Should emit events during execution
 await agent.execute({ goal: 'test' })
 ```
+
+**Completed Implementation:**
+- ✅ Created `WukongEventEmitter` class in `packages/agent/src/EventEmitter.ts`
+- ✅ Extended EventEmitter3 with type-safe event handling
+- ✅ Implemented typed event methods (`on`, `once`, `off`, `emit`, `emitAsync`)
+- ✅ Added error handling for listeners (errors in one listener don't affect others)
+- ✅ Created WeakMap-based listener tracking for proper removal
+- ✅ Implemented async event emission with `emitAsync` method
+- ✅ Added utility methods: `listenerCount`, `eventNames`, `listeners`, `removeAllListeners`, `destroy`
+- ✅ Created factory function `createEventEmitter` for convenience
+- ✅ All event types already defined in `src/types/events.ts` (from Task 1.2)
+- ✅ Exported from main package entry point
+- ✅ Created comprehensive test suite with 18 tests covering:
+  - Basic event emission
+  - Multiple listeners
+  - Different event types
+  - Once listeners
+  - Listener removal
+  - Error handling (sync and async)
+  - Custom error handlers
+  - Async emission
+  - Utility methods
+  - Memory management
+- ✅ All tests passing
+- ✅ Package builds successfully with no TypeScript errors
 
 ---
 
