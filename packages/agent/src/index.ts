@@ -11,6 +11,10 @@ export type * from './types/events';
 // Export core classes
 export { WukongEventEmitter, createEventEmitter } from './EventEmitter';
 
+// Export LLM utilities
+export { MultiModelCaller, createMultiModelCaller } from './llm/MultiModelCaller';
+export type { MultiModelCallerConfig } from './llm/MultiModelCaller';
+
 // Version
 export const version = '0.1.0';
 

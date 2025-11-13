@@ -437,7 +437,7 @@ expect(chunks.length).toBeGreaterThan(0)
 
 ---
 
-### Task 2.7: Multi-Model LLM Caller
+### Task 2.7: Multi-Model LLM Caller ✅
 
 **Purpose:** Implement fallback mechanism for calling multiple LLM providers.
 
@@ -459,7 +459,7 @@ expect(chunks.length).toBeGreaterThan(0)
 
 **Verify Steps:**
 ```typescript
-const caller = new MultiModelLLMCaller({
+const caller = new MultiModelCaller({
   models: [
     new ClaudeAdapter({ apiKey: '...', model: 'claude-sonnet-4.5' }),
     new GeminiAdapter({ apiKey: '...', model: 'gemini-2.0-flash-exp' }),
@@ -470,6 +470,14 @@ const caller = new MultiModelLLMCaller({
 // Should try Claude first, fall back to Gemini, then OpenAI if needed
 const response = await caller.call('Test prompt')
 ```
+
+**Key Features:**
+- Automatic fallback on LLM failures
+- Error classification (retryable vs non-retryable)
+- Exponential backoff retry logic
+- Response validation
+- JSON extraction from XML tags, code blocks, and plain JSON
+- Support for both simple prompts and chat messages
 
 ---
 
