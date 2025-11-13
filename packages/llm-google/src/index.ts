@@ -3,11 +3,5 @@
  * @description Google Gemini integration for Wukong agent framework
  */
 
-// This is a placeholder file created during project initialization
-// TODO: Implement Google Gemini adapter as per Task 2.5
-
+export { GeminiAdapter, createGeminiAdapter, type GeminiAdapterConfig } from './GeminiAdapter';
 export const version = '0.1.0';
-
-export default {
-  version,
-};

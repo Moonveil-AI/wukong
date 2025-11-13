@@ -1,7 +1,7 @@
 {
   "name": "@wukong/llm-google",
-  "version": "0.1.0",
-  "description": "Google Gemini LLM adapter for Wukong",
+  "version": "0.2.0",
+  "description": "Google Gemini LLM adapter for Wukong (with Gemini 2.5 Pro support)",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
