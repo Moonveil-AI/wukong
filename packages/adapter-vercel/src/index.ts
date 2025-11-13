@@ -6,11 +6,15 @@
 // Export migration utilities
 export { MigrationRunner, type MigrationInfo, type MigrationResult } from './migrations.js';
 
-// This is a placeholder file created during project initialization
-// TODO: Implement Vercel storage adapter as per Task 2.2
+// Export individual adapters
+export { VercelStorageAdapter, type VercelStorageAdapterConfig } from './VercelStorageAdapter.js';
+export { VercelCacheAdapter, type VercelCacheAdapterConfig } from './VercelCacheAdapter.js';
+export { VercelBlobAdapter, type VercelBlobAdapterConfig } from './VercelBlobAdapter.js';
+
+// Export combined adapter (recommended)
+export { VercelAdapter, type VercelAdapterConfig } from './VercelAdapter.js';
+
+// Default export
+export { VercelAdapter as default } from './VercelAdapter.js';
 
 export const version = '0.1.0';
-
-export default {
-  version,
-};
