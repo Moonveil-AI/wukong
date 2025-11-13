@@ -11,24 +11,26 @@
   "author": "Your Name",
   "engines": {
     "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
+    "pnpm": ">=9.0.0"
   },
   "scripts": {
     "build": "pnpm -r run build",
     "dev": "pnpm -r --parallel run dev",
-    "test": "vitest",
-    "test:ci": "vitest run",
+    "test": "cross-env VITE_CJS_IGNORE_WARNING=true vitest run",
+    "test:watch": "cross-env VITE_CJS_IGNORE_WARNING=true vitest",
+    "test:ci": "cross-env VITE_CJS_IGNORE_WARNING=true vitest run",
     "lint": "biome check .",
     "lint:fix": "biome check --apply .",
     "format": "biome format --write .",
     "typecheck": "pnpm -r run typecheck",
-    "check": "pnpm typecheck && pnpm lint",
+    "check": "pnpm typecheck && pnpm lint && pnpm test",
     "clean": "pnpm -r run clean && rm -rf node_modules",
     "prepare": "pnpm build"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/node": "^20.17.6",
+    "cross-env": "^10.1.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2",
     "vitest": "^2.1.8"

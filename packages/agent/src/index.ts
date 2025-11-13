@@ -3,9 +3,12 @@
  * @description Main entry point for the Wukong agent framework
  */
 
-// This is a placeholder file created during project initialization
-// TODO: Implement core agent functionality as per Task 1.2
+// Export all types
+export type * from './types/index';
+export type * from './types/adapters';
+export type * from './types/events';
 
+// Version
 export const version = '0.1.0';
 
 export default {
