@@ -666,7 +666,7 @@ expect(result.success).toBe(true)
 
 ---
 
-### Task 2.12: Stop Controller
+### Task 2.12: Stop Controller ✅
 
 **Purpose:** Allow users to safely stop agent execution at any time.
 
@@ -698,7 +698,7 @@ if (controller.shouldStop()) {
 }
 
 // User requests stop
-controller.requestStop(graceful: true)
+controller.requestStop({ graceful: true })
 
 // Agent checks and confirms
 if (controller.hasStopRequest()) {

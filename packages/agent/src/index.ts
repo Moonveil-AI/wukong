@@ -38,6 +38,9 @@ export type {
   ToolRegistry,
 } from './executor/StepExecutor';
 
+// Export stop controller
+export { StopController } from './controller/StopController';
+
 // Version
 export const version = '0.1.0';
 
