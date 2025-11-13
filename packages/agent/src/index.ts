@@ -15,6 +15,10 @@ export { WukongEventEmitter, createEventEmitter } from './EventEmitter';
 export { MultiModelCaller, createMultiModelCaller } from './llm/MultiModelCaller';
 export type { MultiModelCallerConfig } from './llm/MultiModelCaller';
 
+// Export prompt building utilities
+export { PromptBuilder, createPromptBuilder } from './prompt/PromptBuilder';
+export type { PromptContext, PromptBuilderOptions } from './prompt/PromptBuilder';
+
 // Version
 export const version = '0.1.0';
 
