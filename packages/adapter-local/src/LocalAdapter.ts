@@ -20,6 +20,7 @@ import type {
 import { LocalCacheAdapter } from './LocalCacheAdapter.js';
 import { LocalFilesAdapter } from './LocalFilesAdapter.js';
 import { LocalStorageAdapter } from './LocalStorageAdapter.js';
+import { LocalVectorAdapter, type LocalVectorAdapterConfig } from './LocalVectorAdapter.js';
 
 export interface LocalAdapterConfig {
   /**
@@ -51,6 +52,12 @@ export interface LocalAdapterConfig {
    * @default false
    */
   verbose?: boolean;
+
+  /**
+   * Enable vector adapter (uses same database)
+   * @default false
+   */
+  enableVector?: boolean | Omit<LocalVectorAdapterConfig, 'db'>;
 }
 
 /**
@@ -60,11 +67,13 @@ export interface LocalAdapterConfig {
  * - StorageAdapter: SQLite with better-sqlite3
  * - CacheAdapter: In-memory cache
  * - FilesAdapter: Local file system
+ * - VectorAdapter: SQLite with BLOB storage (optional)
  */
 export class LocalAdapter implements CombinedAdapter {
   private storageAdapter: LocalStorageAdapter;
   private cacheAdapter: LocalCacheAdapter;
   private filesAdapter: LocalFilesAdapter;
+  private vectorAdapter?: LocalVectorAdapter;
 
   public readonly files: FilesAdapter;
 
@@ -86,6 +95,19 @@ export class LocalAdapter implements CombinedAdapter {
     });
 
     this.files = this.filesAdapter;
+
+    // Initialize vector adapter (optional)
+    if (config.enableVector) {
+      const vectorConfig =
+        typeof config.enableVector === 'boolean'
+          ? { db: this.storageAdapter.db }
+          : { db: this.storageAdapter.db, ...config.enableVector };
+      this.vectorAdapter = new LocalVectorAdapter(vectorConfig);
+    }
+  }
+
+  get vector() {
+    return this.vectorAdapter;
   }
 
   // ==========================================

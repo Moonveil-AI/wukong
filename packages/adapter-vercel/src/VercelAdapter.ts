@@ -8,6 +8,7 @@ import type { CombinedAdapter } from '@wukong/agent';
 import { VercelBlobAdapter, type VercelBlobAdapterConfig } from './VercelBlobAdapter.js';
 import { VercelCacheAdapter, type VercelCacheAdapterConfig } from './VercelCacheAdapter.js';
 import { VercelStorageAdapter, type VercelStorageAdapterConfig } from './VercelStorageAdapter.js';
+import { VercelVectorAdapter, type VercelVectorAdapterConfig } from './VercelVectorAdapter.js';
 
 export interface VercelAdapterConfig {
   /**
@@ -24,6 +25,11 @@ export interface VercelAdapterConfig {
    * Blob configuration (optional, uses environment variables by default)
    */
   blob?: VercelBlobAdapterConfig;
+
+  /**
+   * Vector configuration (optional, uses same postgres connection)
+   */
+  vector?: VercelVectorAdapterConfig | boolean;
 }
 
 /**
@@ -35,6 +41,7 @@ export class VercelAdapter implements CombinedAdapter {
   private storageAdapter: VercelStorageAdapter;
   private cacheAdapter: VercelCacheAdapter;
   private blobAdapter: VercelBlobAdapter;
+  private vectorAdapter?: VercelVectorAdapter;
 
   constructor(config: VercelAdapterConfig) {
     // Initialize storage adapter
@@ -47,6 +54,18 @@ export class VercelAdapter implements CombinedAdapter {
 
     // Initialize blob adapter
     this.blobAdapter = new VercelBlobAdapter(config.blob || {});
+
+    // Initialize vector adapter (optional)
+    if (config.vector) {
+      const vectorConfig =
+        typeof config.vector === 'boolean'
+          ? {
+              postgresUrl:
+                typeof config.postgres === 'string' ? config.postgres : config.postgres.postgresUrl,
+            }
+          : config.vector;
+      this.vectorAdapter = new VercelVectorAdapter(vectorConfig);
+    }
   }
 
   // ==========================================
@@ -276,8 +295,11 @@ export class VercelAdapter implements CombinedAdapter {
     return this.blobAdapter;
   }
 
+  get vector() {
+    return this.vectorAdapter;
+  }
+
   // Optional adapters (not implemented in base Vercel adapter)
-  vector = undefined;
   llm = undefined;
   embedding = undefined;
 

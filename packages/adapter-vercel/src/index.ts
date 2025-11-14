@@ -10,6 +10,7 @@ export { MigrationRunner, type MigrationInfo, type MigrationResult } from './mig
 export { VercelStorageAdapter, type VercelStorageAdapterConfig } from './VercelStorageAdapter.js';
 export { VercelCacheAdapter, type VercelCacheAdapterConfig } from './VercelCacheAdapter.js';
 export { VercelBlobAdapter, type VercelBlobAdapterConfig } from './VercelBlobAdapter.js';
+export { VercelVectorAdapter, type VercelVectorAdapterConfig } from './VercelVectorAdapter.js';
 
 // Export combined adapter (recommended)
 export { VercelAdapter, type VercelAdapterConfig } from './VercelAdapter.js';

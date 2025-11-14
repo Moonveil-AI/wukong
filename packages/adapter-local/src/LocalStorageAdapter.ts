@@ -37,23 +37,30 @@ export interface LocalStorageAdapterConfig {
 }
 
 export class LocalStorageAdapter implements StorageAdapter {
-  private db: Database.Database;
+  private _db: Database.Database;
 
   constructor(config: LocalStorageAdapterConfig) {
-    this.db = new Database(config.dbPath, {
+    this._db = new Database(config.dbPath, {
       verbose: config.verbose ? console.log : undefined,
     });
 
     // Enable WAL mode for better concurrency
     if (config.enableWAL !== false && config.dbPath !== ':memory:') {
-      this.db.pragma('journal_mode = WAL');
+      this._db.pragma('journal_mode = WAL');
     }
 
     // Enable foreign keys
-    this.db.pragma('foreign_keys = ON');
+    this._db.pragma('foreign_keys = ON');
 
     // Set reasonable defaults
-    this.db.pragma('busy_timeout = 5000');
+    this._db.pragma('busy_timeout = 5000');
+  }
+
+  /**
+   * Expose database instance for vector adapter
+   */
+  get db(): Database.Database {
+    return this._db;
   }
 
   // ==========================================
@@ -64,7 +71,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     const id = this.generateId('session');
     const now = new Date();
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       INSERT INTO sessions (
         id, goal, initial_goal, status, user_id, api_key, organization_id,
         agent_type, auto_run, tools_config, parent_session_id, depth,
@@ -109,7 +116,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   getSession(sessionId: string): Promise<Session | null> {
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       SELECT * FROM sessions WHERE id = ? AND is_deleted = 0
     `);
 
@@ -184,7 +191,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     // Add session ID for WHERE clause
     values.push(sessionId);
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       UPDATE sessions
       SET ${setClauses.join(', ')}
       WHERE id = ? AND is_deleted = 0
@@ -196,7 +203,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   deleteSession(sessionId: string): Promise<void> {
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       UPDATE sessions
       SET is_deleted = 1, updated_at = ?
       WHERE id = ?
@@ -234,7 +241,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     const whereClause = whereClauses.join(' AND ');
 
     // Get total count
-    const countStmt = this.db.prepare(`
+    const countStmt = this._db.prepare(`
       SELECT COUNT(*) as count FROM sessions WHERE ${whereClause}
     `);
     const countResult = countStmt.get(...values) as { count: number };
@@ -244,7 +251,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     const limit = filters.limit || 50;
     const offset = filters.offset || 0;
 
-    const sessionsStmt = this.db.prepare(`
+    const sessionsStmt = this._db.prepare(`
       SELECT * FROM sessions
       WHERE ${whereClause}
       ORDER BY created_at DESC
@@ -264,7 +271,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   async createStep(step: Omit<Step, 'id' | 'createdAt' | 'updatedAt'>): Promise<Step> {
     const now = new Date();
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       INSERT INTO steps (
         session_id, step_number, action, reasoning, selected_tool, parameters,
         llm_prompt, llm_response, step_result, error_message, status, discarded,
@@ -301,7 +308,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   getStep(stepId: number): Promise<Step | null> {
-    const stmt = this.db.prepare('SELECT * FROM steps WHERE id = ?');
+    const stmt = this._db.prepare('SELECT * FROM steps WHERE id = ?');
     const row = stmt.get(stepId);
 
     if (!row) return Promise.resolve(null);
@@ -362,7 +369,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     // Add step ID for WHERE clause
     values.push(stepId);
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       UPDATE steps
       SET ${setClauses.join(', ')}
       WHERE id = ?
@@ -406,7 +413,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       }
     }
 
-    const stmt = this.db.prepare(query);
+    const stmt = this._db.prepare(query);
     const rows = stmt.all(...values);
 
     return rows.map((row: any) => this.mapStepRow(row));
@@ -416,7 +423,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     if (stepIds.length === 0) return;
 
     const placeholders = stepIds.map(() => '?').join(',');
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       UPDATE steps
       SET discarded = 1, updated_at = ?
       WHERE session_id = ? AND id IN (${placeholders})
@@ -426,7 +433,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   getLastStep(sessionId: string): Promise<Step | null> {
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       SELECT * FROM steps
       WHERE session_id = ?
       ORDER BY step_number DESC
@@ -446,7 +453,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   async createTodo(todo: Omit<Todo, 'createdAt' | 'updatedAt'>): Promise<Todo> {
     const now = new Date();
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       INSERT INTO todos (
         id, session_id, title, description, order_index, status, dependencies, priority,
         estimated_steps, actual_steps, estimated_tokens, actual_tokens,
@@ -481,7 +488,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   getTodo(todoId: string): Promise<Todo | null> {
-    const stmt = this.db.prepare('SELECT * FROM todos WHERE id = ?');
+    const stmt = this._db.prepare('SELECT * FROM todos WHERE id = ?');
     const row = stmt.get(todoId);
 
     if (!row) return Promise.resolve(null);
@@ -541,7 +548,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     // Add todo ID for WHERE clause
     values.push(todoId);
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       UPDATE todos
       SET ${setClauses.join(', ')}
       WHERE id = ?
@@ -553,13 +560,13 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   deleteTodo(todoId: string): Promise<void> {
-    const stmt = this.db.prepare('DELETE FROM todos WHERE id = ?');
+    const stmt = this._db.prepare('DELETE FROM todos WHERE id = ?');
     stmt.run(todoId);
     return Promise.resolve();
   }
 
   async listTodos(sessionId: string): Promise<Todo[]> {
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       SELECT * FROM todos
       WHERE session_id = ?
       ORDER BY order_index ASC
@@ -572,8 +579,8 @@ export class LocalStorageAdapter implements StorageAdapter {
   async batchCreateTodos(todos: Omit<Todo, 'createdAt' | 'updatedAt'>[]): Promise<Todo[]> {
     const now = new Date();
 
-    const insert = this.db.transaction((todosToInsert: typeof todos) => {
-      const stmt = this.db.prepare(`
+    const insert = this._db.transaction((todosToInsert: typeof todos) => {
+      const stmt = this._db.prepare(`
         INSERT INTO todos (
           id, session_id, title, description, order_index, status, dependencies, priority,
           estimated_steps, actual_steps, estimated_tokens, actual_tokens,
@@ -612,7 +619,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     // Fetch and return created todos
     const ids = todos.map((t) => t.id);
     const placeholders = ids.map(() => '?').join(',');
-    const stmt = this.db.prepare(`SELECT * FROM todos WHERE id IN (${placeholders})`);
+    const stmt = this._db.prepare(`SELECT * FROM todos WHERE id IN (${placeholders})`);
     const rows = stmt.all(...ids);
 
     return rows.map((row: any) => this.mapTodoRow(row));
@@ -621,7 +628,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   async batchUpdateTodos(updates: Array<{ id: string; updates: Partial<Todo> }>): Promise<Todo[]> {
     const now = new Date();
 
-    const update = this.db.transaction((updatesToApply: typeof updates) => {
+    const update = this._db.transaction((updatesToApply: typeof updates) => {
       for (const { id, updates: todoUpdates } of updatesToApply) {
         const setClauses: string[] = [];
         const values: any[] = [];
@@ -667,7 +674,7 @@ export class LocalStorageAdapter implements StorageAdapter {
           values.push(now.toISOString());
           values.push(id);
 
-          const stmt = this.db.prepare(`
+          const stmt = this._db.prepare(`
             UPDATE todos
             SET ${setClauses.join(', ')}
             WHERE id = ?
@@ -683,7 +690,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     // Fetch and return updated todos
     const ids = updates.map((u) => u.id);
     const placeholders = ids.map(() => '?').join(',');
-    const stmt = this.db.prepare(`SELECT * FROM todos WHERE id IN (${placeholders})`);
+    const stmt = this._db.prepare(`SELECT * FROM todos WHERE id IN (${placeholders})`);
     const rows = stmt.all(...ids);
 
     return rows.map((row: any) => this.mapTodoRow(row));
@@ -698,7 +705,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   ): Promise<ParallelToolCall> {
     const now = new Date();
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       INSERT INTO parallel_tool_calls (
         step_id, tool_id, tool_name, parameters, status, result, error_message,
         progress_percentage, status_message, external_task_id, external_status,
@@ -732,7 +739,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   getParallelToolCall(callId: number): Promise<ParallelToolCall | null> {
-    const stmt = this.db.prepare('SELECT * FROM parallel_tool_calls WHERE id = ?');
+    const stmt = this._db.prepare('SELECT * FROM parallel_tool_calls WHERE id = ?');
     const row = stmt.get(callId);
 
     if (!row) return Promise.resolve(null);
@@ -769,7 +776,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       values.push(now.toISOString());
       values.push(callId);
 
-      const stmt = this.db.prepare(`
+      const stmt = this._db.prepare(`
         UPDATE parallel_tool_calls
         SET ${setClauses.join(', ')}
         WHERE id = ?
@@ -782,7 +789,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async listParallelToolCalls(stepId: number): Promise<ParallelToolCall[]> {
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       SELECT * FROM parallel_tool_calls
       WHERE step_id = ?
       ORDER BY created_at ASC
@@ -802,7 +809,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     const id = this.generateId('fork');
     const now = new Date();
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       INSERT INTO fork_agent_tasks (
         id, parent_session_id, parent_step_id, sub_session_id, goal, context_summary,
         depth, max_steps, timeout_seconds, status, result_summary, error_message,
@@ -840,7 +847,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   getForkAgentTask(taskId: string): Promise<ForkAgentTask | null> {
-    const stmt = this.db.prepare('SELECT * FROM fork_agent_tasks WHERE id = ?');
+    const stmt = this._db.prepare('SELECT * FROM fork_agent_tasks WHERE id = ?');
     const row = stmt.get(taskId);
 
     if (!row) return Promise.resolve(null);
@@ -875,7 +882,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       values.push(now.toISOString());
       values.push(taskId);
 
-      const stmt = this.db.prepare(`
+      const stmt = this._db.prepare(`
         UPDATE fork_agent_tasks
         SET ${setClauses.join(', ')}
         WHERE id = ?
@@ -888,7 +895,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async listForkAgentTasks(sessionId: string): Promise<ForkAgentTask[]> {
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       SELECT * FROM fork_agent_tasks
       WHERE parent_session_id = ?
       ORDER BY created_at ASC
@@ -906,7 +913,7 @@ export class LocalStorageAdapter implements StorageAdapter {
     const id = this.generateId('checkpoint');
     const now = new Date();
 
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       INSERT INTO checkpoints (
         id, session_id, name, step_number, session_state, created_at
       ) VALUES (?, ?, ?, ?, ?, ?)
@@ -925,7 +932,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   getCheckpoint(checkpointId: string): Promise<Checkpoint | null> {
-    const stmt = this.db.prepare('SELECT * FROM checkpoints WHERE id = ?');
+    const stmt = this._db.prepare('SELECT * FROM checkpoints WHERE id = ?');
     const row = stmt.get(checkpointId);
 
     if (!row) return Promise.resolve(null);
@@ -933,7 +940,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   async listCheckpoints(sessionId: string): Promise<Checkpoint[]> {
-    const stmt = this.db.prepare(`
+    const stmt = this._db.prepare(`
       SELECT * FROM checkpoints
       WHERE session_id = ?
       ORDER BY created_at DESC
@@ -944,7 +951,7 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   deleteCheckpoint(checkpointId: string): Promise<void> {
-    const stmt = this.db.prepare('DELETE FROM checkpoints WHERE id = ?');
+    const stmt = this._db.prepare('DELETE FROM checkpoints WHERE id = ?');
     stmt.run(checkpointId);
     return Promise.resolve();
   }
@@ -955,7 +962,7 @@ export class LocalStorageAdapter implements StorageAdapter {
 
   async transaction<T>(fn: (tx: StorageAdapter) => Promise<T>): Promise<T> {
     // Create a transaction wrapper
-    const txFn = this.db.transaction((callback: () => T) => callback());
+    const txFn = this._db.transaction((callback: () => T) => callback());
     // Execute the function within a transaction
     // For SQLite, the transaction is handled by better-sqlite3
     return txFn(() => {
@@ -1152,6 +1159,6 @@ export class LocalStorageAdapter implements StorageAdapter {
    * Close the database connection
    */
   close(): void {
-    this.db.close();
+    this._db.close();
   }
 }
