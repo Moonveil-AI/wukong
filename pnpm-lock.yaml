@@ -37,7 +37,7 @@ importers:
         specifier: workspace:*
         version: link:../agent
       better-sqlite3:
-        specifier: ^11.8.1
+        specifier: ^11.10.0
         version: 11.10.0
     devDependencies:
       '@types/better-sqlite3':

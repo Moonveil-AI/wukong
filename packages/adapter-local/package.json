@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@wukong/agent": "workspace:*",
-    "better-sqlite3": "^11.8.1"
+    "better-sqlite3": "^11.10.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12",

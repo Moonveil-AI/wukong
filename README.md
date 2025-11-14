@@ -57,6 +57,35 @@
 npm install @wukong/agent
 ```
 
+#### Troubleshooting: better-sqlite3 Native Bindings
+
+If you encounter errors like `Could not locate the bindings file` when running tests or using the local adapter, this means the `better-sqlite3` native module needs to be compiled for your Node.js version.
+
+**Solution:**
+
+```bash
+# Navigate to the better-sqlite3 module directory
+cd node_modules/.pnpm/better-sqlite3@*/node_modules/better-sqlite3
+
+# Build the native bindings
+npm run build-release
+
+# Return to project root
+cd -
+```
+
+**Alternative solution (for pnpm monorepo):**
+
+```bash
+# Rebuild all native modules
+pnpm rebuild better-sqlite3
+```
+
+**Note:** This is required when:
+- First installing dependencies on a new machine
+- Switching Node.js versions
+- Upgrading Node.js to a new major version
+
 ### Basic Usage
 
 ```typescript
