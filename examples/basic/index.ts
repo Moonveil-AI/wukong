@@ -9,16 +9,25 @@
  */
 
 import 'dotenv/config';
-import { LocalAdapter } from '@wukong/adapter-local';
+import { LocalAdapter, MigrationRunner } from '@wukong/adapter-local';
 import { WukongAgent } from '@wukong/agent';
 import { ClaudeAdapter } from '@wukong/llm-anthropic';
 import { OpenAIAdapter } from '@wukong/llm-openai';
 
-// Define a simple custom tool
+// Define a simple custom tool following the Tool interface
 const calculatorTool = {
-  name: 'calculator',
-  description: 'Perform basic mathematical calculations',
-  inputSchema: {
+  metadata: {
+    name: 'calculator',
+    description: 'Perform basic mathematical calculations (add, subtract, multiply, divide)',
+    version: '1.0.0',
+    category: 'data' as const,
+    riskLevel: 'low' as const,
+    timeout: 30,
+    requiresConfirmation: false,
+    async: false,
+    estimatedTime: 1,
+  },
+  schema: {
     type: 'object' as const,
     properties: {
       operation: {
@@ -26,19 +35,21 @@ const calculatorTool = {
         enum: ['add', 'subtract', 'multiply', 'divide'],
         description: 'The mathematical operation to perform',
       },
-      a: {
+      operand1: {
         type: 'number',
-        description: 'First number',
+        description: 'First operand (number)',
       },
-      b: {
+      operand2: {
         type: 'number',
-        description: 'Second number',
+        description: 'Second operand (number)',
       },
     },
-    required: ['operation', 'a', 'b'],
+    required: ['operation', 'operand1', 'operand2'],
   },
-  execute(params: { operation: string; a: number; b: number }) {
-    const { operation, a, b } = params;
+  handler: async (params: any) => {
+    const { operation, operand1, operand2 } = params;
+    const a = operand1;
+    const b = operand2;
 
     let result: number;
     switch (operation) {
@@ -53,18 +64,24 @@ const calculatorTool = {
         break;
       case 'divide':
         if (b === 0) {
-          throw new Error('Cannot divide by zero');
+          return {
+            success: false,
+            error: 'Cannot divide by zero',
+          };
         }
         result = a / b;
         break;
       default:
-        throw new Error(`Unknown operation: ${operation}`);
+        return {
+          success: false,
+          error: `Unknown operation: ${operation}`,
+        };
     }
 
     return {
       success: true,
       result,
-      message: `${a} ${operation} ${b} = ${result}`,
+      output: `${a} ${operation} ${b} = ${result}`,
     };
   },
 };
@@ -76,8 +93,17 @@ async function main() {
   const dbPath = process.env.DATABASE_PATH || './data/wukong.db';
   console.log(`📦 Initializing local storage at: ${dbPath}`);
 
-  const adapter = new LocalAdapter({ databasePath: dbPath });
-  await adapter.initialize();
+  // Run database migrations
+  console.log('🔄 Running database migrations...');
+  const migrationRunner = new MigrationRunner(dbPath);
+  const migrationResults = await migrationRunner.migrate();
+  if (migrationResults.length > 0) {
+    console.log(`✅ Applied ${migrationResults.length} migration(s)\n`);
+  } else {
+    console.log('✅ Database is up to date\n');
+  }
+
+  const adapter = new LocalAdapter({ dbPath });
   console.log('✅ Storage adapter initialized\n');
 
   // 2. Initialize LLM adapters (with fallback)
@@ -117,10 +143,10 @@ async function main() {
   const agent = new WukongAgent({
     adapter,
     llm: {
-      adapters: llmAdapters,
-      maxRetries: 3,
+      models: llmAdapters,
+      maxRetriesPerModel: 3,
     },
-    tools: [calculatorTool as any],
+    tools: [calculatorTool],
     defaultMode: 'auto',
     enableMCP: true,
   });
@@ -129,6 +155,15 @@ async function main() {
   // 4. Set up event listeners for visibility
   agent.on('session:created', (event) => {
     console.log(`📝 Session created: ${event.sessionId}`);
+  });
+
+  agent.on('llm:started', (event) => {
+    console.log(`🤖 LLM call started for step ${event.stepId}`);
+  });
+
+  agent.on('llm:complete', (event) => {
+    console.log(`🤖 LLM call completed for step ${event.stepId}`);
+    console.log(`   Response preview: ${event.response?.text?.slice(0, 150)}...`);
   });
 
   agent.on('step:started', (event) => {
@@ -147,8 +182,13 @@ async function main() {
     console.log(`   Success: ${event.success}`);
   });
 
+  agent.on('task:failed', (event) => {
+    console.error(`❌ Task failed: ${event.error}`);
+  });
+
   agent.on('error', (event) => {
-    console.error(`❌ Error: ${event.message}`);
+    console.error(`❌ Error event: ${event.message}`);
+    console.error(`   Full event:`, event);
   });
 
   // 5. Execute a task
@@ -163,11 +203,19 @@ async function main() {
     });
 
     console.log('━'.repeat(60));
-    console.log('\n🎉 Task completed successfully!\n');
+    console.log('\n🎉 Task execution finished!\n');
     console.log('Final Result:');
     console.log(JSON.stringify(result, null, 2));
+    
+    // Check if there was an error in the result
+    if (result.error) {
+      console.error('\n❌ Task failed with error:', result.error);
+    }
   } catch (error) {
-    console.error('\n❌ Task failed:', error);
+    console.error('\n❌ Task failed with exception:', error);
+    if (error instanceof Error) {
+      console.error('Stack trace:', error.stack);
+    }
     process.exit(1);
   }
 
