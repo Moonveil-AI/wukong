@@ -481,7 +481,7 @@ export class ParallelToolExecutor {
    * Get all tool calls for a step
    */
   private async getAllToolCalls(stepId: number): Promise<ParallelToolCall[]> {
-    return this.storage.listParallelToolCalls(stepId);
+    return await this.storage.listParallelToolCalls(stepId);
   }
 
   /**
@@ -511,7 +511,7 @@ export class ParallelToolExecutor {
    * Get all tool calls for a step with their current status
    */
   async getStepToolCalls(stepId: number): Promise<ParallelToolCall[]> {
-    return this.storage.listParallelToolCalls(stepId);
+    return await this.storage.listParallelToolCalls(stepId);
   }
 
   /**
