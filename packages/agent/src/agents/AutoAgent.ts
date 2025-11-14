@@ -1,14 +1,15 @@
 /**
- * Interactive Agent
+ * Auto Agent
  *
- * An agent that requires user confirmation after each step.
- * This provides maximum control and transparency to the user.
+ * An autonomous agent that runs continuously until completion without user interaction.
+ * This is designed for long-running tasks that don't require user confirmation.
  *
  * Key features:
- * - Wait for user confirmation after each tool call
- * - Allow user to modify direction at any time
- * - Emit AskUser events for tool confirmations
- * - Support graceful stopping
+ * - Runs autonomously without user input
+ * - First step always searches knowledge base
+ * - Respects maxSteps limit
+ * - Handles timeout gracefully
+ * - Can be stopped manually
  * - Full event transparency
  */
 
@@ -19,7 +20,7 @@ import { PromptBuilder, type PromptContext } from '../prompt/PromptBuilder.js';
 import { ResponseParser } from '../prompt/ResponseParser.js';
 import { SessionManager } from '../session/SessionManager.js';
 import type { StorageAdapter } from '../types/adapters.js';
-import type { Session, Step, TaskOptions, TaskResult, Tool, ToolCall } from '../types/index.js';
+import type { Session, Step, TaskOptions, TaskResult, Tool } from '../types/index.js';
 
 /**
  * LLM Caller interface
@@ -29,9 +30,16 @@ export interface LLMCaller {
 }
 
 /**
- * Options for InteractiveAgent
+ * Knowledge base interface
  */
-export interface InteractiveAgentOptions {
+export interface KnowledgeBase {
+  search(query: string, options?: any): Promise<any[]>;
+}
+
+/**
+ * Options for AutoAgent
+ */
+export interface AutoAgentOptions {
   /** Storage adapter */
   storageAdapter: StorageAdapter;
 
@@ -50,6 +58,9 @@ export interface InteractiveAgentOptions {
   /** Files adapter */
   filesAdapter?: any;
 
+  /** Knowledge base (optional) */
+  knowledgeBase?: KnowledgeBase;
+
   /** Enable MCP mode */
   enableMCP?: boolean;
 
@@ -64,23 +75,18 @@ export interface InteractiveAgentOptions {
 }
 
 /**
- * User confirmation handler
- * Returns true to proceed, false to cancel
- */
-export type ConfirmationHandler = (toolCall: ToolCall) => Promise<boolean>;
-
-/**
- * Interactive Agent Implementation
+ * Auto Agent Implementation
  *
- * Executes tasks step-by-step with user confirmation after each action.
+ * Executes tasks autonomously without user confirmation.
  */
-export class InteractiveAgent {
+export class AutoAgent {
   private storageAdapter: StorageAdapter;
   private llmCaller: LLMCaller;
   private eventEmitter: EventEmitter;
   private tools: Tool[];
   private apiKeys: Record<string, string>;
   private filesAdapter?: any;
+  private knowledgeBase?: KnowledgeBase;
   private enableMCP: boolean;
   private companyName?: string;
   private maxSteps: number;
@@ -92,15 +98,14 @@ export class InteractiveAgent {
   private responseParser: ResponseParser;
   private stopController: StopController;
 
-  private confirmationHandler?: ConfirmationHandler;
-
-  constructor(options: InteractiveAgentOptions) {
+  constructor(options: AutoAgentOptions) {
     this.storageAdapter = options.storageAdapter;
     this.llmCaller = options.llmCaller;
     this.eventEmitter = options.eventEmitter;
     this.tools = options.tools;
     this.apiKeys = options.apiKeys || {};
     this.filesAdapter = options.filesAdapter;
+    this.knowledgeBase = options.knowledgeBase;
     this.enableMCP = options.enableMCP ?? true;
     this.companyName = options.companyName;
     this.maxSteps = options.maxSteps ?? 100;
@@ -127,14 +132,7 @@ export class InteractiveAgent {
   }
 
   /**
-   * Set confirmation handler for tool execution
-   */
-  setConfirmationHandler(handler: ConfirmationHandler): void {
-    this.confirmationHandler = handler;
-  }
-
-  /**
-   * Execute a task in interactive mode
+   * Execute a task in autonomous mode
    */
   async execute(options: TaskOptions): Promise<TaskResult> {
     const startTime = Date.now();
@@ -143,8 +141,8 @@ export class InteractiveAgent {
       // Create or resume session
       const session = await this.sessionManager.createSession({
         goal: options.goal,
-        agentType: 'InteractiveAgent',
-        autoRun: false,
+        agentType: 'AutoAgent',
+        autoRun: true,
         // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
         userId: options.context?.['userId'] as string | undefined,
         // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
@@ -167,6 +165,42 @@ export class InteractiveAgent {
         session,
       });
 
+      // First step: Search knowledge base if available
+      let knowledgeResults: any[] = [];
+      if (this.knowledgeBase && options.goal) {
+        try {
+          this.eventEmitter.emit('knowledge:searching', {
+            event: 'knowledge:searching',
+            sessionId: session.id,
+            query: options.goal,
+          });
+
+          knowledgeResults = await this.knowledgeBase.search(options.goal, {
+            topK: 5,
+            filters: {
+              // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
+              userId: options.context?.['userId'],
+              // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
+              organizationId: options.context?.['organizationId'],
+            },
+          });
+
+          this.eventEmitter.emit('knowledge:found', {
+            event: 'knowledge:found',
+            sessionId: session.id,
+            results: knowledgeResults,
+            count: knowledgeResults.length,
+          });
+        } catch (error) {
+          // Knowledge search failed, continue without it
+          this.eventEmitter.emit('knowledge:error', {
+            event: 'knowledge:error',
+            sessionId: session.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+
       // Main execution loop
       let currentStep = 0;
       let isComplete = false;
@@ -188,7 +222,7 @@ export class InteractiveAgent {
 
         try {
           // Execute one step
-          const stepResult = await this.executeStep(session, currentStep);
+          const stepResult = await this.executeStep(session, currentStep, knowledgeResults);
 
           currentStep++;
           this.stopController.updateState(
@@ -197,20 +231,6 @@ export class InteractiveAgent {
             stepResult.step.id,
             stepResult.result,
           );
-
-          // Check if we need to wait for user confirmation
-          if (stepResult.waitForUser) {
-            // For tool calls, request confirmation before continuing
-            const shouldContinue = await this.requestUserConfirmation(stepResult.step);
-            if (!shouldContinue) {
-              // User declined, pause execution
-              await this.storageAdapter.updateSession(session.id, {
-                status: 'paused',
-                isRunning: false,
-              });
-              return this.buildTaskResult(session, 'stopped', currentStep, startTime);
-            }
-          }
 
           // Check if task is complete
           if (stepResult.step.action === 'Finish') {
@@ -231,11 +251,38 @@ export class InteractiveAgent {
             currentStep,
             totalSteps: options.maxSteps ?? this.maxSteps,
           });
+
+          // Clear knowledge results after first step
+          if (currentStep === 1) {
+            knowledgeResults = [];
+          }
         } catch (error) {
           // Step execution failed
           await this.handleStepError(session, currentStep, error);
           return this.buildTaskResult(session, 'failed', currentStep, startTime, error);
         }
+      }
+
+      // Check if we hit max steps without completing
+      if (!isComplete && currentStep >= (options.maxSteps ?? this.maxSteps)) {
+        await this.storageAdapter.updateSession(session.id, {
+          status: 'failed',
+          isRunning: false,
+        });
+
+        this.eventEmitter.emit('task:maxStepsReached', {
+          event: 'task:maxStepsReached',
+          sessionId: session.id,
+          stepsExecuted: currentStep,
+        });
+
+        return this.buildTaskResult(
+          session,
+          'failed',
+          currentStep,
+          startTime,
+          new Error('Max steps reached'),
+        );
       }
 
       // Task completed successfully
@@ -279,26 +326,27 @@ export class InteractiveAgent {
   private async executeStep(
     session: Session,
     stepNumber: number,
+    knowledgeResults: any[],
   ): Promise<{
     success: boolean;
     step: Step;
     result?: any;
     error?: string;
     shouldContinue: boolean;
-    waitForUser?: boolean;
   }> {
     // Load history
     const history = await this.storageAdapter.listSteps(session.id);
 
-    // Build prompt
+    // Build prompt with knowledge results on first step
     const promptContext: PromptContext = {
       goal: session.goal,
-      agentType: 'InteractiveAgent',
+      agentType: 'AutoAgent',
       companyName: this.companyName,
       tools: this.tools,
       history,
       enableMCP: this.enableMCP,
-      autoRun: false,
+      autoRun: true,
+      knowledge: stepNumber === 0 && knowledgeResults.length > 0 ? knowledgeResults : undefined,
     };
 
     const prompt = this.promptBuilder.build(promptContext);
@@ -335,6 +383,17 @@ export class InteractiveAgent {
     // Parse response
     const parsedAction = this.responseParser.parse(llmResponse);
 
+    // Handle discardable steps if specified
+    if (parsedAction.discardableSteps && parsedAction.discardableSteps.length > 0) {
+      await this.sessionManager.markStepsAsDiscarded(session.id, parsedAction.discardableSteps);
+
+      this.eventEmitter.emit('steps:discarded', {
+        event: 'steps:discarded',
+        sessionId: session.id,
+        stepIds: parsedAction.discardableSteps,
+      });
+    }
+
     // Execute the action (StepExecutor will create and manage the step)
     const executionResult = await this.stepExecutor.execute(
       session,
@@ -343,44 +402,7 @@ export class InteractiveAgent {
       llmResponse,
     );
 
-    // Determine if we need to wait for user confirmation
-    const needsConfirmation =
-      parsedAction.action === 'CallTool' || parsedAction.action === 'CallToolsParallel';
-
-    return {
-      ...executionResult,
-      waitForUser: needsConfirmation,
-    };
-  }
-
-  /**
-   * Request user confirmation for tool execution
-   */
-  private async requestUserConfirmation(step: Step): Promise<boolean> {
-    // Build tool call information
-    const toolCall: ToolCall = {
-      toolName: step.selectedTool || 'unknown',
-      parameters: step.parameters || {},
-      isHighRisk: false, // TODO: Check tool metadata
-      riskLevel: 'low', // TODO: Get from tool metadata
-      description: step.reasoning || 'No description',
-    };
-
-    // Emit confirmation request event
-    this.eventEmitter.emit('tool:requiresConfirmation', {
-      event: 'tool:requiresConfirmation',
-      sessionId: step.sessionId,
-      stepId: step.id,
-      toolCall,
-    });
-
-    // Use confirmation handler if set
-    if (this.confirmationHandler) {
-      return await this.confirmationHandler(toolCall);
-    }
-
-    // Default: auto-approve (for testing)
-    return true;
+    return executionResult;
   }
 
   /**
@@ -478,7 +500,7 @@ export class InteractiveAgent {
     // TODO: Continue from last step instead of restarting
     return this.execute({
       goal: session.goal,
-      mode: 'interactive',
+      mode: 'auto',
     });
   }
 
