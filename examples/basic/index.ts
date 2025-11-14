@@ -1,6 +1,6 @@
 /**
  * Basic Example: Using Wukong Agent
- * 
+ *
  * This example demonstrates:
  * 1. Setting up a WukongAgent with local storage
  * 2. Creating a simple custom tool
@@ -9,8 +9,8 @@
  */
 
 import 'dotenv/config';
-import { WukongAgent } from '@wukong/agent';
 import { LocalAdapter } from '@wukong/adapter-local';
+import { WukongAgent } from '@wukong/agent';
 import { ClaudeAdapter } from '@wukong/llm-anthropic';
 import { OpenAIAdapter } from '@wukong/llm-openai';
 
@@ -37,9 +37,9 @@ const calculatorTool = {
     },
     required: ['operation', 'a', 'b'],
   },
-  async execute(params: { operation: string; a: number; b: number }) {
+  execute(params: { operation: string; a: number; b: number }) {
     const { operation, a, b } = params;
-    
+
     let result: number;
     switch (operation) {
       case 'add':
@@ -60,7 +60,7 @@ const calculatorTool = {
       default:
         throw new Error(`Unknown operation: ${operation}`);
     }
-    
+
     return {
       success: true,
       result,
@@ -75,7 +75,7 @@ async function main() {
   // 1. Initialize storage adapter (Local SQLite)
   const dbPath = process.env.DATABASE_PATH || './data/wukong.db';
   console.log(`📦 Initializing local storage at: ${dbPath}`);
-  
+
   const adapter = new LocalAdapter({ databasePath: dbPath });
   await adapter.initialize();
   console.log('✅ Storage adapter initialized\n');
@@ -83,29 +83,31 @@ async function main() {
   // 2. Initialize LLM adapters (with fallback)
   console.log('🧠 Setting up LLM adapters...');
   const llmAdapters = [];
-  
+
   if (process.env.OPENAI_API_KEY) {
     llmAdapters.push(
       new OpenAIAdapter({
         apiKey: process.env.OPENAI_API_KEY,
         model: 'gpt-4-turbo-preview',
-      })
+      }),
     );
     console.log('  - OpenAI GPT-4 ✅');
   }
-  
+
   if (process.env.ANTHROPIC_API_KEY) {
     llmAdapters.push(
       new ClaudeAdapter({
         apiKey: process.env.ANTHROPIC_API_KEY,
         model: 'claude-3-5-sonnet-20241022',
-      })
+      }),
     );
     console.log('  - Anthropic Claude ✅');
   }
 
   if (llmAdapters.length === 0) {
-    console.error('❌ No LLM API key found! Please set OPENAI_API_KEY or ANTHROPIC_API_KEY in .env');
+    console.error(
+      '❌ No LLM API key found! Please set OPENAI_API_KEY or ANTHROPIC_API_KEY in .env',
+    );
     process.exit(1);
   }
   console.log();
@@ -152,7 +154,7 @@ async function main() {
   // 5. Execute a task
   console.log('🎯 Executing task...\n');
   console.log('━'.repeat(60));
-  
+
   try {
     const result = await agent.execute({
       goal: 'Calculate the result of 15 multiplied by 8, then add 42 to it',
@@ -164,7 +166,6 @@ async function main() {
     console.log('\n🎉 Task completed successfully!\n');
     console.log('Final Result:');
     console.log(JSON.stringify(result, null, 2));
-    
   } catch (error) {
     console.error('\n❌ Task failed:', error);
     process.exit(1);
@@ -180,4 +181,3 @@ main().catch((error) => {
   console.error('Fatal error:', error);
   process.exit(1);
 });
-
