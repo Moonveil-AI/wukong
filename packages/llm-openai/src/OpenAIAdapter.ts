@@ -68,7 +68,7 @@ export class OpenAIAdapter implements LLMAdapter {
 
     this.config = {
       apiKey: config.apiKey,
-      model: config.model || 'gpt-5.1-instant',
+      model: config.model || 'gpt-5-2025-08-07', // Default to GPT-5 (uses new Responses API)
       temperature: config.temperature ?? 0.7,
       maxTokens: config.maxTokens ?? 4096,
       maxRetries: config.maxRetries ?? 3,
@@ -105,6 +105,12 @@ export class OpenAIAdapter implements LLMAdapter {
     const model = options?.model || this.config.model;
 
     try {
+      // GPT-5 models use the new Responses API
+      if (model.startsWith('gpt-5')) {
+        return await this.callWithResponsesAPI(messages, model, options, startTime);
+      }
+
+      // GPT-4 and earlier use Chat Completions API
       const response = await this.client.chat.completions.create({
         model,
         messages: messages.map((m) => ({
@@ -148,6 +154,43 @@ export class OpenAIAdapter implements LLMAdapter {
 
       throw error;
     }
+  }
+
+  /**
+   * Call GPT-5 using the new Responses API
+   */
+  private async callWithResponsesAPI(
+    messages: LLMMessage[],
+    model: string,
+    _options: LLMCallOptions | undefined,
+    startTime: number,
+  ): Promise<LLMCallResponse> {
+    // Convert messages to a single input string for Responses API
+    const input = messages.map((m) => `${m.role}: ${m.content}`).join('\n\n');
+
+    // Responses API only accepts model and input parameters
+    const response = await (this.client as any).responses.create({
+      model,
+      input,
+    });
+
+    const responseTimeMs = Date.now() - startTime;
+
+    if (!response.output_text) {
+      throw new Error('No response content from OpenAI Responses API');
+    }
+
+    return {
+      text: response.output_text,
+      tokensUsed: {
+        prompt: response.usage?.input_tokens || 0,
+        completion: response.usage?.output_tokens || 0,
+        total: response.usage?.total_tokens || 0,
+      },
+      model: response.model || model,
+      responseTimeMs,
+      finishReason: 'stop',
+    };
   }
 
   /**
@@ -280,8 +323,8 @@ export class OpenAIAdapter implements LLMAdapter {
    */
   private getTiktokenModel(model: string): TiktokenModel {
     // Map common OpenAI models to tiktoken models
-    // GPT-5.1 models use gpt-4o tokenizer for now
-    if (model.startsWith('gpt-5.1')) {
+    // GPT-5 models use gpt-4o tokenizer for now (tiktoken doesn't have GPT-5 yet)
+    if (model.startsWith('gpt-5')) {
       return 'gpt-4o';
     }
     if (model.startsWith('gpt-4o')) {
@@ -302,10 +345,10 @@ export class OpenAIAdapter implements LLMAdapter {
    * Get model-specific capabilities
    */
   private getModelCapabilities(model: string) {
-    // GPT-5.1 models
-    if (model.includes('gpt-5.1')) {
+    // GPT-5 models
+    if (model.includes('gpt-5')) {
       return {
-        contextWindow: 200000, // 200K context window for GPT-5.1
+        contextWindow: 200000, // 200K context window for GPT-5
         supportsFunctionCalling: true,
         supportsVision: true,
       };
@@ -383,7 +426,7 @@ export class OpenAIAdapter implements LLMAdapter {
  * ```typescript
  * const adapter = createOpenAIAdapter({
  *   apiKey: process.env.OPENAI_API_KEY!,
- *   model: 'gpt-5.1-instant'
+ *   model: 'gpt-5-2025-08-07' // Optional, defaults to 'gpt-5-2025-08-07'
  * });
  *
  * const response = await adapter.call('Hello, world!');

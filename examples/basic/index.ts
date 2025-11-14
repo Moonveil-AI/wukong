@@ -46,7 +46,7 @@ const calculatorTool = {
     },
     required: ['operation', 'operand1', 'operand2'],
   },
-  handler: async (params: any) => {
+  handler: (params: any) => {
     const { operation, operand1, operand2 } = params;
     const a = operand1;
     const b = operand2;
@@ -87,6 +87,7 @@ const calculatorTool = {
 };
 
 async function main() {
+  const startTime = Date.now();
   console.log('🚀 Starting Wukong Agent Example\n');
 
   // 1. Initialize storage adapter (Local SQLite)
@@ -94,13 +95,16 @@ async function main() {
   console.log(`📦 Initializing local storage at: ${dbPath}`);
 
   // Run database migrations
+  const migrationStart = Date.now();
   console.log('🔄 Running database migrations...');
   const migrationRunner = new MigrationRunner(dbPath);
   const migrationResults = await migrationRunner.migrate();
+  const migrationTime = Date.now() - migrationStart;
+
   if (migrationResults.length > 0) {
-    console.log(`✅ Applied ${migrationResults.length} migration(s)\n`);
+    console.log(`✅ Applied ${migrationResults.length} migration(s) in ${migrationTime}ms\n`);
   } else {
-    console.log('✅ Database is up to date\n');
+    console.log(`✅ Database is up to date (${migrationTime}ms)\n`);
   }
 
   const adapter = new LocalAdapter({ dbPath });
@@ -114,10 +118,10 @@ async function main() {
     llmAdapters.push(
       new OpenAIAdapter({
         apiKey: process.env.OPENAI_API_KEY,
-        model: 'gpt-4-turbo-preview',
+        // No model specified, will use OpenAIAdapter default (gpt-5-2025-08-07)
       }),
     );
-    console.log('  - OpenAI GPT-4 ✅');
+    console.log('  - OpenAI (using default model) ✅');
   }
 
   if (process.env.ANTHROPIC_API_KEY) {
@@ -152,49 +156,88 @@ async function main() {
   });
   console.log('✅ Agent created with calculator tool\n');
 
-  // 4. Set up event listeners for visibility
+  // 4. Set up event listeners for visibility with timing
+  const stepTimings = new Map<number, number>();
+
   agent.on('session:created', (event) => {
     console.log(`📝 Session created: ${event.sessionId}`);
   });
 
+  agent.on('task:started', (event: any) => {
+    console.log(`🚀 Task started: ${event.goal}`);
+  });
+
   agent.on('llm:started', (event) => {
+    stepTimings.set(event.stepId, Date.now());
     console.log(`🤖 LLM call started for step ${event.stepId}`);
   });
 
   agent.on('llm:complete', (event) => {
-    console.log(`🤖 LLM call completed for step ${event.stepId}`);
-    console.log(`   Response preview: ${event.response?.text?.slice(0, 150)}...`);
+    const startTime = stepTimings.get(event.stepId);
+    const duration = startTime ? Date.now() - startTime : 0;
+    console.log(`🤖 LLM call completed for step ${event.stepId} (${duration}ms)`);
+    console.log(`   Model: ${event.response?.model || 'unknown'}`);
+    console.log(
+      `   Tokens: ${event.response?.tokensUsed?.total || 0} (prompt: ${event.response?.tokensUsed?.prompt || 0}, completion: ${event.response?.tokensUsed?.completion || 0})`,
+    );
+    console.log(`   Response preview: ${event.response?.text?.slice(0, 100)}...`);
   });
 
   agent.on('step:started', (event) => {
-    console.log(`⚡ Step ${event.stepNumber} started: ${event.actionType}`);
+    console.log(`\n⚡ Step ${event.stepNumber} started`);
+    console.log(`   Action: ${event.actionType}`);
+    if (event.reasoning) {
+      console.log(`   Reasoning: ${event.reasoning}`);
+    }
   });
 
   agent.on('step:completed', (event) => {
     console.log(`✅ Step ${event.stepNumber} completed`);
     if (event.result) {
-      console.log(`   Result: ${JSON.stringify(event.result).slice(0, 100)}...`);
+      console.log(`   Result: ${JSON.stringify(event.result, null, 2)}`);
     }
   });
 
+  const toolTimings = new Map<string, number>();
+
+  agent.on('tool:executing', (event) => {
+    const key = `${event.sessionId}-${event.toolName}`;
+    toolTimings.set(key, Date.now());
+    console.log(`\n🔧 Executing tool: ${event.toolName}`);
+    console.log('   Parameters:', JSON.stringify(event.parameters, null, 2));
+  });
+
   agent.on('tool:executed', (event) => {
-    console.log(`🔧 Tool executed: ${event.toolName}`);
+    const key = `${event.sessionId}-${event.toolName}`;
+    const startTime = toolTimings.get(key);
+    const duration = startTime ? Date.now() - startTime : 0;
+    console.log(`✅ Tool completed: ${event.toolName} (${duration}ms)`);
     console.log(`   Success: ${event.success}`);
+    if (event.result) {
+      console.log('   Result:', JSON.stringify(event.result, null, 2));
+    }
+    if (event.error) {
+      console.error(`   Error: ${event.error}`);
+    }
   });
 
   agent.on('task:failed', (event) => {
-    console.error(`❌ Task failed: ${event.error}`);
+    console.error(`\n❌ Task failed: ${event.error}`);
+    if (event.partialResult) {
+      console.error('   Partial result:', event.partialResult);
+    }
   });
 
   agent.on('error', (event) => {
-    console.error(`❌ Error event: ${event.message}`);
-    console.error(`   Full event:`, event);
+    console.error(`\n❌ Error event: ${event.message}`);
+    console.error('   Full event:', JSON.stringify(event, null, 2));
   });
 
   // 5. Execute a task
   console.log('🎯 Executing task...\n');
   console.log('━'.repeat(60));
 
+  const executionStart = Date.now();
   try {
     const result = await agent.execute({
       goal: 'Calculate the result of 15 multiplied by 8, then add 42 to it',
@@ -202,17 +245,57 @@ async function main() {
       mode: 'auto', // Auto mode - no user confirmations needed
     });
 
-    console.log('━'.repeat(60));
-    console.log('\n🎉 Task execution finished!\n');
-    console.log('Final Result:');
-    console.log(JSON.stringify(result, null, 2));
-    
+    const executionTime = Date.now() - executionStart;
+    console.log(`\n${'━'.repeat(60)}`);
+    console.log(`\n🎉 Task execution finished in ${executionTime}ms!\n`);
+
+    // Display detailed step information
+    if (result.sessionId) {
+      console.log('📊 Execution Summary:');
+      console.log(`   Session ID: ${result.sessionId}`);
+      console.log(`   Status: ${result.status}`);
+      console.log(`   Steps executed: ${result.stepCount}`);
+      console.log(`   Total time: ${executionTime}ms`);
+      console.log(
+        `   Average time per step: ${result.stepCount > 0 ? Math.round(executionTime / result.stepCount) : 0}ms`,
+      );
+
+      // Read detailed steps from database
+      console.log('\n📝 Detailed Steps:');
+      const steps = await adapter.listSteps(result.sessionId);
+
+      for (const step of steps) {
+        console.log(`\n   Step ${step.stepNumber}:`);
+        console.log(`   ├─ Action: ${step.action}`);
+        if (step.selectedTool) {
+          console.log(`   ├─ Tool: ${step.selectedTool}`);
+        }
+        if (step.parameters) {
+          const params =
+            typeof step.parameters === 'string' ? JSON.parse(step.parameters) : step.parameters;
+          console.log(`   ├─ Parameters: ${JSON.stringify(params)}`);
+        }
+        if (step.stepResult) {
+          const result =
+            typeof step.stepResult === 'string' ? step.stepResult : JSON.stringify(step.stepResult);
+          console.log(`   ├─ Result: ${result}`);
+        }
+        if (step.reasoning) {
+          console.log(`   └─ Reasoning: ${step.reasoning.slice(0, 80)}...`);
+        }
+      }
+    }
+
+    console.log('\n✨ Final Output:');
+    console.log(JSON.stringify(result.output, null, 2));
+
     // Check if there was an error in the result
     if (result.error) {
       console.error('\n❌ Task failed with error:', result.error);
     }
   } catch (error) {
-    console.error('\n❌ Task failed with exception:', error);
+    const executionTime = Date.now() - executionStart;
+    console.error(`\n❌ Task failed after ${executionTime}ms:`, error);
     if (error instanceof Error) {
       console.error('Stack trace:', error.stack);
     }
@@ -221,7 +304,10 @@ async function main() {
 
   // 6. Clean up
   await adapter.close();
-  console.log('\n👋 Agent example completed!');
+
+  const totalTime = Date.now() - startTime;
+  console.log(`\n⏱️  Total execution time: ${totalTime}ms`);
+  console.log('👋 Agent example completed!');
 }
 
 // Run the example
