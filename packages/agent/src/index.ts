@@ -85,6 +85,15 @@ export type {
   UpdateDocumentOptions,
 } from './knowledge/KnowledgeBaseManager';
 
+// Export knowledge extractor
+export { KnowledgeExtractor, createKnowledgeExtractor } from './knowledge/KnowledgeExtractor';
+export type {
+  ExtractedKnowledge,
+  DeduplicationResult,
+  ExtractionOptions,
+  ExtractionStats,
+} from './knowledge/KnowledgeExtractor';
+
 // Version
 export const version = '0.1.0';
 
