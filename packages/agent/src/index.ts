@@ -37,12 +37,17 @@ export type {
   StepExecutionResult,
 } from './executor/StepExecutor';
 
-// Export tool registry
+// Export tool system
 export { ToolRegistry } from './tools/ToolRegistry';
 export type {
   MCPToolDefinition,
   ToolRegistryConfig,
 } from './tools/ToolRegistry';
+export { ToolExecutor } from './tools/ToolExecutor';
+export type {
+  ToolExecutorConfig,
+  ToolExecutionRequest,
+} from './tools/ToolExecutor';
 
 // Export stop controller
 export { StopController } from './controller/StopController';
