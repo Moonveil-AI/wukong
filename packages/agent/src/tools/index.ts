@@ -20,3 +20,9 @@ export {
   type AsyncTaskStatus,
   type TaskSubmitOptions,
 } from './AsyncToolExecutor';
+export {
+  ParallelToolExecutor,
+  type ParallelToolExecutorConfig,
+  type ParallelToolRequest,
+  type ParallelExecutionOptions,
+} from './ParallelToolExecutor';
