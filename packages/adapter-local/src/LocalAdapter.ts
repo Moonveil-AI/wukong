@@ -10,6 +10,8 @@ import type {
   Checkpoint,
   CombinedAdapter,
   FilesAdapter,
+  ForkAgentTask,
+  ParallelToolCall,
   Session,
   Step,
   StorageAdapter,
@@ -173,6 +175,48 @@ export class LocalAdapter implements CombinedAdapter {
 
   async batchUpdateTodos(updates: Array<{ id: string; updates: Partial<Todo> }>): Promise<Todo[]> {
     return await this.storageAdapter.batchUpdateTodos(updates);
+  }
+
+  async createParallelToolCall(
+    call: Omit<ParallelToolCall, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ParallelToolCall> {
+    return await this.storageAdapter.createParallelToolCall(call);
+  }
+
+  async getParallelToolCall(callId: number): Promise<ParallelToolCall | null> {
+    return await this.storageAdapter.getParallelToolCall(callId);
+  }
+
+  async updateParallelToolCall(
+    callId: number,
+    updates: Partial<ParallelToolCall>,
+  ): Promise<ParallelToolCall> {
+    return await this.storageAdapter.updateParallelToolCall(callId, updates);
+  }
+
+  async listParallelToolCalls(stepId: number): Promise<ParallelToolCall[]> {
+    return await this.storageAdapter.listParallelToolCalls(stepId);
+  }
+
+  async createForkAgentTask(
+    task: Omit<ForkAgentTask, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ForkAgentTask> {
+    return await this.storageAdapter.createForkAgentTask(task);
+  }
+
+  async getForkAgentTask(taskId: string): Promise<ForkAgentTask | null> {
+    return await this.storageAdapter.getForkAgentTask(taskId);
+  }
+
+  async updateForkAgentTask(
+    taskId: string,
+    updates: Partial<ForkAgentTask>,
+  ): Promise<ForkAgentTask> {
+    return await this.storageAdapter.updateForkAgentTask(taskId, updates);
+  }
+
+  async listForkAgentTasks(sessionId: string): Promise<ForkAgentTask[]> {
+    return await this.storageAdapter.listForkAgentTasks(sessionId);
   }
 
   async createCheckpoint(checkpoint: Omit<Checkpoint, 'id' | 'createdAt'>): Promise<Checkpoint> {

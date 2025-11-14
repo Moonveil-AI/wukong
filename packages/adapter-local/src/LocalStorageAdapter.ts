@@ -5,7 +5,15 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { Checkpoint, Session, Step, StorageAdapter, Todo } from '@wukong/agent';
+import type {
+  Checkpoint,
+  ForkAgentTask,
+  ParallelToolCall,
+  Session,
+  Step,
+  StorageAdapter,
+  Todo,
+} from '@wukong/agent';
 import Database from 'better-sqlite3';
 
 export interface LocalStorageAdapterConfig {
@@ -682,6 +690,215 @@ export class LocalStorageAdapter implements StorageAdapter {
   }
 
   // ==========================================
+  // Parallel Tool Call Operations
+  // ==========================================
+
+  async createParallelToolCall(
+    call: Omit<ParallelToolCall, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ParallelToolCall> {
+    const now = new Date();
+
+    const stmt = this.db.prepare(`
+      INSERT INTO parallel_tool_calls (
+        step_id, tool_id, tool_name, parameters, status, result, error_message,
+        progress_percentage, status_message, external_task_id, external_status,
+        started_at, completed_at, execution_duration_ms, retry_count, max_retries,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const info = stmt.run(
+      call.stepId,
+      call.toolId,
+      call.toolName,
+      JSON.stringify(call.parameters),
+      call.status || 'pending',
+      call.result ? JSON.stringify(call.result) : null,
+      call.errorMessage,
+      call.progressPercentage || 0,
+      call.statusMessage,
+      call.externalTaskId,
+      call.externalStatus,
+      call.startedAt?.toISOString(),
+      call.completedAt?.toISOString(),
+      call.executionDurationMs,
+      call.retryCount || 0,
+      call.maxRetries || 3,
+      now.toISOString(),
+      now.toISOString(),
+    );
+
+    return (await this.getParallelToolCall(Number(info.lastInsertRowid))) as ParallelToolCall;
+  }
+
+  getParallelToolCall(callId: number): Promise<ParallelToolCall | null> {
+    const stmt = this.db.prepare('SELECT * FROM parallel_tool_calls WHERE id = ?');
+    const row = stmt.get(callId);
+
+    if (!row) return Promise.resolve(null);
+    return Promise.resolve(this.mapParallelToolCallRow(row as any));
+  }
+
+  async updateParallelToolCall(
+    callId: number,
+    updates: Partial<ParallelToolCall>,
+  ): Promise<ParallelToolCall> {
+    const now = new Date();
+    const setClauses: string[] = [];
+    const values: any[] = [];
+
+    // Build dynamic SET clause
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === 'id' || key === 'createdAt' || key === 'updatedAt') continue;
+
+      const snakeKey = this.camelToSnake(key);
+      setClauses.push(`${snakeKey} = ?`);
+
+      // Handle special types
+      if (key === 'parameters' || key === 'result') {
+        values.push(value ? JSON.stringify(value) : null);
+      } else if (key === 'startedAt' || key === 'completedAt') {
+        values.push(value ? new Date(value).toISOString() : null);
+      } else {
+        values.push(value);
+      }
+    }
+
+    if (setClauses.length > 0) {
+      setClauses.push('updated_at = ?');
+      values.push(now.toISOString());
+      values.push(callId);
+
+      const stmt = this.db.prepare(`
+        UPDATE parallel_tool_calls
+        SET ${setClauses.join(', ')}
+        WHERE id = ?
+      `);
+
+      stmt.run(...values);
+    }
+
+    return (await this.getParallelToolCall(callId)) as ParallelToolCall;
+  }
+
+  async listParallelToolCalls(stepId: number): Promise<ParallelToolCall[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM parallel_tool_calls
+      WHERE step_id = ?
+      ORDER BY created_at ASC
+    `);
+
+    const rows = stmt.all(stepId);
+    return rows.map((row: any) => this.mapParallelToolCallRow(row));
+  }
+
+  // ==========================================
+  // Fork Agent Task Operations
+  // ==========================================
+
+  async createForkAgentTask(
+    task: Omit<ForkAgentTask, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ForkAgentTask> {
+    const id = this.generateId('fork');
+    const now = new Date();
+
+    const stmt = this.db.prepare(`
+      INSERT INTO fork_agent_tasks (
+        id, parent_session_id, parent_step_id, sub_session_id, goal, context_summary,
+        depth, max_steps, timeout_seconds, status, result_summary, error_message,
+        steps_executed, tokens_used, tools_called, started_at, completed_at,
+        execution_duration_ms, retry_count, max_retries, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      id,
+      task.parentSessionId,
+      task.parentStepId,
+      task.subSessionId,
+      task.goal,
+      task.contextSummary,
+      task.depth,
+      task.maxSteps || 20,
+      task.timeoutSeconds || 300,
+      task.status || 'pending',
+      task.resultSummary,
+      task.errorMessage,
+      task.stepsExecuted || 0,
+      task.tokensUsed || 0,
+      task.toolsCalled || 0,
+      task.startedAt?.toISOString(),
+      task.completedAt?.toISOString(),
+      task.executionDurationMs,
+      task.retryCount || 0,
+      task.maxRetries || 3,
+      now.toISOString(),
+      now.toISOString(),
+    );
+
+    return (await this.getForkAgentTask(id)) as ForkAgentTask;
+  }
+
+  getForkAgentTask(taskId: string): Promise<ForkAgentTask | null> {
+    const stmt = this.db.prepare('SELECT * FROM fork_agent_tasks WHERE id = ?');
+    const row = stmt.get(taskId);
+
+    if (!row) return Promise.resolve(null);
+    return Promise.resolve(this.mapForkAgentTaskRow(row as any));
+  }
+
+  async updateForkAgentTask(
+    taskId: string,
+    updates: Partial<ForkAgentTask>,
+  ): Promise<ForkAgentTask> {
+    const now = new Date();
+    const setClauses: string[] = [];
+    const values: any[] = [];
+
+    // Build dynamic SET clause
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === 'id' || key === 'createdAt' || key === 'updatedAt') continue;
+
+      const snakeKey = this.camelToSnake(key);
+      setClauses.push(`${snakeKey} = ?`);
+
+      // Handle special types
+      if (key === 'startedAt' || key === 'completedAt') {
+        values.push(value ? new Date(value).toISOString() : null);
+      } else {
+        values.push(value);
+      }
+    }
+
+    if (setClauses.length > 0) {
+      setClauses.push('updated_at = ?');
+      values.push(now.toISOString());
+      values.push(taskId);
+
+      const stmt = this.db.prepare(`
+        UPDATE fork_agent_tasks
+        SET ${setClauses.join(', ')}
+        WHERE id = ?
+      `);
+
+      stmt.run(...values);
+    }
+
+    return (await this.getForkAgentTask(taskId)) as ForkAgentTask;
+  }
+
+  async listForkAgentTasks(sessionId: string): Promise<ForkAgentTask[]> {
+    const stmt = this.db.prepare(`
+      SELECT * FROM fork_agent_tasks
+      WHERE parent_session_id = ?
+      ORDER BY created_at ASC
+    `);
+
+    const rows = stmt.all(sessionId);
+    return rows.map((row: any) => this.mapForkAgentTaskRow(row));
+  }
+
+  // ==========================================
   // Checkpoint Operations
   // ==========================================
 
@@ -758,6 +975,13 @@ export class LocalStorageAdapter implements StorageAdapter {
    */
   private generateId(prefix: string): string {
     return `${prefix}_${randomUUID()}`;
+  }
+
+  /**
+   * Convert camelCase to snake_case
+   */
+  private camelToSnake(str: string): string {
+    return str.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
   }
 
   /**
@@ -864,6 +1088,63 @@ export class LocalStorageAdapter implements StorageAdapter {
       stepId: row.step_number,
       sessionState: row.session_state ? JSON.parse(row.session_state) : {},
       createdAt: new Date(row.created_at),
+    };
+  }
+
+  /**
+   * Map database row to ParallelToolCall object
+   */
+  private mapParallelToolCallRow(row: any): ParallelToolCall {
+    return {
+      id: row.id,
+      stepId: row.step_id,
+      toolId: row.tool_id,
+      toolName: row.tool_name,
+      parameters: row.parameters ? JSON.parse(row.parameters) : {},
+      status: row.status,
+      result: row.result ? JSON.parse(row.result) : undefined,
+      errorMessage: row.error_message,
+      progressPercentage: row.progress_percentage,
+      statusMessage: row.status_message,
+      externalTaskId: row.external_task_id,
+      externalStatus: row.external_status,
+      startedAt: row.started_at ? new Date(row.started_at) : undefined,
+      completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
+      executionDurationMs: row.execution_duration_ms,
+      retryCount: row.retry_count,
+      maxRetries: row.max_retries,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+    };
+  }
+
+  /**
+   * Map database row to ForkAgentTask object
+   */
+  private mapForkAgentTaskRow(row: any): ForkAgentTask {
+    return {
+      id: row.id,
+      parentSessionId: row.parent_session_id,
+      parentStepId: row.parent_step_id,
+      subSessionId: row.sub_session_id,
+      goal: row.goal,
+      contextSummary: row.context_summary,
+      depth: row.depth,
+      maxSteps: row.max_steps,
+      timeoutSeconds: row.timeout_seconds,
+      status: row.status,
+      resultSummary: row.result_summary,
+      errorMessage: row.error_message,
+      stepsExecuted: row.steps_executed,
+      tokensUsed: row.tokens_used,
+      toolsCalled: row.tools_called,
+      startedAt: row.started_at ? new Date(row.started_at) : undefined,
+      completedAt: row.completed_at ? new Date(row.completed_at) : undefined,
+      executionDurationMs: row.execution_duration_ms,
+      retryCount: row.retry_count,
+      maxRetries: row.max_retries,
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
     };
   }
 

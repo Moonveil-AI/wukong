@@ -5,7 +5,15 @@
  */
 
 import { sql } from '@vercel/postgres';
-import type { Checkpoint, Session, Step, StorageAdapter, Todo } from '@wukong/agent';
+import type {
+  Checkpoint,
+  ForkAgentTask,
+  ParallelToolCall,
+  Session,
+  Step,
+  StorageAdapter,
+  Todo,
+} from '@wukong/agent';
 
 export interface VercelStorageAdapterConfig {
   /**
@@ -479,6 +487,228 @@ export class VercelStorageAdapter implements StorageAdapter {
   }
 
   // ==========================================
+  // Parallel Tool Call Operations
+  // ==========================================
+
+  async createParallelToolCall(
+    call: Omit<ParallelToolCall, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ParallelToolCall> {
+    const now = new Date();
+
+    const result = await sql`
+      INSERT INTO parallel_tool_calls (
+        step_id, tool_id, tool_name, parameters, status, result, error_message,
+        progress_percentage, status_message, external_task_id, external_status,
+        started_at, completed_at, execution_duration_ms, retry_count, max_retries,
+        created_at, updated_at
+      ) VALUES (
+        ${call.stepId}, ${call.toolId}, ${call.toolName}, ${JSON.stringify(call.parameters)},
+        ${call.status || 'pending'}, ${call.result ? JSON.stringify(call.result) : null},
+        ${call.errorMessage}, ${call.progressPercentage || 0}, ${call.statusMessage},
+        ${call.externalTaskId}, ${call.externalStatus}, ${call.startedAt?.toISOString()},
+        ${call.completedAt?.toISOString()}, ${call.executionDurationMs},
+        ${call.retryCount || 0}, ${call.maxRetries || 3},
+        ${now.toISOString()}, ${now.toISOString()}
+      )
+      RETURNING *
+    `;
+
+    return this.mapParallelToolCallRow(result.rows[0]);
+  }
+
+  async getParallelToolCall(callId: number): Promise<ParallelToolCall | null> {
+    const result = await sql`
+      SELECT * FROM parallel_tool_calls WHERE id = ${callId}
+    `;
+
+    if (result.rows.length === 0) return null;
+    return this.mapParallelToolCallRow(result.rows[0]);
+  }
+
+  async updateParallelToolCall(
+    callId: number,
+    updates: Partial<ParallelToolCall>,
+  ): Promise<ParallelToolCall> {
+    const now = new Date();
+    const setClauses: string[] = [];
+    const values: any[] = [];
+
+    const updateFields: Record<string, string> = {
+      stepId: 'step_id',
+      toolId: 'tool_id',
+      toolName: 'tool_name',
+      parameters: 'parameters',
+      status: 'status',
+      result: 'result',
+      errorMessage: 'error_message',
+      progressPercentage: 'progress_percentage',
+      statusMessage: 'status_message',
+      externalTaskId: 'external_task_id',
+      externalStatus: 'external_status',
+      startedAt: 'started_at',
+      completedAt: 'completed_at',
+      executionDurationMs: 'execution_duration_ms',
+      retryCount: 'retry_count',
+      maxRetries: 'max_retries',
+    };
+
+    for (const [key, dbField] of Object.entries(updateFields)) {
+      if (key in updates) {
+        const value = (updates as any)[key];
+        setClauses.push(`${dbField} = $${values.length + 1}`);
+
+        if (key === 'parameters' || key === 'result') {
+          values.push(value ? JSON.stringify(value) : null);
+        } else if (key === 'startedAt' || key === 'completedAt') {
+          values.push(value ? new Date(value).toISOString() : null);
+        } else {
+          values.push(value);
+        }
+      }
+    }
+
+    if (setClauses.length > 0) {
+      setClauses.push(`updated_at = $${values.length + 1}`);
+      values.push(now.toISOString());
+      values.push(callId);
+
+      const query = `
+        UPDATE parallel_tool_calls
+        SET ${setClauses.join(', ')}
+        WHERE id = $${values.length}
+        RETURNING *
+      `;
+
+      const result = await sql.query(query, values);
+      return this.mapParallelToolCallRow(result.rows[0]);
+    }
+
+    return (await this.getParallelToolCall(callId)) as ParallelToolCall;
+  }
+
+  async listParallelToolCalls(stepId: number): Promise<ParallelToolCall[]> {
+    const result = await sql`
+      SELECT * FROM parallel_tool_calls
+      WHERE step_id = ${stepId}
+      ORDER BY created_at ASC
+    `;
+
+    return result.rows.map((row: any) => this.mapParallelToolCallRow(row));
+  }
+
+  // ==========================================
+  // Fork Agent Task Operations
+  // ==========================================
+
+  async createForkAgentTask(
+    task: Omit<ForkAgentTask, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<ForkAgentTask> {
+    const id = this.generateId('fork');
+    const now = new Date();
+
+    const result = await sql`
+      INSERT INTO fork_agent_tasks (
+        id, parent_session_id, parent_step_id, sub_session_id, goal, context_summary,
+        depth, max_steps, timeout_seconds, status, result_summary, error_message,
+        steps_executed, tokens_used, tools_called, started_at, completed_at,
+        execution_duration_ms, retry_count, max_retries, created_at, updated_at
+      ) VALUES (
+        ${id}, ${task.parentSessionId}, ${task.parentStepId}, ${task.subSessionId},
+        ${task.goal}, ${task.contextSummary}, ${task.depth}, ${task.maxSteps || 20},
+        ${task.timeoutSeconds || 300}, ${task.status || 'pending'}, ${task.resultSummary},
+        ${task.errorMessage}, ${task.stepsExecuted || 0}, ${task.tokensUsed || 0},
+        ${task.toolsCalled || 0}, ${task.startedAt?.toISOString()}, ${task.completedAt?.toISOString()},
+        ${task.executionDurationMs}, ${task.retryCount || 0}, ${task.maxRetries || 3},
+        ${now.toISOString()}, ${now.toISOString()}
+      )
+      RETURNING *
+    `;
+
+    return this.mapForkAgentTaskRow(result.rows[0]);
+  }
+
+  async getForkAgentTask(taskId: string): Promise<ForkAgentTask | null> {
+    const result = await sql`
+      SELECT * FROM fork_agent_tasks WHERE id = ${taskId}
+    `;
+
+    if (result.rows.length === 0) return null;
+    return this.mapForkAgentTaskRow(result.rows[0]);
+  }
+
+  async updateForkAgentTask(
+    taskId: string,
+    updates: Partial<ForkAgentTask>,
+  ): Promise<ForkAgentTask> {
+    const now = new Date();
+    const setClauses: string[] = [];
+    const values: any[] = [];
+
+    const updateFields: Record<string, string> = {
+      parentSessionId: 'parent_session_id',
+      parentStepId: 'parent_step_id',
+      subSessionId: 'sub_session_id',
+      goal: 'goal',
+      contextSummary: 'context_summary',
+      depth: 'depth',
+      maxSteps: 'max_steps',
+      timeoutSeconds: 'timeout_seconds',
+      status: 'status',
+      resultSummary: 'result_summary',
+      errorMessage: 'error_message',
+      stepsExecuted: 'steps_executed',
+      tokensUsed: 'tokens_used',
+      toolsCalled: 'tools_called',
+      startedAt: 'started_at',
+      completedAt: 'completed_at',
+      executionDurationMs: 'execution_duration_ms',
+      retryCount: 'retry_count',
+      maxRetries: 'max_retries',
+    };
+
+    for (const [key, dbField] of Object.entries(updateFields)) {
+      if (key in updates) {
+        const value = (updates as any)[key];
+        setClauses.push(`${dbField} = $${values.length + 1}`);
+
+        if (key === 'startedAt' || key === 'completedAt') {
+          values.push(value ? new Date(value).toISOString() : null);
+        } else {
+          values.push(value);
+        }
+      }
+    }
+
+    if (setClauses.length > 0) {
+      setClauses.push(`updated_at = $${values.length + 1}`);
+      values.push(now.toISOString());
+      values.push(taskId);
+
+      const query = `
+        UPDATE fork_agent_tasks
+        SET ${setClauses.join(', ')}
+        WHERE id = $${values.length}
+        RETURNING *
+      `;
+
+      const result = await sql.query(query, values);
+      return this.mapForkAgentTaskRow(result.rows[0]);
+    }
+
+    return (await this.getForkAgentTask(taskId)) as ForkAgentTask;
+  }
+
+  async listForkAgentTasks(sessionId: string): Promise<ForkAgentTask[]> {
+    const result = await sql`
+      SELECT * FROM fork_agent_tasks
+      WHERE parent_session_id = ${sessionId}
+      ORDER BY created_at ASC
+    `;
+
+    return result.rows.map((row: any) => this.mapForkAgentTaskRow(row));
+  }
+
+  // ==========================================
   // Checkpoint Operations
   // ==========================================
 
@@ -635,6 +865,61 @@ export class VercelStorageAdapter implements StorageAdapter {
       sessionState:
         typeof row.session_state === 'string' ? JSON.parse(row.session_state) : row.session_state,
       createdAt: row.created_at,
+    };
+  }
+
+  private mapParallelToolCallRow(row: any): ParallelToolCall {
+    return {
+      id: row.id,
+      stepId: row.step_id,
+      toolId: row.tool_id,
+      toolName: row.tool_name,
+      parameters: typeof row.parameters === 'string' ? JSON.parse(row.parameters) : row.parameters,
+      status: row.status,
+      result: row.result
+        ? typeof row.result === 'string'
+          ? JSON.parse(row.result)
+          : row.result
+        : undefined,
+      errorMessage: row.error_message,
+      progressPercentage: row.progress_percentage,
+      statusMessage: row.status_message,
+      externalTaskId: row.external_task_id,
+      externalStatus: row.external_status,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+      executionDurationMs: row.execution_duration_ms,
+      retryCount: row.retry_count,
+      maxRetries: row.max_retries,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    };
+  }
+
+  private mapForkAgentTaskRow(row: any): ForkAgentTask {
+    return {
+      id: row.id,
+      parentSessionId: row.parent_session_id,
+      parentStepId: row.parent_step_id,
+      subSessionId: row.sub_session_id,
+      goal: row.goal,
+      contextSummary: row.context_summary,
+      depth: row.depth,
+      maxSteps: row.max_steps,
+      timeoutSeconds: row.timeout_seconds,
+      status: row.status,
+      resultSummary: row.result_summary,
+      errorMessage: row.error_message,
+      stepsExecuted: row.steps_executed,
+      tokensUsed: row.tokens_used,
+      toolsCalled: row.tools_called,
+      startedAt: row.started_at,
+      completedAt: row.completed_at,
+      executionDurationMs: row.execution_duration_ms,
+      retryCount: row.retry_count,
+      maxRetries: row.max_retries,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
     };
   }
 }

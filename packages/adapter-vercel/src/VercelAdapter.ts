@@ -128,6 +128,46 @@ export class VercelAdapter implements CombinedAdapter {
     return await this.storageAdapter.batchUpdateTodos(updates);
   }
 
+  async createParallelToolCall(
+    call: Parameters<VercelStorageAdapter['createParallelToolCall']>[0],
+  ) {
+    return await this.storageAdapter.createParallelToolCall(call);
+  }
+
+  async getParallelToolCall(callId: number) {
+    return await this.storageAdapter.getParallelToolCall(callId);
+  }
+
+  async updateParallelToolCall(
+    callId: number,
+    updates: Parameters<VercelStorageAdapter['updateParallelToolCall']>[1],
+  ) {
+    return await this.storageAdapter.updateParallelToolCall(callId, updates);
+  }
+
+  async listParallelToolCalls(stepId: number) {
+    return await this.storageAdapter.listParallelToolCalls(stepId);
+  }
+
+  async createForkAgentTask(task: Parameters<VercelStorageAdapter['createForkAgentTask']>[0]) {
+    return await this.storageAdapter.createForkAgentTask(task);
+  }
+
+  async getForkAgentTask(taskId: string) {
+    return await this.storageAdapter.getForkAgentTask(taskId);
+  }
+
+  async updateForkAgentTask(
+    taskId: string,
+    updates: Parameters<VercelStorageAdapter['updateForkAgentTask']>[1],
+  ) {
+    return await this.storageAdapter.updateForkAgentTask(taskId, updates);
+  }
+
+  async listForkAgentTasks(sessionId: string) {
+    return await this.storageAdapter.listForkAgentTasks(sessionId);
+  }
+
   async createCheckpoint(checkpoint: Parameters<VercelStorageAdapter['createCheckpoint']>[0]) {
     return await this.storageAdapter.createCheckpoint(checkpoint);
   }

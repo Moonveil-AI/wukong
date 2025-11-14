@@ -41,6 +41,14 @@ export type {
 // Export stop controller
 export { StopController } from './controller/StopController';
 
+// Export agent implementations
+export { InteractiveAgent } from './agents/InteractiveAgent';
+export type {
+  InteractiveAgentOptions,
+  LLMCaller,
+  ConfirmationHandler,
+} from './agents/InteractiveAgent';
+
 // Version
 export const version = '0.1.0';
 
