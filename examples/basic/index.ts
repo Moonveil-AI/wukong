@@ -35,21 +35,19 @@ const calculatorTool = {
         enum: ['add', 'subtract', 'multiply', 'divide'],
         description: 'The mathematical operation to perform',
       },
-      operand1: {
+      a: {
         type: 'number',
-        description: 'First operand (number)',
+        description: 'First number',
       },
-      operand2: {
+      b: {
         type: 'number',
-        description: 'Second operand (number)',
+        description: 'Second number',
       },
     },
-    required: ['operation', 'operand1', 'operand2'],
+    required: ['operation', 'a', 'b'],
   },
   handler: (params: any) => {
-    const { operation, operand1, operand2 } = params;
-    const a = operand1;
-    const b = operand2;
+    const { operation, a, b } = params;
 
     let result: number;
     switch (operation) {
@@ -118,10 +116,10 @@ async function main() {
     llmAdapters.push(
       new OpenAIAdapter({
         apiKey: process.env.OPENAI_API_KEY,
-        // No model specified, will use OpenAIAdapter default (gpt-5-2025-08-07)
+        // No model specified, will use OpenAIAdapter default (gpt-5-mini-2025-08-07)
       }),
     );
-    console.log('  - OpenAI (using default model) ✅');
+    console.log('  - OpenAI (using gpt-5-mini) ✅');
   }
 
   if (process.env.ANTHROPIC_API_KEY) {

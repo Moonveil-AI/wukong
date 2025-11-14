@@ -236,7 +236,6 @@ export class StepExecutor {
    */
   private async executeCallTool(step: Step, action: CallToolAction): Promise<StepExecutionResult> {
     const { selectedTool, parameters } = action;
-
     if (!this.toolRegistry) {
       throw new Error('Tool registry not configured');
     }

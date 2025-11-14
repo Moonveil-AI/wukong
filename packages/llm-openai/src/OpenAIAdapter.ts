@@ -68,7 +68,7 @@ export class OpenAIAdapter implements LLMAdapter {
 
     this.config = {
       apiKey: config.apiKey,
-      model: config.model || 'gpt-5-2025-08-07', // Default to GPT-5 (uses new Responses API)
+      model: config.model || 'gpt-5-mini-2025-08-07', // Default to GPT-5 Mini (uses new Responses API)
       temperature: config.temperature ?? 0.7,
       maxTokens: config.maxTokens ?? 4096,
       maxRetries: config.maxRetries ?? 3,

@@ -20,7 +20,7 @@ describe('OpenAIAdapter', () => {
       });
 
       const config = adapter.getConfig();
-      expect(config.model).toBe('gpt-5-2025-08-07');
+      expect(config.model).toBe('gpt-5-mini-2025-08-07');
       expect(config.temperature).toBe(0.7);
       expect(config.maxTokens).toBe(4096);
       expect(config.maxRetries).toBe(3);
