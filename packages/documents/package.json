@@ -12,9 +12,7 @@
       "require": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "files": ["dist"],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -35,12 +33,6 @@
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   },
-  "keywords": [
-    "documents",
-    "pdf",
-    "docx",
-    "markdown",
-    "wukong"
-  ],
+  "keywords": ["documents", "pdf", "docx", "markdown", "wukong"],
   "license": "MIT"
 }
