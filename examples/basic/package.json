@@ -1,0 +1,26 @@
+{
+  "name": "wukong-example-basic",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Basic example of using Wukong Agent",
+  "type": "module",
+  "scripts": {
+    "start": "node --loader tsx index.ts",
+    "dev": "tsx index.ts"
+  },
+  "dependencies": {
+    "@wukong/agent": "workspace:*",
+    "@wukong/adapter-local": "workspace:*",
+    "@wukong/llm-anthropic": "workspace:*",
+    "@wukong/llm-openai": "workspace:*",
+    "@wukong/embeddings": "workspace:*",
+    "@wukong/documents": "workspace:*",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "@types/node": "^20.17.6"
+  }
+}
+

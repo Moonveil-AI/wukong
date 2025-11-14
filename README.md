@@ -51,10 +51,30 @@
 
 ## Quick Start
 
-### Installation
+> **✨ Phase 3 Complete!** The library is now ready for testing.  
+> 📊 [**Current Status**](./STATUS.md) | 📖 [**Quick Start Guide**](./QUICKSTART.md)
+
+### Try the Example
 
 ```bash
-npm install @wukong/agent
+# Clone and install
+git clone https://github.com/yourusername/wukong.git
+cd wukong
+pnpm install && pnpm build
+
+# Run the basic example
+cd examples/basic
+cp env.template .env
+# Edit .env and add your OPENAI_API_KEY
+pnpm dev
+```
+
+### Installation (Future)
+
+Once published to npm:
+
+```bash
+npm install @wukong/agent @wukong/adapter-local @wukong/llm-openai
 ```
 
 #### Troubleshooting: better-sqlite3 Native Bindings
@@ -207,10 +227,11 @@ For detailed implementation of each principle, see [Appendix A-Trustworthiness C
 
 ## Next Steps
 
-- Read [Core Design Principles](./docs/design/01-core-concepts.md) to understand design philosophy
-- Review [Recommended Libraries](./docs/implementation/recommended-libraries.md) to choose your adapters
-- Check [Core Interface Design](./docs/design/03-interfaces.md) to start using
-- Refer to [Usage Examples](./docs/design/11-examples.md) for quick start
+- **[📖 Quick Start Guide](./QUICKSTART.md)** - Get started in 5 minutes
+- **[🎯 Basic Example](./examples/basic)** - Try the working example
+- [Core Design Principles](./docs/design/01-core-concepts.md) - Understand design philosophy
+- [Implementation Plan](./docs/implementation/plan.md) - See what's completed and what's next
+- [Core Interface Design](./docs/design/03-interfaces.md) - API documentation
 
 ---
 
