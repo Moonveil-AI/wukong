@@ -289,7 +289,7 @@ expect(chunks[0].text.length).toBeLessThanOrEqual(1000)
 
 ---
 
-### Task 3.7: Embedding Generator (Optional Package)
+### Task 3.7: Embedding Generator (Optional Package) ✅
 
 **Purpose:** Generate vector embeddings for semantic search.
 

@@ -3,11 +3,17 @@
  * @description Vector embedding generation utilities for Wukong
  */
 
-// This is a placeholder file created during project initialization
-// TODO: Implement embedding generator as per Task 3.7
-
 export const version = '0.1.0';
 
-export default {
-  version,
-};
+// Export types
+export type {
+  EmbeddingConfig,
+  EmbeddingGenerator,
+  EmbedOptions,
+  EmbeddingResult,
+  BatchEmbeddingResult,
+} from './types';
+
+// Export OpenAI implementation
+export { OpenAIEmbeddings } from './OpenAIEmbeddings';
+export type { OpenAIEmbeddingConfig } from './OpenAIEmbeddings';
