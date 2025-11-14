@@ -80,6 +80,12 @@ importers:
 
   packages/agent:
     dependencies:
+      '@wukong/documents':
+        specifier: workspace:*
+        version: link:../documents
+      '@wukong/embeddings':
+        specifier: workspace:*
+        version: link:../embeddings
       ajv:
         specifier: ^8.17.1
         version: 8.17.1

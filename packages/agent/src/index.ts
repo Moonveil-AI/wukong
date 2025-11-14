@@ -74,6 +74,17 @@ export type {
   ExecutionResult,
 } from './WukongAgent';
 
+// Export knowledge base manager
+export { KnowledgeBaseManager, createKnowledgeBaseManager } from './knowledge/KnowledgeBaseManager';
+export type {
+  KnowledgeBaseManagerOptions,
+  IndexDocumentsOptions,
+  IndexingProgress,
+  SearchOptions,
+  SearchResult,
+  UpdateDocumentOptions,
+} from './knowledge/KnowledgeBaseManager';
+
 // Version
 export const version = '0.1.0';
 

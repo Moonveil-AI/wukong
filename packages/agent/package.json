@@ -31,7 +31,17 @@
     "typescript": "^5.7.2"
   },
   "peerDependencies": {
+    "@wukong/documents": "workspace:*",
+    "@wukong/embeddings": "workspace:*",
     "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@wukong/documents": {
+      "optional": true
+    },
+    "@wukong/embeddings": {
+      "optional": true
+    }
   },
   "keywords": ["agent", "ai", "llm", "typescript", "wukong"],
   "license": "MIT"
