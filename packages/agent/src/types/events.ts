@@ -793,6 +793,80 @@ export interface EventEmitter {
   listenerCount(event: WukongEvent['event']): number;
 }
 
+/**
+ * Map of event names to their payloads (for simpler event handling)
+ */
+export interface AgentEvent {
+  // Session events
+  'session:created': Session;
+  'session:updated': { session: Session; changes: Partial<Session> };
+  'session:deleted': { sessionId: string };
+  'session:resumed': { session: Session; fromStep: number };
+  'session:paused': { sessionId: string; timestamp: Date };
+
+  // Step events
+  'step:started': Step;
+  'step:completed': Step;
+  'step:error': { step: Step; error: string };
+
+  // Tool events
+  'tool:started': {
+    sessionId: string;
+    stepId: number;
+    toolName: string;
+    parameters: Record<string, any>;
+    description: string;
+  };
+  'tool:completed': {
+    sessionId: string;
+    stepId: number;
+    toolName: string;
+    result: ToolResult;
+    durationMs: number;
+  };
+  'tool:error': {
+    sessionId: string;
+    stepId: number;
+    toolName: string;
+    error: string;
+    canRetry: boolean;
+  };
+  'tool:requiresConfirmation': { sessionId: string; stepId: number; toolCall: ToolCall };
+
+  // LLM events
+  'llm:started': { sessionId: string; stepId: number; model: string; promptTokens: number };
+  'llm:completed': { sessionId: string; stepId: number; response: LLMResponse };
+  'llm:streaming': { sessionId: string; stepId: number; chunk: StreamChunk };
+  'llm:error': {
+    sessionId: string;
+    stepId: number;
+    error: string;
+    model: string;
+    willRetry: boolean;
+  };
+
+  // Knowledge events
+  'knowledge:searched': {
+    sessionId: string;
+    stepId: number;
+    query: string;
+    resultsCount: number;
+    durationMs: number;
+  };
+
+  // Todo events
+  'todo:created': Todo;
+  'todo:updated': Todo;
+
+  // Task events
+  'task:started': { goal?: string; mode: string; timestamp: Date };
+  'task:completed': { sessionId: string; status: string; stepCount: number; timestamp: Date };
+  'task:error': { error: Error; timestamp: Date };
+
+  // Stop events
+  'stop:requested': { graceful: boolean; timestamp: Date };
+}
+
 // ==========================================
 // Event Type Guards
 // ==========================================

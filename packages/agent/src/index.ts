@@ -55,6 +55,14 @@ export type {
   KnowledgeBase,
 } from './agents/AutoAgent';
 
+// Export main WukongAgent class
+export { WukongAgent, createWukongAgent } from './WukongAgent';
+export type {
+  WukongAgentConfig,
+  ExecuteOptions,
+  ExecutionResult,
+} from './WukongAgent';
+
 // Version
 export const version = '0.1.0';
 

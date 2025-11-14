@@ -57,6 +57,18 @@ export class WukongEventEmitter {
   }
 
   /**
+   * Alias for on() - register an event listener
+   * @param event - Event name to listen for
+   * @param listener - Listener function
+   */
+  addListener<T extends WukongEvent['event']>(
+    event: T,
+    listener: EventListener<Extract<WukongEvent, { event: T }>>,
+  ): void {
+    this.on(event, listener);
+  }
+
+  /**
    * Register a one-time event listener
    * @param event - Event name to listen for
    * @param listener - Listener function
@@ -83,6 +95,18 @@ export class WukongEventEmitter {
     if (wrappedListener) {
       this.emitter.off(event, wrappedListener as any);
     }
+  }
+
+  /**
+   * Alias for off() - remove an event listener
+   * @param event - Event name
+   * @param listener - Listener function to remove
+   */
+  removeListener<T extends WukongEvent['event']>(
+    event: T,
+    listener: EventListener<Extract<WukongEvent, { event: T }>>,
+  ): void {
+    this.off(event, listener);
   }
 
   /**

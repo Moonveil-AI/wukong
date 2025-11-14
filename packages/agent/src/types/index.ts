@@ -4,6 +4,16 @@
  * This file contains all the core interfaces and types used throughout the agent system.
  */
 
+// Re-export adapter types for convenience
+export type {
+  StorageAdapter,
+  CacheAdapter,
+  FilesAdapter,
+  VectorAdapter,
+  LLMAdapter,
+  EmbeddingAdapter,
+} from './adapters';
+
 // ==========================================
 // Session Types
 // ==========================================
