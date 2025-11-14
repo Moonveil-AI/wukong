@@ -254,7 +254,7 @@ expect(text.length).toBeGreaterThan(0)
 
 ---
 
-### Task 3.6: Document Chunker
+### Task 3.6: Document Chunker ✅
 
 **Purpose:** Split documents into chunks with overlap for vector indexing.
 
