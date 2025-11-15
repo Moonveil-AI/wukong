@@ -94,6 +94,15 @@ export type {
   ExtractionStats,
 } from './knowledge/KnowledgeExtractor';
 
+// Export todo manager
+export { TodoManager } from './todo/TodoManager';
+export type {
+  TodoGenerationOptions,
+  TodoUpdateOptions,
+  ProgressInfo,
+  TodoManagerEvents,
+} from './todo/TodoManager';
+
 // Version
 export const version = '0.1.0';
 

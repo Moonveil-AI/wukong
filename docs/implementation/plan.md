@@ -78,7 +78,9 @@ Implemented the complete tools system and knowledge base infrastructure includin
 
 ## Phase 4: Advanced Features
 
-### Task 4.1: Todo Manager
+### Task 4.1: Todo Manager ✅
+
+**Status:** Completed
 
 **Purpose:** Generate, track, and update task lists.
 
@@ -87,31 +89,24 @@ Implemented the complete tools system and knowledge base infrastructure includin
 - `docs/design/13-database-design.md` - todos table
 
 **Implementation:**
-1. Create `packages/agent/src/todo/TodoManager.ts`:
+1. Created `packages/agent/src/todo/TodoManager.ts`:
    - Generate todos from goal (using LLM)
-   - Track progress
+   - Track progress (simple and weighted)
    - Update todo status
    - Calculate overall progress
    - Handle dependencies
+   - Add/remove/reorder todos
+   - Event emission for all todo lifecycle events
 
 **Tests:**
-- Todos are generated from goals
-- Progress tracking is accurate
-- Dependencies are respected
-- Events are emitted
-- Dynamic updates work
+- ✅ Todos are generated from goals
+- ✅ Progress tracking is accurate
+- ✅ Dependencies are respected
+- ✅ Events are emitted correctly
+- ✅ Dynamic updates work
+- ✅ Weighted progress calculation works
 
-**Verify Steps:**
-```typescript
-const manager = new TodoManager(storageAdapter, llm)
-
-const todos = await manager.generateTodos('Analyze sales.csv')
-expect(todos.length).toBeGreaterThan(0)
-
-await manager.markCompleted(todos[0].id)
-const progress = await manager.getProgress(sessionId)
-expect(progress).toBeGreaterThan(0)
-```
+**Verified:** All 19 tests passing
 
 ---
 
