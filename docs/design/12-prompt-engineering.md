@@ -43,24 +43,41 @@ ${ActionType.toString()}
 
 ---
 
-# Discarding Steps (Token Optimization)
+# Step Management (Token Optimization)
 
-To save tokens, you should mark steps that are no longer needed.
+To save tokens, you can optimize steps in two ways: **discard** or **compress**.
 
-## Always Keep
-- User's original requirements and modifications
+## 1. Discard (Complete Removal)
+Remove steps that have no lasting value:
+- Purely procedural confirmations ("OK", "I understand", "Let me help")
+- Drafts that were rejected and replaced
+- Errors that were immediately corrected
+- Steps with no new information
+
+## 2. Compress (Preserve Key Info)
+Replace verbose steps with concise summaries:
+- Long tool outputs (keep only key results)
+- Detailed analyses (keep only conclusions)
+- Verbose user explanations (keep only requirements)
+- Multi-paragraph responses (keep only action items)
+
+IMPORTANT: Provide the compressed content directly in your response, not instructions to compress.
+
+## Always Keep in Full
+Never discard or compress these:
+- User's original goal and requirement modifications
 - Final effective solutions
 - Error patterns that may reoccur
-- Last 5 steps
-
-## Safe to Discard
-- Steps with no new information
-- Purely procedural confirmations ("OK", "I understand")
-- Drafts replaced by better versions
-- Errors immediately corrected
+- Last 5 steps (maintain immediate context)
+- Steps with unique insights or decisions
 
 ## How to Mark
-Include "discardable_steps": [2, 5, 8] in your response to mark step IDs.
+Include both fields in your response:
+- "discardable_steps": [2, 5, 8] - Step IDs to completely remove
+- "compressed_steps": [
+    { "step_id": 12, "compressed": "Brief summary you created" },
+    { "step_id": 15, "compressed": "Another concise summary" }
+  ]
 
 ---
 
@@ -90,7 +107,13 @@ Your response MUST be valid JSON wrapped in XML tags:
   "parameters": {
     "param1": "value1"
   },
-  "discardable_steps": [2, 5, 8],  // Optional: steps to discard
+  "discardable_steps": [2, 5, 8],  // Optional: steps to completely remove
+  "compressed_steps": [  // Optional: steps to replace with compressed version
+    {
+      "step_id": 12,
+      "compressed": "Your compressed summary of step 12"
+    }
+  ],
   "message_to_user": "Human-readable message"  // For AskUser or Plan
 }
 </final_output>
@@ -279,14 +302,14 @@ Step 4: Finish
 
 ---
 
-## Step Discarding Rules
+## Step Management Rules
 
-Detailed rules for marking steps as discardable:
+Detailed rules for optimizing steps through discarding or compression:
 
-### Always Keep
+### Always Keep in Full (Never Discard or Compress)
 
 ```typescript
-const mustKeep = {
+const mustKeepInFull = {
   // 1. Original user requirements
   examples: [
     "User: I want a vertical video about cats",
@@ -306,14 +329,20 @@ const mustKeep = {
   ],
   
   // 4. Recent steps (last 5)
-  reason: "Context for immediate next steps"
+  reason: "Context for immediate next steps",
+  
+  // 5. Steps with unique insights or decisions
+  examples: [
+    "User prefers minimalist design style",
+    "Decision: Use tool A instead of B because of performance"
+  ]
 }
 ```
 
-### Safe to Discard
+### Discard Completely
 
 ```typescript
-const canDiscard = {
+const shouldDiscard = {
   // 1. No new information
   examples: [
     'Agent: "I understand"',
@@ -323,33 +352,88 @@ const canDiscard = {
   // 2. Purely procedural confirmations
   examples: [
     'User: "OK"',
-    'User: "Yes, continue"'
+    'User: "Yes, continue"',
+    'User: "Sounds good"'
   ],
   
   // 3. Superseded drafts
   examples: [
     "Draft 1: [generated image that was rejected]",
-    "Draft 2: [generated image that was rejected]",
-    "Draft 3: [final approved image]"  // Keep this one
+    "Draft 2: [generated image that was rejected]"
+    // Keep Draft 3 (final version) or compress it
   ],
   
   // 4. Immediately corrected errors
   examples: [
     'Step 10: Called wrong tool with wrong params',
-    'Step 11: Corrected and succeeded'  // Step 10 can be discarded
+    // Step 11: Corrected and succeeded
+    // → Discard Step 10
   ]
 }
 ```
 
-### Marking in Response
+### Compress (Keep Key Info Only)
+
+```typescript
+const shouldCompress = {
+  // 1. Verbose tool outputs
+  original: `
+    Step 25: Analyzed sales data
+    Result: {
+      Q1: { jan: $120k, feb: $135k, mar: $145k },
+      Q2: { apr: $155k, may: $168k, jun: $172k },
+      trends: "Consistent 8% monthly growth",
+      topProducts: ["Widget A (42%)", "Widget B (31%)", "Widget C (27%)"],
+      customers: { enterprise: 35%, smb: 45%, individual: 20% },
+      // ... 50 more lines of data
+    }
+  `,
+  compressed: "Q1-Q2 sales: $995k total, 8% monthly growth. Top: Widget A (42%), main segment: SMB (45%).",
+  
+  // 2. Long explanations
+  original: `
+    Step 18: User explained their requirements in detail.
+    They want to create a marketing video for their new product launch.
+    The video should be vertical format for mobile viewing.
+    They prefer a modern, energetic style with fast cuts.
+    Background music should be upbeat and contemporary.
+    Duration should be between 30-60 seconds.
+    The color scheme should match their brand colors: blue and white.
+    // ... 3 more paragraphs
+  `,
+  compressed: "User requirements: 30-60s vertical marketing video, modern/energetic style, fast cuts, upbeat music, blue/white brand colors.",
+  
+  // 3. Detailed analyses
+  original: `
+    Step 32: Analyzed competitor strategies
+    Competitor A focuses on...
+    Competitor B's approach is...
+    Competitor C differentiates by...
+    // ... detailed analysis
+  `,
+  compressed: "Competitor analysis: A uses premium positioning, B focuses on price, C emphasizes innovation."
+}
+```
+
+### Response Format
 
 ```json
 {
   "action": "CallTool",
   "selected_tool": "GENERATE_VIDEO",
   "parameters": {...},
-  "discardable_steps": [8, 12, 15],
-  "reasoning": "Generating video. Steps 8, 12, 15 were drafts replaced by better versions."
+  "discardable_steps": [5, 8, 12],
+  "compressed_steps": [
+    {
+      "step_id": 15,
+      "compressed": "Q1-Q2 sales: $995k total, 8% monthly growth. Top: Widget A (42%)."
+    },
+    {
+      "step_id": 18,
+      "compressed": "Requirements: 30-60s vertical video, modern style, upbeat music, blue/white colors."
+    }
+  ],
+  "reasoning": "Generating video. Discarded: steps 5,8,12 (confirmations). Compressed: steps 15,18 (verbose outputs)."
 }
 ```
 
@@ -430,7 +514,13 @@ Example:
     "size": "1024x1024",
     "quality": "high"
   },
-  "discardable_steps": [3, 7]
+  "discardable_steps": [3, 7],
+  "compressed_steps": [
+    {
+      "step_id": 5,
+      "compressed": "User requirements: vertical format, minimalist style, white background."
+    }
+  ]
 }
 </final_output>
 ```
@@ -468,7 +558,14 @@ Example:
       "tool_id": "scene_3"
     }
   ],
-  "wait_strategy": "all"
+  "wait_strategy": "all",
+  "discardable_steps": [8, 9],
+  "compressed_steps": [
+    {
+      "step_id": 12,
+      "compressed": "User feedback: Scene 1 approved, Scene 2 needs warmer colors, Scene 3 perfect."
+    }
+  ]
 }
 </final_output>
 ```
@@ -642,7 +739,17 @@ Agent: <final_output>
     }
   ],
   "wait_strategy": "all",
-  "discardable_steps": [2, 3]
+  "discardable_steps": [2],
+  "compressed_steps": [
+    {
+      "step_id": 3,
+      "compressed": "KB: multi-scene videos work best with consistent style, generate images in parallel first."
+    },
+    {
+      "step_id": 5,
+      "compressed": "Generated 3 scene images: morning (coffee), coding (office), evening (reading). All 9:16 vertical."
+    }
+  ]
 }
 </final_output>
 

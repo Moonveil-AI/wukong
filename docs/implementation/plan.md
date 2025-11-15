@@ -158,29 +158,47 @@ Implemented the complete tools system and knowledge base infrastructure includin
 
 ---
 
-### Task 4.3: Step Discarding
+### Task 4.3: Step Management (Discard & Compress)
 
-**Purpose:** Allow LLM to mark unnecessary steps for token optimization.
+**Purpose:** Allow LLM to optimize history by discarding or compressing steps for token optimization.
 
 **Referenced Documentation:**
-- `docs/design/08-token-optimization.md` - Smart step discarding
-- `docs/design/12-prompt-engineering.md` - Step discarding rules
+- `docs/design/08-token-optimization.md` - Smart step discarding and compression
+- `docs/design/12-prompt-engineering.md` - Step management rules
 
 **Implementation:**
 1. Implement in `PromptBuilder`:
-   - Include step discarding instructions in prompt
-   - Explain what can/cannot be discarded
+   - Include step management instructions in prompt
+   - Explain what should be discarded vs compressed
+   - LLM returns compressed content directly, not compression instructions
 
 2. Implement in `SessionManager`:
-   - Process `discardableSteps` from LLM response
-   - Mark steps as discarded in database
-   - Exclude discarded steps from future prompts
+   - Process `discardableSteps` from LLM response (complete removal)
+   - Process `compressedSteps` from LLM response (replace with compressed content)
+   - Update database accordingly
+   - Use compressed/discarded versions in future prompts
+
+3. Response format:
+   ```typescript
+   interface AgentResponse {
+     action: string
+     reasoning: string
+     parameters: any
+     discardableSteps?: number[]  // Steps to completely discard
+     compressedSteps?: {          // Steps to replace with compressed version
+       stepId: number
+       compressed: string         // LLM-generated compressed content
+     }[]
+   }
+   ```
 
 **Tests:**
-- LLM marks steps as discardable
+- LLM marks steps as discardable (complete removal)
+- LLM provides compressed versions of verbose steps
 - Discarded steps are excluded from prompts
-- Token count is reduced
-- Important steps are never discarded
+- Compressed steps show compressed version in prompts
+- Token count is significantly reduced
+- Important information is preserved in compressed steps
 
 **Verify Steps:**
 ```typescript
@@ -188,6 +206,7 @@ Implemented the complete tools system and knowledge base infrastructure includin
 const response = await llm.call(prompt)
 const parsed = parser.parse(response)
 
+// Handle complete discards
 if (parsed.discardableSteps) {
   await sessionManager.markStepsAsDiscarded(
     sessionId,
@@ -195,9 +214,18 @@ if (parsed.discardableSteps) {
   )
 }
 
-// Verify discarded steps not in next prompt
+// Handle compressions (LLM provides compressed content)
+if (parsed.compressedSteps) {
+  await sessionManager.compressSteps(
+    sessionId,
+    parsed.compressedSteps
+  )
+}
+
+// Verify optimizations in next prompt
 const nextPrompt = promptBuilder.build(context)
 expect(nextPrompt).not.toContain('discarded step content')
+expect(nextPrompt).toContain('compressed content from LLM')
 ```
 
 ---
