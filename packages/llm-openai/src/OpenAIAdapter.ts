@@ -1,13 +1,14 @@
 /**
  * OpenAI LLM Adapter Implementation
  *
- * This adapter provides integration with OpenAI's API, supporting:
- * - Standard text completion
- * - Chat message format
- * - Streaming responses
+ * This adapter provides integration with OpenAI's Responses API for GPT-5 models:
+ * - GPT-5 models (gpt-5-mini, gpt-5, etc.)
+ * - Streaming responses (all calls use streaming internally)
  * - Token counting with tiktoken
  * - Automatic retries with exponential backoff
  * - Rate limit handling
+ *
+ * Note: Only GPT-5 models are supported. All API calls use the Responses API with streaming.
  */
 
 import type {
@@ -87,114 +88,40 @@ export class OpenAIAdapter implements LLMAdapter {
   }
 
   /**
-   * Call the LLM with a simple prompt
+   * Call the LLM with a simple prompt (uses streaming internally)
    */
-  call(prompt: string, options?: LLMCallOptions): Promise<LLMCallResponse> {
-    const messages: LLMMessage[] = [{ role: 'user', content: prompt }];
-    return this.callWithMessages(messages, options);
+  async call(prompt: string, options?: LLMCallOptions): Promise<LLMCallResponse> {
+    // Use streaming internally but don't expose the chunks
+    return this.callWithStreaming(prompt, {
+      ...(options || {}),
+      streaming: {
+        onChunk: () => {
+          /* No-op */
+        },
+        onComplete: () => {
+          /* No-op */
+        },
+        onError: () => {
+          /* No-op */
+        },
+      },
+    } as LLMCallOptions & { streaming: LLMStreamingOptions });
   }
 
   /**
-   * Call the LLM with messages (chat format)
+   * Call the LLM with messages (chat format) - uses streaming internally
    */
   async callWithMessages(
     messages: LLMMessage[],
     options?: LLMCallOptions,
   ): Promise<LLMCallResponse> {
-    const startTime = Date.now();
-    const model = options?.model || this.config.model;
-
-    try {
-      // GPT-5 models use the new Responses API
-      if (model.startsWith('gpt-5')) {
-        return await this.callWithResponsesAPI(messages, model, options, startTime);
-      }
-
-      // GPT-4 and earlier use Chat Completions API
-      const response = await this.client.chat.completions.create({
-        model,
-        messages: messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-        temperature: options?.temperature ?? this.config.temperature,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        max_tokens: options?.maxTokens ?? this.config.maxTokens,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        top_p: options?.topP,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        frequency_penalty: options?.frequencyPenalty,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        presence_penalty: options?.presencePenalty,
-        stop: options?.stop,
-      });
-
-      const responseTimeMs = Date.now() - startTime;
-      const choice = response.choices[0];
-
-      if (!choice?.message?.content) {
-        throw new Error('No response content from OpenAI');
-      }
-
-      return {
-        text: choice.message.content,
-        tokensUsed: {
-          prompt: response.usage?.prompt_tokens || 0,
-          completion: response.usage?.completion_tokens || 0,
-          total: response.usage?.total_tokens || 0,
-        },
-        model: response.model,
-        responseTimeMs,
-        finishReason: this.mapFinishReason(choice.finish_reason),
-      };
-    } catch (error) {
-      if (error instanceof OpenAI.APIError) {
-        throw new Error(`OpenAI API error (${error.status}): ${error.message}`);
-      }
-
-      throw error;
-    }
+    // Convert messages to a prompt and use streaming
+    const prompt = messages.map((m) => `${m.role}: ${m.content}`).join('\n\n');
+    return this.call(prompt, options);
   }
 
   /**
-   * Call GPT-5 using the new Responses API
-   */
-  private async callWithResponsesAPI(
-    messages: LLMMessage[],
-    model: string,
-    _options: LLMCallOptions | undefined,
-    startTime: number,
-  ): Promise<LLMCallResponse> {
-    // Convert messages to a single input string for Responses API
-    const input = messages.map((m) => `${m.role}: ${m.content}`).join('\n\n');
-
-    // Responses API only accepts model and input parameters
-    const response = await (this.client as any).responses.create({
-      model,
-      input,
-    });
-
-    const responseTimeMs = Date.now() - startTime;
-
-    if (!response.output_text) {
-      throw new Error('No response content from OpenAI Responses API');
-    }
-
-    return {
-      text: response.output_text,
-      tokensUsed: {
-        prompt: response.usage?.input_tokens || 0,
-        completion: response.usage?.output_tokens || 0,
-        total: response.usage?.total_tokens || 0,
-      },
-      model: response.model || model,
-      responseTimeMs,
-      finishReason: 'stop',
-    };
-  }
-
-  /**
-   * Call the LLM with streaming
+   * Call the LLM with streaming (only uses Responses API)
    */
   async callWithStreaming(
     prompt: string,
@@ -205,30 +132,58 @@ export class OpenAIAdapter implements LLMAdapter {
     const messages: LLMMessage[] = [{ role: 'user', content: prompt }];
 
     try {
-      const stream = await this.client.chat.completions.create({
-        model,
-        messages: messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })),
-        temperature: options?.temperature ?? this.config.temperature,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        max_tokens: options?.maxTokens ?? this.config.maxTokens,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        top_p: options?.topP,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        frequency_penalty: options?.frequencyPenalty,
-        // biome-ignore lint/style/useNamingConvention: OpenAI API requires snake_case
-        presence_penalty: options?.presencePenalty,
-        stop: options?.stop,
-        stream: true,
-      });
+      // All models use Responses API with streaming
+      return await this.callWithResponsesAPIStreaming(messages, model, options, startTime);
+    } catch (error) {
+      if (options.streaming.onError) {
+        options.streaming.onError(error as Error);
+      }
 
-      let fullText = '';
-      let finishReason: 'stop' | 'length' | 'error' = 'stop';
+      if (error instanceof OpenAI.APIError) {
+        throw new Error(`OpenAI API error (${error.status}): ${error.message}`);
+      }
 
-      for await (const chunk of stream) {
-        const delta = chunk.choices[0]?.delta?.content;
+      throw error;
+    }
+  }
+
+  /**
+   * Call GPT-5 using the Responses API with streaming
+   */
+  private async callWithResponsesAPIStreaming(
+    messages: LLMMessage[],
+    model: string,
+    options: LLMCallOptions & { streaming: LLMStreamingOptions },
+    startTime: number,
+  ): Promise<LLMCallResponse> {
+    // Validate that it's a GPT-5 model
+    if (!model.startsWith('gpt-5')) {
+      throw new Error(`This adapter only supports GPT-5 models. Received: ${model}`);
+    }
+
+    // Convert messages to a single input string for Responses API
+    const input = messages.map((m) => `${m.role}: ${m.content}`).join('\n\n');
+
+    // Responses API with streaming
+    const stream = await (this.client as any).responses.create({
+      model,
+      input,
+      stream: true,
+    });
+
+    let fullText = '';
+    let inputTokens = 0;
+    let outputTokens = 0;
+
+    // Process stream events
+    for await (const event of stream) {
+      // Handle different event types for Responses API
+      // The correct event types are:
+      // - response.output_text.delta: Contains the text delta
+      // - response.completed: Final event with usage info
+
+      if (event.type === 'response.output_text.delta') {
+        const delta = event.delta;
 
         if (delta) {
           fullText += delta;
@@ -242,49 +197,40 @@ export class OpenAIAdapter implements LLMAdapter {
             }
           }
         }
-
-        if (chunk.choices[0]?.finish_reason) {
-          finishReason = this.mapFinishReason(chunk.choices[0].finish_reason);
+      } else if (event.type === 'response.completed' && event.response) {
+        // Final event with usage info
+        if (event.response.usage) {
+          inputTokens = event.response.usage.input_tokens || 0;
+          outputTokens = event.response.usage.output_tokens || 0;
+        }
+        if (event.response.output_text) {
+          fullText = event.response.output_text;
         }
       }
-
-      const responseTimeMs = Date.now() - startTime;
-
-      // Call the onComplete callback
-      if (options.streaming.onComplete) {
-        try {
-          options.streaming.onComplete(fullText);
-        } catch (error) {
-          console.error('Error in onComplete callback:', error);
-        }
-      }
-
-      // Count tokens since streaming doesn't provide usage
-      const promptTokens = await this.countTokens(prompt);
-      const completionTokens = await this.countTokens(fullText);
-
-      return {
-        text: fullText,
-        tokensUsed: {
-          prompt: promptTokens,
-          completion: completionTokens,
-          total: promptTokens + completionTokens,
-        },
-        model,
-        responseTimeMs,
-        finishReason,
-      };
-    } catch (error) {
-      if (options.streaming.onError) {
-        options.streaming.onError(error as Error);
-      }
-
-      if (error instanceof OpenAI.APIError) {
-        throw new Error(`OpenAI API error (${error.status}): ${error.message}`);
-      }
-
-      throw error;
     }
+
+    const responseTimeMs = Date.now() - startTime;
+
+    // Call the onComplete callback
+    if (options.streaming.onComplete) {
+      try {
+        options.streaming.onComplete(fullText);
+      } catch (error) {
+        console.error('Error in onComplete callback:', error);
+      }
+    }
+
+    return {
+      text: fullText,
+      tokensUsed: {
+        prompt: inputTokens,
+        completion: outputTokens,
+        total: inputTokens + outputTokens,
+      },
+      model,
+      responseTimeMs,
+      finishReason: 'stop',
+    };
   }
 
   /**
@@ -320,88 +266,22 @@ export class OpenAIAdapter implements LLMAdapter {
 
   /**
    * Map OpenAI model to tiktoken model
+   * GPT-5 models use gpt-4o tokenizer (tiktoken doesn't have GPT-5 yet)
    */
-  private getTiktokenModel(model: string): TiktokenModel {
-    // Map common OpenAI models to tiktoken models
-    // GPT-5 models use gpt-4o tokenizer for now (tiktoken doesn't have GPT-5 yet)
-    if (model.startsWith('gpt-5')) {
-      return 'gpt-4o';
-    }
-    if (model.startsWith('gpt-4o')) {
-      return 'gpt-4o';
-    }
-    if (model.startsWith('gpt-4')) {
-      return 'gpt-4';
-    }
-    if (model.startsWith('gpt-3.5')) {
-      return 'gpt-3.5-turbo';
-    }
-
-    // Default to gpt-4o for newer models
+  private getTiktokenModel(_model: string): TiktokenModel {
     return 'gpt-4o';
   }
 
   /**
-   * Get model-specific capabilities
+   * Get model-specific capabilities for GPT-5
    */
-  private getModelCapabilities(model: string) {
-    // GPT-5 models
-    if (model.includes('gpt-5')) {
-      return {
-        contextWindow: 200000, // 200K context window for GPT-5
-        supportsFunctionCalling: true,
-        supportsVision: true,
-      };
-    }
-
-    // GPT-4o models
-    if (model.includes('gpt-4o')) {
-      return {
-        contextWindow: 128000,
-        supportsFunctionCalling: true,
-        supportsVision: true,
-      };
-    }
-
-    // GPT-4 models
-    if (model.includes('gpt-4')) {
-      return {
-        contextWindow: model.includes('turbo') ? 128000 : 8192,
-        supportsFunctionCalling: true,
-        supportsVision: model.includes('vision'),
-      };
-    }
-
-    // GPT-3.5 models
-    if (model.includes('gpt-3.5')) {
-      return {
-        contextWindow: 16385,
-        supportsFunctionCalling: true,
-        supportsVision: false,
-      };
-    }
-
-    // Default
+  private getModelCapabilities(_model: string) {
+    // All GPT-5 models have similar capabilities
     return {
-      contextWindow: 8192,
-      supportsFunctionCalling: false,
-      supportsVision: false,
+      contextWindow: 200000, // 200K context window for GPT-5
+      supportsFunctionCalling: true,
+      supportsVision: true,
     };
-  }
-
-  /**
-   * Map OpenAI finish reason to our type
-   */
-  private mapFinishReason(reason: string | null): 'stop' | 'length' | 'error' {
-    switch (reason) {
-      case 'stop':
-        return 'stop';
-      case 'length':
-      case 'max_tokens':
-        return 'length';
-      default:
-        return 'error';
-    }
   }
 
   /**
@@ -420,13 +300,13 @@ export class OpenAIAdapter implements LLMAdapter {
 }
 
 /**
- * Create an OpenAI adapter instance
+ * Create an OpenAI adapter instance for GPT-5 models
  *
  * @example
  * ```typescript
  * const adapter = createOpenAIAdapter({
  *   apiKey: process.env.OPENAI_API_KEY!,
- *   model: 'gpt-5-2025-08-07' // Optional, defaults to 'gpt-5-2025-08-07'
+ *   model: 'gpt-5-mini-2025-08-07' // Optional, defaults to 'gpt-5-mini-2025-08-07'
  * });
  *
  * const response = await adapter.call('Hello, world!');

@@ -76,6 +76,24 @@ You should see something like:
 🎯 Executing task...
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📝 Session created: sess_xxxxx
+
+🤖 LLM call started for step 0
+   Streaming output: 
+   <Action>CallTool</Action>
+<SelectedTool>calculator</SelectedTool>
+<Parameters>
+{
+  "operation": "multiply",
+  "a": 15,
+  "b": 8
+}
+</Parameters>
+<Reasoning>First, I need to multiply 15 by 8...</Reasoning>
+
+✅ LLM call completed for step 0 (1234ms)
+   Model: claude-3-5-sonnet-20241022
+   Tokens: 150 (prompt: 100, completion: 50)
+
 ⚡ Step 1 started: think
 ✅ Step 1 completed
 ⚡ Step 2 started: useTool

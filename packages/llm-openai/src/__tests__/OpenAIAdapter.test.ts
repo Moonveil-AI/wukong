@@ -42,6 +42,19 @@ describe('OpenAIAdapter', () => {
   });
 
   describe('getCapabilities', () => {
+    it('should return correct capabilities for gpt-5 models', () => {
+      const adapter = new OpenAIAdapter({
+        apiKey: 'test-key',
+        model: 'gpt-5-mini-2025-08-07',
+      });
+
+      const capabilities = adapter.getCapabilities();
+      expect(capabilities.maxTokens).toBe(200000);
+      expect(capabilities.supportsStreaming).toBe(true);
+      expect(capabilities.supportsFunctionCalling).toBe(true);
+      expect(capabilities.supportsVision).toBe(true);
+    });
+
     it('should return correct capabilities for gpt-5.1', () => {
       const adapter = new OpenAIAdapter({
         apiKey: 'test-key',
@@ -53,44 +66,6 @@ describe('OpenAIAdapter', () => {
       expect(capabilities.supportsStreaming).toBe(true);
       expect(capabilities.supportsFunctionCalling).toBe(true);
       expect(capabilities.supportsVision).toBe(true);
-    });
-
-    it('should return correct capabilities for gpt-4o', () => {
-      const adapter = new OpenAIAdapter({
-        apiKey: 'test-key',
-        model: 'gpt-4o',
-      });
-
-      const capabilities = adapter.getCapabilities();
-      expect(capabilities.maxTokens).toBe(128000);
-      expect(capabilities.supportsStreaming).toBe(true);
-      expect(capabilities.supportsFunctionCalling).toBe(true);
-      expect(capabilities.supportsVision).toBe(true);
-    });
-
-    it('should return correct capabilities for gpt-4', () => {
-      const adapter = new OpenAIAdapter({
-        apiKey: 'test-key',
-        model: 'gpt-4-turbo',
-      });
-
-      const capabilities = adapter.getCapabilities();
-      expect(capabilities.maxTokens).toBe(128000);
-      expect(capabilities.supportsStreaming).toBe(true);
-      expect(capabilities.supportsFunctionCalling).toBe(true);
-    });
-
-    it('should return correct capabilities for gpt-3.5-turbo', () => {
-      const adapter = new OpenAIAdapter({
-        apiKey: 'test-key',
-        model: 'gpt-3.5-turbo',
-      });
-
-      const capabilities = adapter.getCapabilities();
-      expect(capabilities.maxTokens).toBe(16385);
-      expect(capabilities.supportsStreaming).toBe(true);
-      expect(capabilities.supportsFunctionCalling).toBe(true);
-      expect(capabilities.supportsVision).toBe(false);
     });
   });
 

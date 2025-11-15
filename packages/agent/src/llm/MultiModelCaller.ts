@@ -104,6 +104,63 @@ export class MultiModelCaller {
   }
 
   /**
+   * Call LLM with streaming support and automatic fallback
+   */
+  async callWithStreaming(
+    prompt: string,
+    options: LLMCallOptions & {
+      streaming: {
+        onChunk?: (chunk: string) => void;
+        onComplete?: (fullText: string) => void;
+        onError?: (error: Error) => void;
+      };
+    },
+  ): Promise<LLMCallResponse> {
+    const errors: Array<{ modelIndex: number; error: Error }> = [];
+
+    for (let i = 0; i < this.config.models.length; i++) {
+      const model = this.config.models[i];
+      if (!model) {
+        continue;
+      }
+
+      // Check if model supports streaming
+      if (typeof model.callWithStreaming !== 'function') {
+        // Fall back to regular call
+        continue;
+      }
+
+      try {
+        const response = await model.callWithStreaming(prompt, options);
+
+        // Validate response if enabled
+        if (this.config.validateResponse) {
+          const isValid = this.validateResponse(response);
+          if (!isValid) {
+            throw new Error('Response validation failed');
+          }
+        }
+
+        // Extract JSON if enabled
+        if (this.config.autoExtractJson) {
+          response.text = this.extractJson(response.text) || response.text;
+        }
+
+        return response;
+      } catch (error) {
+        errors.push({
+          modelIndex: i,
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      }
+    }
+
+    // All models failed or don't support streaming
+    // Fall back to regular call
+    return await this.call(prompt, options);
+  }
+
+  /**
    * Call LLM with automatic fallback
    */
   async call(prompt: string, options?: LLMCallOptions): Promise<LLMCallResponse> {

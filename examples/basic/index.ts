@@ -158,41 +158,46 @@ async function main() {
   const stepTimings = new Map<number, number>();
 
   agent.on('session:created', (event) => {
-    console.log(`📝 Session created: ${event.sessionId}`);
-  });
-
-  agent.on('task:started', (event: any) => {
-    console.log(`🚀 Task started: ${event.goal}`);
+    console.log(`📝 Session created: ${event.session.id}`);
   });
 
   agent.on('llm:started', (event) => {
     stepTimings.set(event.stepId, Date.now());
-    console.log(`🤖 LLM call started for step ${event.stepId}`);
+    console.log(`\n🤖 LLM call started for step ${event.stepId}`);
+    process.stdout.write('   ');
+  });
+
+  // Real-time streaming output from LLM
+  agent.on('llm:streaming', (event: any) => {
+    // Display each chunk as it arrives
+    if (event.chunk?.text) {
+      process.stdout.write(event.chunk.text);
+    }
   });
 
   agent.on('llm:complete', (event) => {
     const startTime = stepTimings.get(event.stepId);
     const duration = startTime ? Date.now() - startTime : 0;
-    console.log(`🤖 LLM call completed for step ${event.stepId} (${duration}ms)`);
+    console.log('\n');
+    console.log(`✅ LLM call completed for step ${event.stepId} (${duration}ms)`);
     console.log(`   Model: ${event.response?.model || 'unknown'}`);
     console.log(
       `   Tokens: ${event.response?.tokensUsed?.total || 0} (prompt: ${event.response?.tokensUsed?.prompt || 0}, completion: ${event.response?.tokensUsed?.completion || 0})`,
     );
-    console.log(`   Response preview: ${event.response?.text?.slice(0, 100)}...`);
   });
 
   agent.on('step:started', (event) => {
-    console.log(`\n⚡ Step ${event.stepNumber} started`);
-    console.log(`   Action: ${event.actionType}`);
-    if (event.reasoning) {
-      console.log(`   Reasoning: ${event.reasoning}`);
+    console.log(`\n⚡ Step ${event.step.stepNumber} started`);
+    console.log(`   Action: ${event.step.action}`);
+    if (event.step.reasoning) {
+      console.log(`   Reasoning: ${event.step.reasoning}`);
     }
   });
 
   agent.on('step:completed', (event) => {
-    console.log(`✅ Step ${event.stepNumber} completed`);
-    if (event.result) {
-      console.log(`   Result: ${JSON.stringify(event.result, null, 2)}`);
+    console.log(`✅ Step ${event.step.stepNumber} completed`);
+    if (event.step.stepResult) {
+      console.log(`   Result: ${JSON.stringify(event.step.stepResult, null, 2)}`);
     }
   });
 
@@ -205,17 +210,17 @@ async function main() {
     console.log('   Parameters:', JSON.stringify(event.parameters, null, 2));
   });
 
-  agent.on('tool:executed', (event) => {
+  agent.on('tool:completed', (event) => {
     const key = `${event.sessionId}-${event.toolName}`;
     const startTime = toolTimings.get(key);
     const duration = startTime ? Date.now() - startTime : 0;
     console.log(`✅ Tool completed: ${event.toolName} (${duration}ms)`);
-    console.log(`   Success: ${event.success}`);
-    if (event.result) {
-      console.log('   Result:', JSON.stringify(event.result, null, 2));
+    console.log(`   Success: ${event.result.success}`);
+    if (event.result.result) {
+      console.log('   Result:', JSON.stringify(event.result.result, null, 2));
     }
-    if (event.error) {
-      console.error(`   Error: ${event.error}`);
+    if (event.result.error) {
+      console.error(`   Error: ${event.result.error}`);
     }
   });
 
@@ -227,7 +232,7 @@ async function main() {
   });
 
   agent.on('error', (event) => {
-    console.error(`\n❌ Error event: ${event.message}`);
+    console.error(`\n❌ Error event: ${event.error?.message || 'Unknown error'}`);
     console.error('   Full event:', JSON.stringify(event, null, 2));
   });
 
