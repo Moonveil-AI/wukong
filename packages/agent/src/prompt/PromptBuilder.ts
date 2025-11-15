@@ -162,27 +162,42 @@ ${actionsList}`;
   }
 
   /**
-   * Build discarding steps section
+   * Build step management section (discard & compress)
    */
   private buildDiscardingStepsSection(): string {
-    return `# Discarding Steps (Token Optimization)
+    return `# Step Management (Token Optimization)
 
-To save tokens, you should mark steps that are no longer needed.
+You can optimize steps in two ways to save tokens:
 
-## Always Keep
-- User's original requirements and modifications
+## 1. Discard (Complete Removal)
+✅ Discard these:
+- Confirmation steps with no new information ("OK", "I understand")
+- Drafts that were rejected and replaced
+- Errors that were immediately corrected
+- Purely procedural steps with no useful data
+
+## 2. Compress (Preserve Key Info)
+✅ Compress these:
+- Verbose tool outputs (keep only key results)
+- Long user explanations (keep only requirements)
+- Detailed analyses (keep only conclusions)
+- Multi-paragraph responses (keep only action items)
+
+## Always Keep in Full
+❌ Never discard or compress:
+- User's original goal and requirements
 - Final effective solutions
 - Error patterns that may reoccur
-- Last 5 steps
+- Last 5 steps (maintain immediate context)
+- Steps with unique insights or decisions
 
-## Safe to Discard
-- Steps with no new information
-- Purely procedural confirmations ("OK", "I understand")
-- Drafts replaced by better versions
-- Errors immediately corrected
-
-## How to Mark
-Include "discardable_steps": [2, 5, 8] in your response to mark step IDs.`;
+## How to Optimize
+In your response, include:
+- "discardable_steps": [2, 5, 8] - IDs of steps to remove completely
+- "compressed_steps": [
+    { "step_id": 8, "compressed": "Brief summary of step 8" },
+    { "step_id": 12, "compressed": "Key points from step 12" }
+  ]`;
   }
 
   /**
@@ -257,7 +272,13 @@ Your response MUST be valid JSON wrapped in XML tags:
   "parameters": {
     "param1": "value1"
   },
-  "discardable_steps": [2, 5, 8],  // Optional: steps to discard
+  "discardable_steps": [2, 5, 8],  // Optional: steps to discard completely
+  "compressed_steps": [  // Optional: steps to compress
+    {
+      "step_id": 8,
+      "compressed": "Brief summary of step 8"
+    }
+  ],
   "message_to_user": "Human-readable message",  // For AskUser, Plan, or Finish
   "options": ["option1", "option2"]  // For AskUser: provide clear options
 }
@@ -435,6 +456,14 @@ No previous steps.
 
     // Format each step
     const formattedSteps = activeSteps.map((step) => {
+      // If step has compressed content, use that instead
+      if (step.compressedContent) {
+        return `### Step ${step.stepNumber} [COMPRESSED]
+
+${step.compressedContent}`;
+      }
+
+      // Otherwise, show full step details
       let stepText = `### Step ${step.stepNumber}
 
 **Action**: ${step.action}`;

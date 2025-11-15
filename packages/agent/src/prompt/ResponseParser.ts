@@ -12,11 +12,20 @@ import type { AgentAction } from '../types/index.js';
 // ==========================================
 
 /**
+ * Compressed step schema
+ */
+const CompressedStepSchema = z.object({
+  stepId: z.number(),
+  compressed: z.string().min(1, 'Compressed content is required'),
+});
+
+/**
  * Base response schema with common fields
  */
 const BaseResponseSchema = z.object({
   reasoning: z.string().min(1, 'Reasoning is required'),
   discardableSteps: z.array(z.number()).optional(),
+  compressedSteps: z.array(CompressedStepSchema).optional(),
   messageToUser: z.string().optional(),
 });
 

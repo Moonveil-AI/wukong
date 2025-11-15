@@ -89,6 +89,14 @@ export interface StorageAdapter {
   markStepsAsDiscarded(sessionId: string, stepIds: number[]): Promise<void>;
 
   /**
+   * Compress steps with LLM-provided compressed content
+   */
+  compressSteps(
+    sessionId: string,
+    compressions: Array<{ stepId: number; compressed: string }>,
+  ): Promise<void>;
+
+  /**
    * Get the last step for a session
    */
   getLastStep(sessionId: string): Promise<Step | null>;

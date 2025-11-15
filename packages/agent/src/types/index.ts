@@ -123,6 +123,9 @@ export interface Step {
   status: 'pending' | 'running' | 'completed' | 'failed';
   discarded: boolean;
 
+  /** Token optimization - compressed content */
+  compressedContent?: string;
+
   /** Parallel execution support */
   isParallel: boolean;
   waitStrategy?: WaitStrategy;
@@ -638,6 +641,14 @@ export interface TaskResult {
 // ==========================================
 
 /**
+ * Compressed step info
+ */
+export interface CompressedStep {
+  stepId: number;
+  compressed: string;
+}
+
+/**
  * CallTool action
  */
 export interface CallToolAction {
@@ -646,6 +657,7 @@ export interface CallToolAction {
   selectedTool: string;
   parameters: Record<string, any>;
   discardableSteps?: number[];
+  compressedSteps?: CompressedStep[];
 }
 
 /**
@@ -661,6 +673,7 @@ export interface CallToolsParallelAction {
   }>;
   waitStrategy: WaitStrategy;
   discardableSteps?: number[];
+  compressedSteps?: CompressedStep[];
 }
 
 /**
@@ -675,6 +688,7 @@ export interface ForkAutoAgentAction {
   maxSteps?: number;
   timeout?: number;
   discardableSteps?: number[];
+  compressedSteps?: CompressedStep[];
 }
 
 /**
@@ -686,6 +700,7 @@ export interface AskUserAction {
   question: string;
   options?: string[];
   discardableSteps?: number[];
+  compressedSteps?: CompressedStep[];
 }
 
 /**
@@ -696,6 +711,7 @@ export interface PlanAction {
   reasoning: string;
   plan: ExecutionPlan;
   discardableSteps?: number[];
+  compressedSteps?: CompressedStep[];
 }
 
 /**
@@ -707,6 +723,7 @@ export interface FinishAction {
   finalResult: any;
   summary?: string;
   discardableSteps?: number[];
+  compressedSteps?: CompressedStep[];
 }
 
 /**

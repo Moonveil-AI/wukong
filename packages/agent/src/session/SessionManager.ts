@@ -266,6 +266,20 @@ export class SessionManager {
   }
 
   /**
+   * Compress steps with LLM-provided compressed content
+   */
+  async compressSteps(
+    sessionId: string,
+    compressions: Array<{ stepId: number; compressed: string }>,
+  ): Promise<void> {
+    if (compressions.length === 0) {
+      return;
+    }
+
+    await this.storage.compressSteps(sessionId, compressions);
+  }
+
+  /**
    * Update session goal
    */
   async updateGoal(sessionId: string, newGoal: string): Promise<Session> {

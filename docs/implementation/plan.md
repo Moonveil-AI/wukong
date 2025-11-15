@@ -158,7 +158,9 @@ Implemented the complete tools system and knowledge base infrastructure includin
 
 ---
 
-### Task 4.3: Step Management (Discard & Compress)
+### Task 4.3: Step Management (Discard & Compress) ✅
+
+**Status:** Completed
 
 **Purpose:** Allow LLM to optimize history by discarding or compressing steps for token optimization.
 
@@ -167,66 +169,50 @@ Implemented the complete tools system and knowledge base infrastructure includin
 - `docs/design/12-prompt-engineering.md` - Step management rules
 
 **Implementation:**
-1. Implement in `PromptBuilder`:
-   - Include step management instructions in prompt
-   - Explain what should be discarded vs compressed
-   - LLM returns compressed content directly, not compression instructions
+1. ✅ Updated type definitions:
+   - Added `CompressedStep` interface in `types/index.ts`
+   - Added `compressedContent` field to `Step` interface
+   - Added `compressedSteps` field to all action types
 
-2. Implement in `SessionManager`:
-   - Process `discardableSteps` from LLM response (complete removal)
-   - Process `compressedSteps` from LLM response (replace with compressed content)
-   - Update database accordingly
-   - Use compressed/discarded versions in future prompts
+2. ✅ Updated `ResponseParser`:
+   - Added `CompressedStepSchema` for validation
+   - Added `compressedSteps` to `BaseResponseSchema`
+   - LLM returns compressed content directly in response
 
-3. Response format:
-   ```typescript
-   interface AgentResponse {
-     action: string
-     reasoning: string
-     parameters: any
-     discardableSteps?: number[]  // Steps to completely discard
-     compressedSteps?: {          // Steps to replace with compressed version
-       stepId: number
-       compressed: string         // LLM-generated compressed content
-     }[]
-   }
-   ```
+3. ✅ Updated `PromptBuilder`:
+   - Enhanced step management section to explain both discard and compress
+   - Updated output format to include `compressedSteps` example
+   - Modified `formatHistorySection` to use compressed content when available
+   - Shows "[COMPRESSED]" marker for compressed steps
 
-**Tests:**
-- LLM marks steps as discardable (complete removal)
-- LLM provides compressed versions of verbose steps
-- Discarded steps are excluded from prompts
-- Compressed steps show compressed version in prompts
-- Token count is significantly reduced
-- Important information is preserved in compressed steps
+4. ✅ Updated `SessionManager`:
+   - Added `compressSteps` method to process compressed steps from LLM
+   - Works alongside existing `markStepsAsDiscarded` method
 
-**Verify Steps:**
-```typescript
-// In agent execution
-const response = await llm.call(prompt)
-const parsed = parser.parse(response)
+5. ✅ Updated `StorageAdapter` interface:
+   - Added `compressSteps` method signature
 
-// Handle complete discards
-if (parsed.discardableSteps) {
-  await sessionManager.markStepsAsDiscarded(
-    sessionId,
-    parsed.discardableSteps
-  )
-}
+6. ✅ Implemented in `LocalStorageAdapter`:
+   - Added `compressSteps` method to update steps with compressed content
+   - Updated `mapStepRow` to include `compressedContent` field
+   - Updated `updateStep` to handle `compressedContent` field
 
-// Handle compressions (LLM provides compressed content)
-if (parsed.compressedSteps) {
-  await sessionManager.compressSteps(
-    sessionId,
-    parsed.compressedSteps
-  )
-}
+7. ✅ Implemented in `VercelStorageAdapter`:
+   - Added `compressSteps` method for PostgreSQL
+   - Updated `mapStepRow` to include `compressedContent` field
 
-// Verify optimizations in next prompt
-const nextPrompt = promptBuilder.build(context)
-expect(nextPrompt).not.toContain('discarded step content')
-expect(nextPrompt).toContain('compressed content from LLM')
-```
+8. ✅ Created database migrations:
+   - Added `005_step_compression.sql` for both Local and Vercel adapters
+   - Adds `compressed_content` column to steps table
+   - Creates index for faster queries on compressed steps
+
+**Key Features:**
+- LLM can mark steps for both discard (complete removal) and compress (preserve key info)
+- Compressed content replaces verbose details while maintaining important information
+- Discarded steps are completely removed from history
+- Compressed steps show brief summary with [COMPRESSED] marker
+- Clear instructions in prompt about what to discard vs compress
+- Backward compatible - existing code continues to work
 
 ---
 

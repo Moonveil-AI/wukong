@@ -332,6 +332,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       errorMessage: 'error_message',
       status: 'status',
       discarded: 'discarded',
+      compressedContent: 'compressed_content',
       isParallel: 'is_parallel',
       waitStrategy: 'wait_strategy',
       parallelStatus: 'parallel_status',
@@ -430,6 +431,28 @@ export class LocalStorageAdapter implements StorageAdapter {
     `);
 
     stmt.run(new Date().toISOString(), sessionId, ...stepIds);
+  }
+
+  compressSteps(
+    sessionId: string,
+    compressions: Array<{ stepId: number; compressed: string }>,
+  ): Promise<void> {
+    if (compressions.length === 0) return Promise.resolve();
+
+    const updateStmt = this._db.prepare(`
+      UPDATE steps
+      SET compressed_content = ?, updated_at = ?
+      WHERE session_id = ? AND id = ?
+    `);
+
+    const now = new Date().toISOString();
+
+    // Update each step with its compressed content
+    for (const { stepId, compressed } of compressions) {
+      updateStmt.run(compressed, now, sessionId, stepId);
+    }
+
+    return Promise.resolve();
   }
 
   getLastStep(sessionId: string): Promise<Step | null> {
@@ -1046,6 +1069,7 @@ export class LocalStorageAdapter implements StorageAdapter {
       errorMessage: row.error_message,
       status: row.status,
       discarded: Boolean(row.discarded),
+      compressedContent: row.compressed_content,
       isParallel: Boolean(row.is_parallel),
       waitStrategy: row.wait_strategy,
       parallelStatus: row.parallel_status,

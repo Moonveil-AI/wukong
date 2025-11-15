@@ -167,6 +167,13 @@ export class LocalAdapter implements CombinedAdapter {
     return await this.storageAdapter.markStepsAsDiscarded(sessionId, stepIds);
   }
 
+  async compressSteps(
+    sessionId: string,
+    compressions: Array<{ stepId: number; compressed: string }>,
+  ): Promise<void> {
+    return await this.storageAdapter.compressSteps(sessionId, compressions);
+  }
+
   async getLastStep(sessionId: string): Promise<Step | null> {
     return await this.storageAdapter.getLastStep(sessionId);
   }

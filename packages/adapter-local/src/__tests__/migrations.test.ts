@@ -42,7 +42,7 @@ describe('MigrationRunner - SQLite', () => {
     const runner = new MigrationRunner(TEST_DB_PATH);
     const available = await runner.getAvailableMigrations();
 
-    expect(available.length).toBeGreaterThanOrEqual(4);
+    expect(available.length).toBeGreaterThanOrEqual(5);
     expect(available[0].version).toBe(1);
     expect(available[0].description).toContain('initial schema');
   });
@@ -52,11 +52,11 @@ describe('MigrationRunner - SQLite', () => {
 
     // Initially all migrations should be pending
     const pendingBefore = await runner.getPendingMigrations();
-    expect(pendingBefore.length).toBeGreaterThanOrEqual(4);
+    expect(pendingBefore.length).toBeGreaterThanOrEqual(5);
 
     // Run migrations
     const results = await runner.migrate();
-    expect(results.length).toBeGreaterThanOrEqual(4);
+    expect(results.length).toBeGreaterThanOrEqual(5);
     expect(results.every((r) => r.success)).toBe(true);
 
     // After migration, no pending migrations
@@ -65,7 +65,7 @@ describe('MigrationRunner - SQLite', () => {
 
     // Version should be updated
     const version = await runner.getCurrentVersion();
-    expect(version).toBeGreaterThanOrEqual(4);
+    expect(version).toBeGreaterThanOrEqual(5);
   });
 
   it('should create all tables correctly', async () => {
@@ -103,7 +103,7 @@ describe('MigrationRunner - SQLite', () => {
     await runner.migrate();
 
     const applied = await runner.getAppliedMigrations();
-    expect(applied.length).toBeGreaterThanOrEqual(4);
+    expect(applied.length).toBeGreaterThanOrEqual(5);
     expect(applied[0].version).toBe(1);
     expect(applied[0].appliedAt).toBeDefined();
   });
@@ -113,7 +113,7 @@ describe('MigrationRunner - SQLite', () => {
 
     // Run migrations first time
     const results1 = await runner.migrate();
-    expect(results1.length).toBeGreaterThanOrEqual(4);
+    expect(results1.length).toBeGreaterThanOrEqual(5);
 
     // Run migrations second time (should be no-op)
     const results2 = await runner.migrate();
@@ -127,13 +127,13 @@ describe('MigrationRunner - SQLite', () => {
     const statusBefore = await runner.status();
     expect(statusBefore.currentVersion).toBe(0);
     expect(statusBefore.appliedCount).toBe(0);
-    expect(statusBefore.pendingCount).toBeGreaterThanOrEqual(4);
+    expect(statusBefore.pendingCount).toBeGreaterThanOrEqual(5);
 
     // After migration
     await runner.migrate();
     const statusAfter = await runner.status();
-    expect(statusAfter.currentVersion).toBeGreaterThanOrEqual(4);
-    expect(statusAfter.appliedCount).toBeGreaterThanOrEqual(4);
+    expect(statusAfter.currentVersion).toBeGreaterThanOrEqual(5);
+    expect(statusAfter.appliedCount).toBeGreaterThanOrEqual(5);
     expect(statusAfter.pendingCount).toBe(0);
   });
 

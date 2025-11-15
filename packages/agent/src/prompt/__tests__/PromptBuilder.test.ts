@@ -135,7 +135,7 @@ describe('PromptBuilder', () => {
       expect(prompt).toContain('# Overview');
       expect(prompt).toContain('## Role');
       expect(prompt).toContain('## Available Actions');
-      expect(prompt).toContain('# Discarding Steps');
+      expect(prompt).toContain('# Step Management (Token Optimization)');
       expect(prompt).toContain('# Main Procedure');
       expect(prompt).toContain('IMPORTANT: AutoAgent Pattern');
       expect(prompt).toContain('# Output Format');
@@ -444,9 +444,9 @@ describe('PromptBuilder', () => {
 
       const prompt = builder.build(context);
 
-      expect(prompt).toContain('# Discarding Steps');
-      expect(prompt).toContain('## Always Keep');
-      expect(prompt).toContain('## Safe to Discard');
+      expect(prompt).toContain('# Step Management (Token Optimization)');
+      expect(prompt).toContain('## Always Keep in Full');
+      expect(prompt).toContain('## 1. Discard (Complete Removal)');
       expect(prompt).toContain('"discardable_steps": [2, 5, 8]');
     });
 

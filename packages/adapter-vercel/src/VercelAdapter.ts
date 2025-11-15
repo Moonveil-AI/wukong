@@ -115,6 +115,13 @@ export class VercelAdapter implements CombinedAdapter {
     return await this.storageAdapter.markStepsAsDiscarded(sessionId, stepIds);
   }
 
+  async compressSteps(
+    sessionId: string,
+    compressions: Array<{ stepId: number; compressed: string }>,
+  ) {
+    return await this.storageAdapter.compressSteps(sessionId, compressions);
+  }
+
   async getLastStep(sessionId: string) {
     return await this.storageAdapter.getLastStep(sessionId);
   }

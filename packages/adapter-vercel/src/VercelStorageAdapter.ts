@@ -336,6 +336,24 @@ export class VercelStorageAdapter implements StorageAdapter {
     await sql.query(query, [...stepIds, new Date().toISOString(), sessionId]);
   }
 
+  async compressSteps(
+    sessionId: string,
+    compressions: Array<{ stepId: number; compressed: string }>,
+  ): Promise<void> {
+    if (compressions.length === 0) return;
+
+    const now = new Date().toISOString();
+
+    // Update each step with its compressed content
+    for (const { stepId, compressed } of compressions) {
+      await sql`
+        UPDATE steps
+        SET compressed_content = ${compressed}, updated_at = ${now}
+        WHERE session_id = ${sessionId} AND id = ${stepId}
+      `;
+    }
+  }
+
   async getLastStep(sessionId: string): Promise<Step | null> {
     const result = await sql`
       SELECT * FROM steps 
@@ -820,6 +838,7 @@ export class VercelStorageAdapter implements StorageAdapter {
       errorMessage: row.error_message,
       status: row.status,
       discarded: row.discarded,
+      compressedContent: row.compressed_content,
       isParallel: row.is_parallel,
       waitStrategy: row.wait_strategy,
       parallelStatus: row.parallel_status,
