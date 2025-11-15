@@ -158,42 +158,7 @@ Implemented the complete tools system and knowledge base infrastructure includin
 
 ---
 
-### Task 4.3: Context Compression
-
-**Purpose:** Compress conversation history for sub-agents and token optimization.
-
-**Referenced Documentation:**
-- `docs/design/14-implementation-patterns.md` - Context compression
-
-**Implementation:**
-1. Create `packages/agent/src/compression/ContextCompressor.ts`:
-   - Use LLM to summarize history
-   - Extract key facts and decisions
-   - Maintain critical information
-   - Target specific token count
-
-**Tests:**
-- Compression reduces token count significantly
-- Key information is preserved
-- Summary is coherent
-- Different compression ratios work
-
-**Verify Steps:**
-```typescript
-const compressor = new ContextCompressor(llm)
-
-const compressed = await compressor.compress(history, {
-  maxTokens: 500
-})
-
-expect(compressed.length).toBeLessThan(originalLength)
-// Verify key information is preserved
-expect(compressed).toContain('key decision')
-```
-
----
-
-### Task 4.4: Step Discarding
+### Task 4.3: Step Discarding
 
 **Purpose:** Allow LLM to mark unnecessary steps for token optimization.
 
@@ -237,7 +202,7 @@ expect(nextPrompt).not.toContain('discarded step content')
 
 ---
 
-### Task 4.5: MCP Code Execution Mode
+### Task 4.4: MCP Code Execution Mode
 
 **Purpose:** Reduce token usage by sending tool names only, not full schemas.
 
@@ -276,7 +241,7 @@ expect(mcpTokens).toBeLessThan(traditionalTokens * 0.1)
 
 ---
 
-### Task 4.6: Skills System (Optional)
+### Task 4.5: Skills System (Optional)
 
 **Purpose:** Lazy-load relevant skills documentation to reduce token usage.
 

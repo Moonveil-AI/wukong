@@ -768,6 +768,8 @@ const embedding3 = await embeddingBatcher.add("text 3")
 
 ## Context Compression
 
+> **Note:** With Step Discarding already implemented (see [Token Optimization](./08-token-optimization.md)), we have sufficient token management for most use cases. Context compression is kept here as a reference for future optimization if needed, but is not required for the initial implementation.
+
 ### LLM-Based Compression
 
 ```typescript
