@@ -25,8 +25,8 @@ import { type TiktokenModel, encoding_for_model } from 'tiktoken';
  * OpenAI adapter configuration
  */
 export interface OpenAIAdapterConfig {
-  /** 
-   * OpenAI API key 
+  /**
+   * OpenAI API key
    * If not provided, will read from OPENAI_API_KEY environment variable
    */
   apiKey?: string;
@@ -67,11 +67,12 @@ export class OpenAIAdapter implements LLMAdapter {
 
   constructor(config: OpenAIAdapterConfig = {}) {
     // Try to get API key from config or environment variable
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
     const apiKey = config.apiKey || process.env['OPENAI_API_KEY'];
-    
+
     if (!apiKey) {
       throw new Error(
-        'OpenAI API key is required. Provide it via config.apiKey or OPENAI_API_KEY environment variable.'
+        'OpenAI API key is required. Provide it via config.apiKey or OPENAI_API_KEY environment variable.',
       );
     }
 

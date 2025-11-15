@@ -47,7 +47,7 @@ const calculatorTool = {
     },
     required: ['operation', 'a', 'b'],
   },
-  handler: async (params: any) => {
+  handler: (params: any) => {
     const { operation, a, b } = params;
 
     let result: number;
@@ -90,6 +90,7 @@ async function main() {
   console.log('🚀 Starting Wukong Agent Example\n');
 
   // 1. Initialize storage adapter (Local SQLite)
+  // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
   const dbPath = process.env['DATABASE_PATH'] || './data/wukong.db';
   console.log(`📦 Initializing local storage at: ${dbPath}`);
 
@@ -122,7 +123,7 @@ async function main() {
       }),
     );
     console.log('  - Anthropic Claude Sonnet 4 (primary) ✅');
-  } catch (error) {
+  } catch (_error) {
     console.log('  - Anthropic Claude (skipped - no API key)');
   }
 
@@ -130,7 +131,7 @@ async function main() {
   try {
     llmAdapters.push(new OpenAIAdapter());
     console.log('  - OpenAI GPT-5 Mini (fallback) ✅');
-  } catch (error) {
+  } catch (_error) {
     console.log('  - OpenAI (skipped - no API key)');
   }
 

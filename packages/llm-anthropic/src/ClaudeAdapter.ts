@@ -24,8 +24,8 @@ import type {
  * Claude adapter configuration
  */
 export interface ClaudeAdapterConfig {
-  /** 
-   * Anthropic API key 
+  /**
+   * Anthropic API key
    * If not provided, will read from ANTHROPIC_API_KEY environment variable
    */
   apiKey?: string;
@@ -62,11 +62,12 @@ export class ClaudeAdapter implements LLMAdapter {
 
   constructor(config: ClaudeAdapterConfig = {}) {
     // Try to get API key from config or environment variable
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
     const apiKey = config.apiKey || process.env['ANTHROPIC_API_KEY'];
-    
+
     if (!apiKey) {
       throw new Error(
-        'Anthropic API key is required. Provide it via config.apiKey or ANTHROPIC_API_KEY environment variable.'
+        'Anthropic API key is required. Provide it via config.apiKey or ANTHROPIC_API_KEY environment variable.',
       );
     }
 
@@ -89,11 +90,24 @@ export class ClaudeAdapter implements LLMAdapter {
   }
 
   /**
-   * Call the LLM with a simple prompt
+   * Call the LLM with a simple prompt (uses streaming internally)
    */
-  call(prompt: string, options?: LLMCallOptions): Promise<LLMCallResponse> {
-    const messages: LLMMessage[] = [{ role: 'user', content: prompt }];
-    return this.callWithMessages(messages, options);
+  async call(prompt: string, options?: LLMCallOptions): Promise<LLMCallResponse> {
+    // Use streaming internally but don't expose the chunks
+    return this.callWithStreaming(prompt, {
+      ...(options || {}),
+      streaming: {
+        onChunk: () => {
+          /* No-op */
+        },
+        onComplete: () => {
+          /* No-op */
+        },
+        onError: () => {
+          /* No-op */
+        },
+      },
+    } as LLMCallOptions & { streaming: LLMStreamingOptions });
   }
 
   /**

@@ -19,7 +19,8 @@ class LLMCallerAdapter implements LLMCaller {
   constructor(
     private llm:
       | { call(prompt: string): Promise<string> }
-      | { call(prompt: string): Promise<LLMCallResponse> },
+      | { call(prompt: string): Promise<LLMCallResponse> }
+      | MultiModelCaller,
   ) {}
 
   async call(prompt: string): Promise<string> {
@@ -29,6 +30,43 @@ class LLMCallerAdapter implements LLMCaller {
     }
     // It's an LLMCallResponse
     return result.text;
+  }
+
+  /**
+   * Call LLM with streaming support
+   */
+  async callWithStreaming(
+    prompt: string,
+    options: {
+      onChunk?: (chunk: string) => void;
+      onComplete?: (fullText: string) => void;
+      onError?: (error: Error) => void;
+    },
+  ): Promise<LLMCallResponse> {
+    // Check if the underlying LLM supports streaming
+    if (this.llm instanceof MultiModelCaller) {
+      return await this.llm.callWithStreaming(prompt, {
+        streaming: options,
+      } as any);
+    }
+
+    // Check if it's an LLMAdapter with callWithStreaming
+    if ('callWithStreaming' in this.llm && typeof this.llm.callWithStreaming === 'function') {
+      return await this.llm.callWithStreaming(prompt, {
+        streaming: options,
+      } as any);
+    }
+
+    // Fallback to regular call without streaming
+    const result = await this.llm.call(prompt);
+    const response = typeof result === 'string' ? { text: result } : result;
+
+    // Call onComplete callback with full text
+    if (options.onComplete) {
+      options.onComplete(response.text);
+    }
+
+    return response as LLMCallResponse;
   }
 }
 

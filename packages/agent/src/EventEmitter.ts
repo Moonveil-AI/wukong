@@ -110,11 +110,32 @@ export class WukongEventEmitter {
   }
 
   /**
-   * Emit an event to all listeners
+   * Emit an event to all listeners (type-safe version)
    * @param eventData - Event object containing event type and data
    */
-  emit<T extends WukongEvent>(eventData: T): void {
-    this.emitter.emit(eventData.event, eventData);
+  emit<T extends WukongEvent>(eventData: T): void;
+
+  /**
+   * Emit an event to all listeners (EventEmitter3-compatible version)
+   * @param event - Event name
+   * @param eventData - Event data
+   */
+  emit<T extends WukongEvent['event']>(
+    event: T,
+    eventData: Extract<WukongEvent, { event: T }>,
+  ): void;
+
+  /**
+   * Implementation
+   */
+  emit<T extends WukongEvent | WukongEvent['event']>(eventOrData: T, eventData?: any): void {
+    if (typeof eventOrData === 'string') {
+      // Called with (event, eventData)
+      this.emitter.emit(eventOrData, eventData);
+    } else {
+      // Called with (eventData)
+      this.emitter.emit((eventOrData as WukongEvent).event, eventOrData);
+    }
   }
 
   /**

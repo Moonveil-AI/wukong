@@ -27,6 +27,14 @@ import type { Session, Step, TaskOptions, TaskResult, Tool } from '../types/inde
  */
 export interface LLMCaller {
   call(prompt: string): Promise<string>;
+  callWithStreaming?(
+    prompt: string,
+    options: {
+      onChunk?: (chunk: string) => void;
+      onComplete?: (fullText: string) => void;
+      onError?: (error: Error) => void;
+    },
+  ): Promise<any>;
 }
 
 /**
@@ -360,8 +368,45 @@ export class AutoAgent {
       promptTokens: 0, // TODO: Count tokens
     });
 
-    // Call LLM
-    const llmResponse = await this.llmCaller.call(prompt);
+    // Call LLM with streaming
+    let llmResponseText = '';
+    let llmResponse: any;
+
+    // Try to use streaming if available
+    if (this.llmCaller.callWithStreaming) {
+      llmResponse = await this.llmCaller.callWithStreaming(prompt, {
+        onChunk: (chunk: string) => {
+          // Emit streaming event
+          this.eventEmitter.emit('llm:streaming', {
+            event: 'llm:streaming',
+            sessionId: session.id,
+            stepId: stepNumber,
+            chunk: {
+              text: chunk,
+              index: 0,
+              isFinal: false,
+            },
+          });
+        },
+        onComplete: (fullText: string) => {
+          llmResponseText = fullText;
+        },
+        onError: (error: Error) => {
+          this.eventEmitter.emit('llm:error', {
+            event: 'llm:error',
+            sessionId: session.id,
+            stepId: stepNumber,
+            error: error.message,
+            model: 'unknown',
+          });
+        },
+      });
+      llmResponseText = llmResponse.text || llmResponseText;
+    } else {
+      // Fallback to regular call
+      llmResponseText = await this.llmCaller.call(prompt);
+      llmResponse = { text: llmResponseText };
+    }
 
     // Emit LLM complete event
     this.eventEmitter.emit('llm:complete', {
@@ -369,19 +414,19 @@ export class AutoAgent {
       sessionId: session.id,
       stepId: stepNumber,
       response: {
-        text: llmResponse,
+        text: llmResponseText,
         tokensUsed: {
-          prompt: 0, // TODO: Track tokens
-          completion: 0,
-          total: 0,
+          prompt: llmResponse.tokensUsed?.prompt || 0,
+          completion: llmResponse.tokensUsed?.completion || 0,
+          total: llmResponse.tokensUsed?.total || 0,
         },
-        model: 'unknown',
-        responseTimeMs: 0,
+        model: llmResponse.model || 'unknown',
+        responseTimeMs: llmResponse.responseTimeMs || 0,
       },
     });
 
     // Parse response
-    const parsedAction = this.responseParser.parse(llmResponse);
+    const parsedAction = this.responseParser.parse(llmResponseText);
 
     // Handle discardable steps if specified
     if (parsedAction.discardableSteps && parsedAction.discardableSteps.length > 0) {
@@ -399,7 +444,7 @@ export class AutoAgent {
       session,
       parsedAction,
       prompt,
-      llmResponse,
+      llmResponseText,
     );
 
     return executionResult;
