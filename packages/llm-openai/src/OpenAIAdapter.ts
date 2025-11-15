@@ -25,8 +25,11 @@ import { type TiktokenModel, encoding_for_model } from 'tiktoken';
  * OpenAI adapter configuration
  */
 export interface OpenAIAdapterConfig {
-  /** OpenAI API key */
-  apiKey: string;
+  /** 
+   * OpenAI API key 
+   * If not provided, will read from OPENAI_API_KEY environment variable
+   */
+  apiKey?: string;
 
   /** Default model to use */
   model?: string;
@@ -62,13 +65,18 @@ export class OpenAIAdapter implements LLMAdapter {
     baseURL?: string;
   };
 
-  constructor(config: OpenAIAdapterConfig) {
-    if (!config.apiKey) {
-      throw new Error('OpenAI API key is required');
+  constructor(config: OpenAIAdapterConfig = {}) {
+    // Try to get API key from config or environment variable
+    const apiKey = config.apiKey || process.env['OPENAI_API_KEY'];
+    
+    if (!apiKey) {
+      throw new Error(
+        'OpenAI API key is required. Provide it via config.apiKey or OPENAI_API_KEY environment variable.'
+      );
     }
 
     this.config = {
-      apiKey: config.apiKey,
+      apiKey,
       model: config.model || 'gpt-5-mini-2025-08-07', // Default to GPT-5 Mini (uses new Responses API)
       temperature: config.temperature ?? 0.7,
       maxTokens: config.maxTokens ?? 4096,

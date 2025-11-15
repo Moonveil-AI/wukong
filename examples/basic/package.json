@@ -5,7 +5,7 @@
   "description": "Basic example of using Wukong Agent",
   "type": "module",
   "scripts": {
-    "start": "node --loader tsx index.ts",
+    "start": "tsx index.ts",
     "dev": "tsx index.ts"
   },
   "dependencies": {

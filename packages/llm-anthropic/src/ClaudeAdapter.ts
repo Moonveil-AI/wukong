@@ -24,8 +24,11 @@ import type {
  * Claude adapter configuration
  */
 export interface ClaudeAdapterConfig {
-  /** Anthropic API key */
-  apiKey: string;
+  /** 
+   * Anthropic API key 
+   * If not provided, will read from ANTHROPIC_API_KEY environment variable
+   */
+  apiKey?: string;
 
   /** Default model to use */
   model?: string;
@@ -57,13 +60,18 @@ export class ClaudeAdapter implements LLMAdapter {
     baseURL?: string;
   };
 
-  constructor(config: ClaudeAdapterConfig) {
-    if (!config.apiKey) {
-      throw new Error('Anthropic API key is required');
+  constructor(config: ClaudeAdapterConfig = {}) {
+    // Try to get API key from config or environment variable
+    const apiKey = config.apiKey || process.env['ANTHROPIC_API_KEY'];
+    
+    if (!apiKey) {
+      throw new Error(
+        'Anthropic API key is required. Provide it via config.apiKey or ANTHROPIC_API_KEY environment variable.'
+      );
     }
 
     this.config = {
-      apiKey: config.apiKey,
+      apiKey,
       model: config.model || 'claude-sonnet-4.5-20241022',
       temperature: config.temperature ?? 0.7,
       maxTokens: config.maxTokens ?? 8192,

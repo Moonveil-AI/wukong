@@ -3,9 +3,10 @@
  *
  * This example demonstrates:
  * 1. Setting up a WukongAgent with local storage
- * 2. Creating a simple custom tool
- * 3. Executing a task with the agent
- * 4. Listening to events for visibility
+ * 2. Automatic LLM adapter initialization from environment variables
+ * 3. Creating a simple custom tool
+ * 4. Executing a task with the agent
+ * 5. Listening to events for visibility
  */
 
 import 'dotenv/config';
@@ -46,7 +47,7 @@ const calculatorTool = {
     },
     required: ['operation', 'a', 'b'],
   },
-  handler: (params: any) => {
+  handler: async (params: any) => {
     const { operation, a, b } = params;
 
     let result: number;
@@ -89,7 +90,7 @@ async function main() {
   console.log('🚀 Starting Wukong Agent Example\n');
 
   // 1. Initialize storage adapter (Local SQLite)
-  const dbPath = process.env.DATABASE_PATH || './data/wukong.db';
+  const dbPath = process.env['DATABASE_PATH'] || './data/wukong.db';
   console.log(`📦 Initializing local storage at: ${dbPath}`);
 
   // Run database migrations
@@ -108,33 +109,34 @@ async function main() {
   const adapter = new LocalAdapter({ dbPath });
   console.log('✅ Storage adapter initialized\n');
 
-  // 2. Initialize LLM adapters (with fallback)
+  // 2. Initialize LLM adapters (with automatic fallback)
+  // API keys are automatically read from environment variables
   console.log('🧠 Setting up LLM adapters...');
   const llmAdapters = [];
 
-  if (process.env.OPENAI_API_KEY) {
-    llmAdapters.push(
-      new OpenAIAdapter({
-        apiKey: process.env.OPENAI_API_KEY,
-        // No model specified, will use OpenAIAdapter default (gpt-5-mini-2025-08-07)
-      }),
-    );
-    console.log('  - OpenAI (using gpt-5-mini) ✅');
-  }
-
-  if (process.env.ANTHROPIC_API_KEY) {
+  // Try to initialize Claude Sonnet 4 (primary model)
+  try {
     llmAdapters.push(
       new ClaudeAdapter({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-20250514',
       }),
     );
-    console.log('  - Anthropic Claude ✅');
+    console.log('  - Anthropic Claude Sonnet 4 (primary) ✅');
+  } catch (error) {
+    console.log('  - Anthropic Claude (skipped - no API key)');
+  }
+
+  // Try to initialize OpenAI (fallback model)
+  try {
+    llmAdapters.push(new OpenAIAdapter());
+    console.log('  - OpenAI GPT-5 Mini (fallback) ✅');
+  } catch (error) {
+    console.log('  - OpenAI (skipped - no API key)');
   }
 
   if (llmAdapters.length === 0) {
     console.error(
-      '❌ No LLM API key found! Please set OPENAI_API_KEY or ANTHROPIC_API_KEY in .env',
+      '❌ No LLM adapters available! Please set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env',
     );
     process.exit(1);
   }
