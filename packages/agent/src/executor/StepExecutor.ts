@@ -5,6 +5,7 @@
  */
 
 import type { EventEmitter } from 'eventemitter3';
+import type { AgentFork } from '../fork/AgentFork.js';
 import type { StorageAdapter } from '../types/adapters.js';
 import type {
   AgentAction,
@@ -48,6 +49,9 @@ export interface StepExecutorOptions {
 
   /** Files adapter for file operations */
   filesAdapter?: any;
+
+  /** Agent fork manager for sub-agent execution */
+  agentFork?: AgentFork;
 }
 
 /**
@@ -85,6 +89,7 @@ export class StepExecutor {
   private eventEmitter?: EventEmitter;
   private apiKeys: Record<string, string>;
   private filesAdapter?: any;
+  private agentFork?: AgentFork;
 
   constructor(options: StepExecutorOptions) {
     this.storageAdapter = options.storageAdapter;
@@ -92,6 +97,7 @@ export class StepExecutor {
     this.eventEmitter = options.eventEmitter;
     this.apiKeys = options.apiKeys || {};
     this.filesAdapter = options.filesAdapter;
+    this.agentFork = options.agentFork;
   }
 
   /**
@@ -465,6 +471,42 @@ export class StepExecutor {
       throw new Error('Session not found');
     }
 
+    // Use AgentFork if available, otherwise use legacy implementation
+    if (this.agentFork) {
+      try {
+        const taskId = await this.agentFork.forkAutoAgent({
+          goal: subGoal,
+          contextSummary,
+          maxDepth,
+          maxSteps,
+          timeoutSeconds: timeout,
+          parentSessionId: currentSession.id,
+          parentStepId: step.id,
+          currentDepth: currentSession.depth,
+          userId: currentSession.userId,
+          organizationId: currentSession.organizationId,
+        });
+
+        return {
+          success: true,
+          step,
+          result: {
+            taskId,
+            subGoal,
+            status: 'pending',
+            message: 'Sub-agent forked and will execute asynchronously',
+          },
+          shouldContinue: true,
+          taskIds: [taskId],
+        };
+      } catch (error) {
+        throw new Error(
+          `Failed to fork sub-agent: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      }
+    }
+
+    // Legacy implementation (for backward compatibility)
     // Check depth limit
     const newDepth = currentSession.depth + 1;
     if (maxDepth && newDepth > maxDepth) {

@@ -16,6 +16,7 @@
 import type { EventEmitter } from 'eventemitter3';
 import { StopController } from '../controller/StopController.js';
 import { StepExecutor } from '../executor/StepExecutor.js';
+import { AgentFork } from '../fork/AgentFork.js';
 import { PromptBuilder, type PromptContext } from '../prompt/PromptBuilder.js';
 import { ResponseParser } from '../prompt/ResponseParser.js';
 import { SessionManager } from '../session/SessionManager.js';
@@ -105,6 +106,7 @@ export class AutoAgent {
   private promptBuilder: PromptBuilder;
   private responseParser: ResponseParser;
   private stopController: StopController;
+  private agentFork: AgentFork;
 
   constructor(options: AutoAgentOptions) {
     this.storageAdapter = options.storageAdapter;
@@ -121,11 +123,24 @@ export class AutoAgent {
 
     // Initialize components
     this.sessionManager = new SessionManager(this.storageAdapter);
+    this.agentFork = new AgentFork(
+      this.storageAdapter,
+      this.llmCaller,
+      this.eventEmitter,
+      this.tools,
+      this.apiKeys,
+      undefined, // executionAdapter - can be injected later
+      this.filesAdapter,
+      this.knowledgeBase,
+      this.enableMCP,
+      this.companyName,
+    );
     this.stepExecutor = new StepExecutor({
       storageAdapter: this.storageAdapter,
       eventEmitter: this.eventEmitter,
       apiKeys: this.apiKeys,
       filesAdapter: this.filesAdapter,
+      agentFork: this.agentFork,
       toolRegistry: {
         getTool: (name: string) => this.tools.find((t) => t.metadata.name === name) || null,
         listTools: () => this.tools,

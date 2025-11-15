@@ -103,6 +103,26 @@ export type {
   TodoManagerEvents,
 } from './todo/TodoManager';
 
+// Export agent fork
+export { AgentFork } from './fork/AgentFork';
+export type {
+  ForkAgentOptions,
+  CompressionOptions,
+} from './fork/AgentFork';
+
+// Export execution adapters
+export type {
+  ExecutionAdapter,
+  SubAgentExecutionOptions,
+  SubAgentExecutionResult,
+} from './fork/ExecutionAdapter';
+export { PromiseAdapter } from './fork/PromiseAdapter';
+export { InngestAdapter, createInngestAdapter } from './fork/InngestAdapter';
+export type {
+  InngestClient,
+  InngestAdapterConfig,
+} from './fork/InngestAdapter';
+
 // Version
 export const version = '0.1.0';
 
