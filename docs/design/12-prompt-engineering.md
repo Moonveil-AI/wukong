@@ -781,7 +781,7 @@ Total Prompt Budget: ~12,000 tokens (for GPT-5.1-instant with 200K context)
 
 Breakdown:
 - System Instructions: ~2,000 tokens
-- Tool Definitions (MCP): ~1,000 tokens (names + params only)
+- Tool Definitions (Tool Executor): ~1,000 tokens (names + params only)
 - Knowledge Snippets: ~1,500 tokens (top 3-5 results)
 - History (non-discarded): ~2,500 tokens (last 10-15 steps)
 - Current Step: ~500 tokens

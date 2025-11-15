@@ -70,8 +70,8 @@ export interface AutoAgentOptions {
   /** Knowledge base (optional) */
   knowledgeBase?: KnowledgeBase;
 
-  /** Enable MCP mode */
-  enableMCP?: boolean;
+  /** Enable Tool Executor mode */
+  enableToolExecutor?: boolean;
 
   /** Company name */
   companyName?: string;
@@ -96,7 +96,7 @@ export class AutoAgent {
   private apiKeys: Record<string, string>;
   private filesAdapter?: any;
   private knowledgeBase?: KnowledgeBase;
-  private enableMCP: boolean;
+  private enableToolExecutor: boolean;
   private companyName?: string;
   private maxSteps: number;
   private timeoutSeconds: number;
@@ -116,7 +116,7 @@ export class AutoAgent {
     this.apiKeys = options.apiKeys || {};
     this.filesAdapter = options.filesAdapter;
     this.knowledgeBase = options.knowledgeBase;
-    this.enableMCP = options.enableMCP ?? true;
+    this.enableToolExecutor = options.enableToolExecutor ?? true;
     this.companyName = options.companyName;
     this.maxSteps = options.maxSteps ?? 100;
     this.timeoutSeconds = options.timeoutSeconds ?? 3600;
@@ -132,7 +132,7 @@ export class AutoAgent {
       undefined, // executionAdapter - can be injected later
       this.filesAdapter,
       this.knowledgeBase,
-      this.enableMCP,
+      this.enableToolExecutor,
       this.companyName,
     );
     this.stepExecutor = new StepExecutor({
@@ -147,7 +147,7 @@ export class AutoAgent {
       },
     });
     this.promptBuilder = new PromptBuilder({
-      enableMCP: this.enableMCP,
+      enableToolExecutor: this.enableToolExecutor,
       companyName: this.companyName,
     });
     this.responseParser = new ResponseParser();
@@ -367,7 +367,7 @@ export class AutoAgent {
       companyName: this.companyName,
       tools: this.tools,
       history,
-      enableMCP: this.enableMCP,
+      enableToolExecutor: this.enableToolExecutor,
       autoRun: true,
       knowledge: stepNumber === 0 && knowledgeResults.length > 0 ? knowledgeResults : undefined,
     };

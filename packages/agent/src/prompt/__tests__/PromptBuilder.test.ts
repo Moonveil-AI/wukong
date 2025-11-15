@@ -107,7 +107,7 @@ describe('PromptBuilder', () => {
 
     it('should create a builder with custom options', () => {
       const builder = new PromptBuilder({
-        enableMCP: false,
+        enableToolExecutor: false,
         companyName: 'Test Corp',
         maxHistoryTokens: 3000,
         maxKnowledgeResults: 3,
@@ -118,7 +118,7 @@ describe('PromptBuilder', () => {
 
   describe('build', () => {
     it('should build a complete prompt for AutoAgent', () => {
-      const builder = new PromptBuilder({ enableMCP: true });
+      const builder = new PromptBuilder({ enableToolExecutor: true });
 
       const context: PromptContext = {
         goal: 'Generate a beautiful sunset image',
@@ -146,7 +146,7 @@ describe('PromptBuilder', () => {
     });
 
     it('should build a complete prompt for InteractiveAgent', () => {
-      const builder = new PromptBuilder({ enableMCP: true });
+      const builder = new PromptBuilder({ enableToolExecutor: true });
 
       const context: PromptContext = {
         goal: 'Create a data report',
@@ -165,7 +165,7 @@ describe('PromptBuilder', () => {
     });
 
     it('should include tools in MCP mode', () => {
-      const builder = new PromptBuilder({ enableMCP: true });
+      const builder = new PromptBuilder({ enableToolExecutor: true });
 
       const context: PromptContext = {
         goal: 'Test goal',
@@ -177,8 +177,8 @@ describe('PromptBuilder', () => {
 
       const prompt = builder.build(context);
 
-      // MCP mode should only include names and descriptions
-      expect(prompt).toContain('Available Tools (MCP Mode)');
+      // Tool Executor mode should only include names and descriptions
+      expect(prompt).toContain('Available Tools (Tool Executor Mode)');
       expect(prompt).toContain('generate_image: Generate images from text prompts');
       expect(prompt).toContain('analyze_data: Analyze data from various sources');
 
@@ -193,7 +193,7 @@ describe('PromptBuilder', () => {
         goal: 'Test goal',
         agentType: 'AutoAgent',
         autoRun: true,
-        enableMCP: false,
+        enableToolExecutor: false,
         tools: mockTools,
         history: [],
       };
@@ -505,10 +505,10 @@ describe('PromptBuilder', () => {
     });
   });
 
-  describe('MCP mode vs Traditional mode', () => {
-    it('should produce significantly shorter prompts in MCP mode', () => {
-      const mcpBuilder = new PromptBuilder({ enableMCP: true });
-      const traditionalBuilder = new PromptBuilder({ enableMCP: false });
+  describe('Tool Executor mode vs Traditional mode', () => {
+    it('should produce significantly shorter prompts in Tool Executor mode', () => {
+      const executorBuilder = new PromptBuilder({ enableToolExecutor: true });
+      const traditionalBuilder = new PromptBuilder({ enableToolExecutor: false });
 
       const context: PromptContext = {
         goal: 'Test goal',
@@ -518,14 +518,14 @@ describe('PromptBuilder', () => {
         history: [],
       };
 
-      const mcpPrompt = mcpBuilder.build({ ...context, enableMCP: true });
-      const traditionalPrompt = traditionalBuilder.build({ ...context, enableMCP: false });
+      const executorPrompt = executorBuilder.build({ ...context, enableToolExecutor: true });
+      const traditionalPrompt = traditionalBuilder.build({ ...context, enableToolExecutor: false });
 
-      const mcpTokens = mcpBuilder.estimateTokens(mcpPrompt);
+      const executorTokens = executorBuilder.estimateTokens(executorPrompt);
       const traditionalTokens = traditionalBuilder.estimateTokens(traditionalPrompt);
 
-      // MCP mode should use significantly fewer tokens
-      expect(mcpTokens).toBeLessThan(traditionalTokens);
+      // Tool Executor mode should use significantly fewer tokens
+      expect(executorTokens).toBeLessThan(traditionalTokens);
     });
   });
 

@@ -110,7 +110,7 @@ export const handler: ToolHandler = async (params, context) => {
       format: 'png',
       prompt
     },
-    // Optional: result summary (for MCP mode)
+    // Optional: result summary (for Tool Executor mode)
     summary: `Generated image: ${prompt.substring(0, 30)}...`
   }
 }
@@ -131,7 +131,7 @@ export const onError = async (error: Error, params: any) => {
 
 ---
 
-## MCP Code Execution Pattern
+## Tool Executor Mode Pattern
 
 ### Traditional Mode Problem
 
@@ -147,10 +147,10 @@ Each tool ~2000 tokens
 50 tools = ~100,000 tokens
 ```
 
-### MCP Mode Advantage
+### Tool Executor Mode Advantage
 
 ```typescript
-// MCP mode: schema cached locally
+// Tool Executor mode: schema cached locally
 Prompt only includes:
 - Tool name list
 - Brief description
@@ -161,17 +161,17 @@ Each tool ~50 tokens
 Savings: 97.5%
 ```
 
-### Enable MCP Mode
+### Enable Tool Executor Mode
 
 ```typescript
 const agent = new WukongAgent({
   tokenConfig: {
-    enableMCP: true  // Enable MCP Code Execution
+    enableToolExecutor: true  // Enable Tool Executor mode
   }
 })
 ```
 
-### MCP Execution Flow
+### Tool Executor Execution Flow
 
 ```typescript
 // 1. LLM returns tool call (no schema)

@@ -41,8 +41,8 @@ export interface SubAgentExecutionOptions {
   /** Knowledge base */
   knowledgeBase?: KnowledgeBase;
 
-  /** Enable MCP */
-  enableMCP?: boolean;
+  /** Enable Tool Executor mode */
+  enableToolExecutor?: boolean;
 
   /** Company name */
   companyName?: string;

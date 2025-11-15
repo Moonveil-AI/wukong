@@ -9,9 +9,9 @@ import * as path from 'node:path';
 import type { Tool, ToolsConfig } from '../types';
 
 /**
- * MCP format tool listing (name + params only)
+ * Tool Executor format tool listing (name + params only)
  */
-export interface MCPToolDefinition {
+export interface ToolExecutorDefinition {
   name: string;
   description: string;
   parameters: {
@@ -225,12 +225,12 @@ export class ToolRegistry {
   }
 
   /**
-   * List tools in MCP format (names + params only, no full implementation details)
+   * List tools in Tool Executor format (names + params only, no full implementation details)
    *
    * This is used in prompts to reduce token usage while still providing
    * the LLM with enough information to select appropriate tools.
    */
-  listToolsForPrompt(): MCPToolDefinition[] {
+  listToolsForPrompt(): ToolExecutorDefinition[] {
     return this.getAllTools().map((tool) => ({
       name: tool.metadata.name,
       description: tool.metadata.description,

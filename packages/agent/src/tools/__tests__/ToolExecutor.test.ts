@@ -14,7 +14,7 @@ describe('ToolExecutor', () => {
 
   beforeEach(() => {
     registry = new ToolRegistry({ path: './tools', autoDiscover: false });
-    executor = new ToolExecutor({ registry, enableMCP: true });
+    executor = new ToolExecutor({ registry, enableToolExecutor: true });
     testContext = {
       sessionId: 'test-session',
       stepId: 1,
@@ -379,8 +379,8 @@ describe('ToolExecutor', () => {
       expect(result.summary).toContain('...');
     });
 
-    it('should not generate summary when MCP is disabled', async () => {
-      const nonMCPExecutor = new ToolExecutor({ registry, enableMCP: false });
+    it('should not generate summary when Tool Executor mode is disabled', async () => {
+      const nonExecutorExecutor = new ToolExecutor({ registry, enableToolExecutor: false });
 
       const tool = createTestTool('test_tool', async () => ({
         success: true,
@@ -389,7 +389,7 @@ describe('ToolExecutor', () => {
 
       registry.register(tool);
 
-      const result = await nonMCPExecutor.execute({
+      const result = await nonExecutorExecutor.execute({
         tool: 'test_tool',
         params: { input: 'test' },
         context: testContext,
@@ -535,9 +535,9 @@ describe('ToolExecutor', () => {
       const stats = executor.getStats();
 
       expect(stats).toHaveProperty('cachedValidators');
-      expect(stats).toHaveProperty('mcpEnabled');
+      expect(stats).toHaveProperty('toolExecutorEnabled');
       expect(stats).toHaveProperty('maxSummaryLength');
-      expect(stats.mcpEnabled).toBe(true);
+      expect(stats.toolExecutorEnabled).toBe(true);
       expect(stats.maxSummaryLength).toBe(500);
     });
   });

@@ -4,7 +4,7 @@
 
 ## Table of Contents
 - [Three Major Savings Strategies](#three-major-savings-strategies)
-- [MCP Code Execution](#mcp-code-execution)
+- [Tool Executor Mode](#tool-executor-mode)
 - [Skills Lazy Loading](#skills-lazy-loading)
 - [Smart Step Discarding](#smart-step-discarding)
 - [Token Usage Monitoring](#token-usage-monitoring)
@@ -17,13 +17,13 @@ Wukong dramatically saves token usage through three mechanisms:
 
 | Strategy | Savings Ratio | Principle |
 |----------|---------------|-----------|
-| **MCP Code Execution** | 98% | Schema doesn't enter Prompt, local validation |
+| **Tool Executor Mode** | 98% | Schema doesn't enter Prompt, local validation |
 | **Skills Lazy Loading** | 98% | Only load relevant Skills, not all |
 | **Smart Step Discarding** | 60-80% | LLM actively marks useless steps |
 
 ---
 
-## MCP Code Execution
+## Tool Executor Mode
 
 ### Traditional Mode Problem
 
@@ -42,10 +42,10 @@ Total: ~155,600 tokens
 Cost: $0.47 per call (GPT-4 pricing)
 ```
 
-### MCP Mode Advantage
+### Tool Executor Mode Advantage
 
 ```typescript
-// MCP Code Execution mode
+// Tool Executor mode
 Prompt includes:
 ├─ System prompt (500 tokens)
 ├─ User goal (100 tokens)
@@ -75,7 +75,7 @@ Savings: 94.8%
 }
 
 // 2. Local executor validates parameters
-class MCPExecutor {
+class ToolExecutor {
   async execute(toolCall: ToolCall) {
     // 2.1 Load complete schema from local
     const tool = await this.registry.getTool(toolCall.tool)
@@ -130,13 +130,13 @@ interface ToolResultSummarizer {
 }
 ```
 
-### Enable MCP Mode
+### Enable Tool Executor Mode
 
 ```typescript
 const agent = new WukongAgent({
   llmKey: process.env.OPENAI_API_KEY,
   tokenConfig: {
-    enableMCP: true  // 🔑 Enable MCP mode
+    enableToolExecutor: true  // 🔑 Enable Tool Executor mode
   }
 })
 ```
@@ -561,9 +561,9 @@ const comparison = {
 ```typescript
 const agent = new WukongAgent({
   tokenConfig: {
-    enableMCP: true,      // Enable MCP
-    enableSkills: true,   // Enable Skills lazy loading
-    autoDiscard: true     // Enable auto-discard
+    enableToolExecutor: true,  // Enable Tool Executor mode
+    enableSkills: true,         // Enable Skills lazy loading
+    autoDiscard: true           // Enable auto-discard
   }
 })
 ```
@@ -593,7 +593,7 @@ agent.on('session:completed', async (session) => {
 
 const agent = new WukongAgent({
   tokenConfig: {
-    enableMCP: true,
+    enableToolExecutor: true,
     enableSkills: true,
     autoDiscard: true
   },

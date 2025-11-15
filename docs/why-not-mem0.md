@@ -258,7 +258,7 @@ Token Savings: 96%
 This is deeply integrated with:
 - Skills metadata system
 - Lazy loading architecture
-- MCP Code Execution pattern
+- Tool Executor mode pattern
 
 **mem0 limitation:** No concept of skills or selective loading, incompatible paradigm.
 
@@ -482,7 +482,7 @@ const agent = new WukongAgent({
 
 1. Core requirements (organization permissions, document indexing, token optimization) don't match mem0's design
 2. Custom solution provides essential features that mem0 cannot replicate
-3. Architecture is deeply integrated with Skills system and MCP pattern
+3. Architecture is deeply integrated with Skills system and Tool Executor pattern
 
 **But Wukong COULD optionally integrate mem0** as a complementary layer for:
 

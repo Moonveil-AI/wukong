@@ -51,7 +51,7 @@ const agent = new WukongAgent({
     requireConfirmation: ['delete', 'publish', 'payment']
   },
   tokenConfig: {
-    enableMCP: true,
+    enableToolExecutor: true,
     enableSkills: true,
     autoDiscard: true
   }

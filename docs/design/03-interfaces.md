@@ -45,7 +45,7 @@ interface WukongAgentConfig {
   
   // Token optimization configuration
   tokenConfig?: {
-    enableMCP?: boolean             // Enable MCP Code Execution
+    enableToolExecutor?: boolean    // Enable Tool Executor mode
     enableSkills?: boolean          // Enable Skills lazy loading
     autoDiscard?: boolean           // Auto-discard useless steps
   }

@@ -105,7 +105,7 @@ const versions = await agent.getVersionHistory(sessionId)
 
 Save tokens through three major mechanisms:
 
-### 1. MCP Code Execution Pattern
+### 1. Tool Executor Mode Pattern
 
 **Problem:** In traditional mode, LLM must carry complete tool schemas each time, resulting in extremely high token consumption.
 
@@ -116,7 +116,7 @@ Save tokens through three major mechanisms:
 // LLM needs to receive: complete tool schema (thousands of tokens)
 // Returns: {"tool": "generate_image", "params": {...}}
 
-// MCP mode
+// Tool Executor mode
 // LLM only needs: tool name list (tens of tokens)
 // Returns: {"tool": "generate_image", "params": {...}}
 // Local executor validates parameters

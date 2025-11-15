@@ -16,10 +16,10 @@ export interface ToolExecutorConfig {
   /** Tool registry instance */
   registry: ToolRegistry;
 
-  /** Enable MCP mode (generate result summaries) */
-  enableMCP?: boolean;
+  /** Enable Tool Executor mode (generate result summaries) */
+  enableToolExecutor?: boolean;
 
-  /** Maximum result length for MCP summary */
+  /** Maximum result length for Tool Executor summary */
   maxSummaryLength?: number;
 
   /** Custom error handler */
@@ -57,7 +57,7 @@ export class ToolExecutor {
     this.registry = config.registry;
     this.config = {
       registry: config.registry,
-      enableMCP: config.enableMCP ?? false,
+      enableToolExecutor: config.enableToolExecutor ?? false,
       maxSummaryLength: config.maxSummaryLength ?? 500,
       onError: config.onError,
     };
@@ -114,8 +114,8 @@ export class ToolExecutor {
 
       const durationMs = Date.now() - startTime;
 
-      // Generate result summary if MCP mode is enabled
-      if (this.config.enableMCP && result.success) {
+      // Generate result summary if Tool Executor mode is enabled
+      if (this.config.enableToolExecutor && result.success) {
         result.summary = this.generateResultSummary(result.result, tool);
       }
 
@@ -424,7 +424,7 @@ export class ToolExecutor {
   getStats() {
     return {
       cachedValidators: this.validatorCache.size,
-      mcpEnabled: this.config.enableMCP,
+      toolExecutorEnabled: this.config.enableToolExecutor,
       maxSummaryLength: this.config.maxSummaryLength,
     };
   }

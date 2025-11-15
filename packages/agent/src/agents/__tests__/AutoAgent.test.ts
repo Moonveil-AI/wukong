@@ -223,7 +223,7 @@ describe('AutoAgent', () => {
         eventEmitter,
         tools,
         knowledgeBase,
-        enableMCP: false,
+        enableToolExecutor: false,
         companyName: 'Test Corp',
         maxSteps: 50,
         timeoutSeconds: 1800,

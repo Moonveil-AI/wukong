@@ -103,10 +103,11 @@ export interface WukongAgentConfig {
   defaultMode?: 'interactive' | 'auto';
 
   /**
-   * Enable MCP (Model Context Protocol) mode for reduced token usage
+   * Enable Tool Executor mode for reduced token usage
+   * In this mode, only tool names are sent to LLM, validation happens locally
    * @default true
    */
-  enableMCP?: boolean;
+  enableToolExecutor?: boolean;
 
   /**
    * Default maximum number of steps for autonomous execution
@@ -247,7 +248,7 @@ export class WukongAgent extends WukongEventEmitter {
 
     this.config = {
       defaultMode: 'interactive',
-      enableMCP: true,
+      enableToolExecutor: true,
       maxSteps: 50,
       timeout: 600,
       tools: [],
@@ -389,7 +390,7 @@ export class WukongAgent extends WukongEventEmitter {
       tools: this.config.tools || [],
       apiKeys: this.config.apiKeys,
       filesAdapter: this.config.filesAdapter,
-      enableMCP: this.config.enableMCP,
+      enableToolExecutor: this.config.enableToolExecutor,
       companyName: this.config.companyName,
       maxSteps: options.maxSteps || this.config.maxSteps,
       timeoutSeconds: options.timeout || this.config.timeout,
@@ -413,7 +414,7 @@ export class WukongAgent extends WukongEventEmitter {
       apiKeys: this.config.apiKeys,
       filesAdapter: this.config.filesAdapter,
       knowledgeBase: this.config.knowledgeBase,
-      enableMCP: this.config.enableMCP,
+      enableToolExecutor: this.config.enableToolExecutor,
       companyName: this.config.companyName,
       maxSteps: options.maxSteps || this.config.maxSteps,
       timeoutSeconds: options.timeout || this.config.timeout,

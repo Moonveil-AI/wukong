@@ -40,7 +40,7 @@ export type {
 // Export tool system
 export { ToolRegistry } from './tools/ToolRegistry';
 export type {
-  MCPToolDefinition,
+  ToolExecutorDefinition,
   ToolRegistryConfig,
 } from './tools/ToolRegistry';
 export { ToolExecutor } from './tools/ToolExecutor';

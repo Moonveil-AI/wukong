@@ -100,7 +100,7 @@ export class AgentFork {
     private executionAdapter?: ExecutionAdapter,
     private filesAdapter?: any,
     private knowledgeBase?: KnowledgeBase,
-    private enableMCP?: boolean,
+    private enableToolExecutor?: boolean,
     private companyName?: string,
   ) {
     // If no execution adapter provided, create a default Promise-based one
@@ -178,7 +178,7 @@ export class AgentFork {
         apiKeys: this.apiKeys,
         filesAdapter: this.filesAdapter,
         knowledgeBase: this.knowledgeBase,
-        enableMCP: this.enableMCP,
+        enableToolExecutor: this.enableToolExecutor,
         companyName: this.companyName,
       });
     } else {
@@ -371,7 +371,7 @@ ${resultStr}
         apiKeys: this.apiKeys,
         filesAdapter: this.filesAdapter,
         knowledgeBase: this.knowledgeBase,
-        enableMCP: this.enableMCP,
+        enableToolExecutor: this.enableToolExecutor,
         companyName: this.companyName,
         maxSteps: task.maxSteps,
         timeoutSeconds: task.timeoutSeconds,

@@ -171,7 +171,7 @@ export class PromiseAdapter implements ExecutionAdapter {
       apiKeys,
       filesAdapter,
       knowledgeBase,
-      enableMCP,
+      enableToolExecutor,
       companyName,
     } = options;
     const startTime = Date.now();
@@ -193,7 +193,7 @@ export class PromiseAdapter implements ExecutionAdapter {
         apiKeys,
         filesAdapter,
         knowledgeBase,
-        enableMCP,
+        enableToolExecutor,
         companyName,
         maxSteps: task.maxSteps,
         timeoutSeconds: task.timeoutSeconds,

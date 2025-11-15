@@ -59,7 +59,7 @@ expect(tool.schema).toBeDefined()
 1. Create `packages/agent/src/tools/ToolExecutor.ts`:
    - Validate parameters against schema
    - Execute tool handler
-   - Generate result summary (for MCP mode)
+   - Generate result summary (for Tool Executor mode)
    - Handle errors
    - Support async tools
 

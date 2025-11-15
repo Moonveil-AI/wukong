@@ -209,7 +209,7 @@ while (!isTaskComplete()) {
     history: session.history,  // Excludes discarded steps
     knowledge: knowledge,       // Relevant context
     skills: skills,             // Only matched skills
-    tools: toolRegistry.listTools(),  // MCP format (name + params only)
+    tools: toolRegistry.listTools(),  // Tool Executor format (name + params only)
     constraints: agentConstraints,
     examples: promptExamples
   })
@@ -313,7 +313,7 @@ LLM response: {"action": "CallTool", "tool": "generate_image", "params": {...}}
   ↓
 [Tool Handler] Execute tool logic
   ↓
-Result summary (MCP mode) or complete result
+Result summary (Tool Executor mode) or complete result
   ↓
 Save to History
   ↓

@@ -4,7 +4,7 @@
  * Export all tool-related classes and types
  */
 
-export { ToolRegistry, type ToolRegistryConfig, type MCPToolDefinition } from './ToolRegistry';
+export { ToolRegistry, type ToolRegistryConfig, type ToolExecutorDefinition } from './ToolRegistry';
 export {
   ToolExecutor,
   type ToolExecutorConfig,

@@ -477,8 +477,8 @@ export interface TrustConfig {
  * Token optimization configuration
  */
 export interface TokenConfig {
-  /** Enable MCP Code Execution */
-  enableMCP?: boolean;
+  /** Enable Tool Executor mode (local validation, reduced tokens) */
+  enableToolExecutor?: boolean;
 
   /** Enable Skills lazy loading */
   enableSkills?: boolean;

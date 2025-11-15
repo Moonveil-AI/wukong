@@ -187,7 +187,7 @@
 1. Create `packages/agent/src/prompt/PromptBuilder.ts`:
    - Build complete prompt from context
    - Include system instructions
-   - Format tools list (MCP mode)
+   - Format tools list (Tool Executor mode)
    - Include knowledge snippets
    - Format history (exclude discarded steps)
    - Add examples
@@ -311,7 +311,7 @@ Phase 2 successfully implemented:
 - ✅ Storage adapters for both Vercel (Postgres/KV/Blob) and Local (SQLite/FS)
 - ✅ LLM integrations for OpenAI, Anthropic Claude, and Google Gemini
 - ✅ Multi-model fallback system with automatic retries
-- ✅ Prompt builder with MCP mode support
+- ✅ Prompt builder with Tool Executor mode support
 - ✅ Response parser with Zod validation
 - ✅ Session management with checkpoints
 - ✅ Step executor for all action types

@@ -58,8 +58,8 @@ export interface InteractiveAgentOptions {
   /** Files adapter */
   filesAdapter?: any;
 
-  /** Enable MCP mode */
-  enableMCP?: boolean;
+  /** Enable Tool Executor mode */
+  enableToolExecutor?: boolean;
 
   /** Company name */
   companyName?: string;
@@ -89,7 +89,7 @@ export class InteractiveAgent {
   private tools: Tool[];
   private apiKeys: Record<string, string>;
   private filesAdapter?: any;
-  private enableMCP: boolean;
+  private enableToolExecutor: boolean;
   private companyName?: string;
   private maxSteps: number;
   private timeoutSeconds: number;
@@ -109,7 +109,7 @@ export class InteractiveAgent {
     this.tools = options.tools;
     this.apiKeys = options.apiKeys || {};
     this.filesAdapter = options.filesAdapter;
-    this.enableMCP = options.enableMCP ?? true;
+    this.enableToolExecutor = options.enableToolExecutor ?? true;
     this.companyName = options.companyName;
     this.maxSteps = options.maxSteps ?? 100;
     this.timeoutSeconds = options.timeoutSeconds ?? 3600;
@@ -127,7 +127,7 @@ export class InteractiveAgent {
       },
     });
     this.promptBuilder = new PromptBuilder({
-      enableMCP: this.enableMCP,
+      enableToolExecutor: this.enableToolExecutor,
       companyName: this.companyName,
     });
     this.responseParser = new ResponseParser();
@@ -305,7 +305,7 @@ export class InteractiveAgent {
       companyName: this.companyName,
       tools: this.tools,
       history,
-      enableMCP: this.enableMCP,
+      enableToolExecutor: this.enableToolExecutor,
       autoRun: false,
     };
 

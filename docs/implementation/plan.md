@@ -44,7 +44,7 @@ Implemented the core agent execution system including:
 - ✅ Storage adapters for both Vercel (Postgres/KV/Blob) and Local (SQLite/FS)
 - ✅ LLM integrations for OpenAI, Anthropic Claude, and Google Gemini
 - ✅ Multi-model fallback system with automatic retries
-- ✅ Prompt builder with MCP mode support
+- ✅ Prompt builder with Tool Executor mode support
 - ✅ Response parser with Zod validation
 - ✅ Session management with checkpoints
 - ✅ Step executor for all action types
@@ -216,41 +216,41 @@ Implemented the complete tools system and knowledge base infrastructure includin
 
 ---
 
-### Task 4.4: MCP Code Execution Mode
+### Task 4.4: Tool Executor Mode
 
 **Purpose:** Reduce token usage by sending tool names only, not full schemas.
 
 **Referenced Documentation:**
-- `docs/design/08-token-optimization.md` - MCP Code Execution
+- `docs/design/08-token-optimization.md` - Tool Executor Mode
 
 **Implementation:**
 1. Update `PromptBuilder`:
-   - MCP mode: send only tool names and brief descriptions
+   - Tool Executor mode: send only tool names and brief descriptions
    - Traditional mode: send full schemas
 
 2. Update `ToolExecutor`:
    - Validate parameters using local schema
 
 **Tests:**
-- MCP mode reduces token count significantly (>90%)
+- Tool Executor mode reduces token count significantly (>90%)
 - Tool execution still works correctly
 - Parameter validation catches errors
 - Both modes produce same results
 
 **Verify Steps:**
 ```typescript
-const builder = new PromptBuilder({ enableMCP: true })
+const builder = new PromptBuilder({ enableToolExecutor: true })
 const prompt = builder.build(context)
 
 // Count tokens
-const mcpTokens = countTokens(prompt)
+const executorTokens = countTokens(prompt)
 
 // Compare with traditional mode
-const traditionalBuilder = new PromptBuilder({ enableMCP: false })
+const traditionalBuilder = new PromptBuilder({ enableToolExecutor: false })
 const traditionalPrompt = traditionalBuilder.build(context)
 const traditionalTokens = countTokens(traditionalPrompt)
 
-expect(mcpTokens).toBeLessThan(traditionalTokens * 0.1)
+expect(executorTokens).toBeLessThan(traditionalTokens * 0.1)
 ```
 
 ---

@@ -16,12 +16,12 @@
 ### Interfaces & Systems
 - [03-Core Interface Design](./docs/design/03-interfaces.md) - Initialization, Execution, Events, Session Management
 - [04-Knowledge Base System](./docs/design/04-knowledge-base.md) - Knowledge Integration, Auto-Indexing, Vector Retrieval
-- [05-Tools System](./docs/design/05-tools-system.md) - Tool Definition, MCP Pattern, Async Execution
+- [05-Tools System](./docs/design/05-tools-system.md) - Tool Definition, Tool Executor Pattern, Async Execution
 
 ### Advanced Features
 - [06-Advanced Features](./docs/design/06-advanced-features.md) - Agent Fork, Parallel Tool Execution
 - [07-Todo List Mechanism](./docs/design/07-todo-list.md) - Task Decomposition, Progress Tracking, Dynamic Adjustment
-- [08-Token Optimization](./docs/design/08-token-optimization.md) - MCP, Skills Lazy Loading, Smart Discarding
+- [08-Token Optimization](./docs/design/08-token-optimization.md) - Tool Executor Mode, Skills Lazy Loading, Smart Discarding
 
 ### Trustworthiness & Implementation
 - [09-Trustworthiness Design](./docs/design/09-trustworthiness.md) - Complete Implementation of Transparent, Controllable, Reversible
@@ -160,7 +160,7 @@ Key Difference:
 1. **Plug-and-Play** - 5-minute integration, no need to learn complex frameworks
 2. **User Autonomy** - LLM, knowledge base, and tools all provided and controlled by users
 3. **Trustworthy** - Complete implementation of all "smart to trustworthy" principles
-4. **Token Efficient** - Save 98% tokens through MCP, Skills, step discarding
+4. **Token Efficient** - Save 98% tokens through Tool Executor mode, Skills, step discarding
 5. **Large Task Capability** - Todo mechanism supports hundreds of steps
 6. **Async Execution** - Long-running tools don't block users
 7. **Streaming Output** - LLM thinking process shown in real-time, users see what AI is thinking
@@ -168,7 +168,7 @@ Key Difference:
 ### 🔑 Key Design
 
 - **Three-Layer Trustworthiness:** Visible, Controllable, Reversible
-- **Three Savings:** MCP Pattern, Skills Lazy Loading, Smart Discarding
+- **Three Savings:** Tool Executor Pattern, Skills Lazy Loading, Smart Discarding
 - **Three Execution Modes:** Interactive, Auto, Streaming
 - **Real-Time Transparency:** LLM streaming output, complete visibility of thinking process
 - **Full Control:** Stop anytime, graceful recovery, complete state preservation

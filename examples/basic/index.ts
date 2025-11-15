@@ -162,7 +162,7 @@ async function main() {
     },
     tools: [calculatorTool],
     defaultMode: 'auto',
-    enableMCP: true,
+    enableToolExecutor: true,
   });
   console.log('✅ Agent created with calculator tool\n');
 

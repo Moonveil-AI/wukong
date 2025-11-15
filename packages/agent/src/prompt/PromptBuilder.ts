@@ -39,8 +39,8 @@ export interface PromptContext {
   /** Skills documentation (if matched) */
   skills?: string;
 
-  /** Enable MCP mode */
-  enableMCP?: boolean;
+  /** Enable Tool Executor mode */
+  enableToolExecutor?: boolean;
 
   /** Auto-run mode */
   autoRun: boolean;
@@ -53,8 +53,8 @@ export interface PromptContext {
  * Prompt builder options
  */
 export interface PromptBuilderOptions {
-  /** Enable MCP Code Execution mode */
-  enableMCP?: boolean;
+  /** Enable Tool Executor mode (local validation, reduced tokens) */
+  enableToolExecutor?: boolean;
 
   /** Company name for context */
   companyName?: string;
@@ -74,7 +74,7 @@ export class PromptBuilder {
 
   constructor(options: PromptBuilderOptions = {}) {
     this.options = {
-      enableMCP: options.enableMCP ?? true,
+      enableToolExecutor: options.enableToolExecutor ?? true,
       companyName: options.companyName ?? 'Your Organization',
       maxHistoryTokens: options.maxHistoryTokens ?? 5000,
       maxKnowledgeResults: options.maxKnowledgeResults ?? 5,
@@ -85,7 +85,7 @@ export class PromptBuilder {
    * Build complete prompt from context
    */
   build(context: PromptContext): string {
-    const enableMCP = context.enableMCP ?? this.options.enableMCP;
+    const enableToolExecutor = context.enableToolExecutor ?? this.options.enableToolExecutor;
 
     const sections = [
       this.buildOverviewSection(context),
@@ -96,7 +96,7 @@ export class PromptBuilder {
       this.buildOutputFormatSection(),
       this.buildCommunicationStyleSection(),
       this.buildToolSelectionGuidelinesSection(context.tools),
-      this.buildCurrentContextSection(context, enableMCP),
+      this.buildCurrentContextSection(context, enableToolExecutor),
     ];
 
     return sections.filter(Boolean).join('\n\n---\n\n');
@@ -341,7 +341,7 @@ Your response MUST be valid JSON wrapped in XML tags:
   /**
    * Build current context section
    */
-  private buildCurrentContextSection(context: PromptContext, enableMCP: boolean): string {
+  private buildCurrentContextSection(context: PromptContext, enableToolExecutor: boolean): string {
     const sections: string[] = [];
 
     // Task goal
@@ -351,7 +351,7 @@ ${context.goal}
 </goal_description>`);
 
     // Available tools
-    sections.push(this.formatToolsSection(context.tools, enableMCP));
+    sections.push(this.formatToolsSection(context.tools, enableToolExecutor));
 
     // Relevant knowledge
     if (context.knowledge && context.knowledge.length > 0) {
@@ -382,14 +382,14 @@ ${context.latestStep}
   /**
    * Format tools section
    */
-  private formatToolsSection(tools: Tool[], enableMCP: boolean): string {
-    if (enableMCP) {
-      // MCP mode: only tool names and brief descriptions
+  private formatToolsSection(tools: Tool[], enableToolExecutor: boolean): string {
+    if (enableToolExecutor) {
+      // Tool Executor mode: only tool names and brief descriptions
       const toolsList = tools
         .map((tool) => `- ${tool.metadata.name}: ${tool.metadata.description}`)
         .join('\n');
 
-      return `## Available Tools (MCP Mode)
+      return `## Available Tools (Tool Executor Mode)
 <all_tool_list>
 ${toolsList}
 </all_tool_list>`;
