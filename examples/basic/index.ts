@@ -13,6 +13,7 @@ import 'dotenv/config';
 import { LocalAdapter, MigrationRunner } from '@wukong/adapter-local';
 import { WukongAgent } from '@wukong/agent';
 import { ClaudeAdapter } from '@wukong/llm-anthropic';
+import { GeminiAdapter } from '@wukong/llm-google';
 import { OpenAIAdapter } from '@wukong/llm-openai';
 
 // Define a simple custom tool following the Tool interface
@@ -127,6 +128,14 @@ async function main() {
     console.log('  - Anthropic Claude (skipped - no API key)');
   }
 
+  // Try to initialize Gemini 2.5 Pro
+  try {
+    llmAdapters.push(new GeminiAdapter());
+    console.log('  - Google Gemini 2.5 Pro (fallback) ✅');
+  } catch (_error) {
+    console.log('  - Google Gemini (skipped - no API key)');
+  }
+
   // Try to initialize OpenAI (fallback model)
   try {
     llmAdapters.push(new OpenAIAdapter());
@@ -137,7 +146,7 @@ async function main() {
 
   if (llmAdapters.length === 0) {
     console.error(
-      '❌ No LLM adapters available! Please set ANTHROPIC_API_KEY or OPENAI_API_KEY in .env',
+      '❌ No LLM adapters available! Please set ANTHROPIC_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY in .env',
     );
     process.exit(1);
   }

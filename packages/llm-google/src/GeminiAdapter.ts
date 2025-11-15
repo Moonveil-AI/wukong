@@ -24,8 +24,11 @@ import type {
  * Gemini adapter configuration
  */
 export interface GeminiAdapterConfig {
-  /** Google AI API key */
-  apiKey: string;
+  /**
+   * Google AI API key
+   * If not provided, will read from GEMINI_API_KEY environment variable
+   */
+  apiKey?: string;
 
   /** Default model to use */
   model?: string;
@@ -57,13 +60,19 @@ export class GeminiAdapter implements LLMAdapter {
     baseURL?: string;
   };
 
-  constructor(config: GeminiAdapterConfig) {
-    if (!config.apiKey) {
-      throw new Error('Google AI API key is required');
+  constructor(config: GeminiAdapterConfig = {}) {
+    // Try to get API key from config or environment variable
+    // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
+    const apiKey = config.apiKey || process.env['GEMINI_API_KEY'];
+
+    if (!apiKey) {
+      throw new Error(
+        'Google AI API key is required. Provide it via config.apiKey or GEMINI_API_KEY environment variable.',
+      );
     }
 
     this.config = {
-      apiKey: config.apiKey,
+      apiKey: apiKey,
       model: config.model || 'gemini-2.5-pro',
       temperature: config.temperature ?? 0.7,
       maxTokens: config.maxTokens ?? 8192,
