@@ -74,28 +74,30 @@ describe('MigrationRunner - SQLite', () => {
 
     const db = new Database(TEST_DB_PATH);
 
-    // Check that all tables exist
-    const tables = db
-      .prepare(`
-      SELECT name FROM sqlite_master 
-      WHERE type='table' 
-      ORDER BY name
-    `)
-      .all() as Array<{ name: string }>;
+    try {
+      // Check that all tables exist
+      const tables = db
+        .prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' 
+        ORDER BY name
+      `)
+        .all() as Array<{ name: string }>;
 
-    const tableNames = tables.map((t) => t.name);
+      const tableNames = tables.map((t) => t.name);
 
-    expect(tableNames).toContain('schema_versions');
-    expect(tableNames).toContain('sessions');
-    expect(tableNames).toContain('steps');
-    expect(tableNames).toContain('todos');
-    expect(tableNames).toContain('checkpoints');
-    expect(tableNames).toContain('parallel_tool_calls');
-    expect(tableNames).toContain('fork_agent_tasks');
-    expect(tableNames).toContain('knowledge_entities');
-    expect(tableNames).toContain('knowledge_feedback');
-
-    db.close();
+      expect(tableNames).toContain('schema_versions');
+      expect(tableNames).toContain('sessions');
+      expect(tableNames).toContain('steps');
+      expect(tableNames).toContain('todos');
+      expect(tableNames).toContain('checkpoints');
+      expect(tableNames).toContain('parallel_tool_calls');
+      expect(tableNames).toContain('fork_agent_tasks');
+      expect(tableNames).toContain('knowledge_entities');
+      expect(tableNames).toContain('knowledge_feedback');
+    } finally {
+      db.close();
+    }
   });
 
   it('should track applied migrations in schema_versions', async () => {
@@ -143,26 +145,28 @@ describe('MigrationRunner - SQLite', () => {
 
     const db = new Database(TEST_DB_PATH);
 
-    // Check that indexes exist
-    const indexes = db
-      .prepare(`
-      SELECT name FROM sqlite_master 
-      WHERE type='index' AND name LIKE 'idx_%'
-      ORDER BY name
-    `)
-      .all() as Array<{ name: string }>;
+    try {
+      // Check that indexes exist
+      const indexes = db
+        .prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='index' AND name LIKE 'idx_%'
+        ORDER BY name
+      `)
+        .all() as Array<{ name: string }>;
 
-    const indexNames = indexes.map((i) => i.name);
+      const indexNames = indexes.map((i) => i.name);
 
-    // Should have multiple indexes
-    expect(indexNames.length).toBeGreaterThan(10);
+      // Should have multiple indexes
+      expect(indexNames.length).toBeGreaterThan(10);
 
-    // Check for some specific indexes
-    expect(indexNames).toContain('idx_sessions_user_id');
-    expect(indexNames).toContain('idx_steps_session_id');
-    expect(indexNames).toContain('idx_todos_session_id');
-
-    db.close();
+      // Check for some specific indexes
+      expect(indexNames).toContain('idx_sessions_user_id');
+      expect(indexNames).toContain('idx_steps_session_id');
+      expect(indexNames).toContain('idx_todos_session_id');
+    } finally {
+      db.close();
+    }
   });
 
   it('should support foreign key constraints', async () => {
@@ -171,32 +175,34 @@ describe('MigrationRunner - SQLite', () => {
 
     const db = new Database(TEST_DB_PATH);
 
-    // Enable foreign keys
-    db.pragma('foreign_keys = ON');
+    try {
+      // Enable foreign keys
+      db.pragma('foreign_keys = ON');
 
-    // Insert a session
-    db.prepare(`
-      INSERT INTO sessions (id, goal)
-      VALUES ('test-session', 'Test goal')
-    `).run();
+      // Insert a session
+      db.prepare(`
+        INSERT INTO sessions (id, goal)
+        VALUES ('test-session', 'Test goal')
+      `).run();
 
-    // Try to insert a step with invalid session_id (should fail)
-    expect(() => {
+      // Try to insert a step with invalid session_id (should fail)
+      expect(() => {
+        db.prepare(`
+          INSERT INTO steps (session_id, step_number, action)
+          VALUES ('invalid-session', 1, 'CallTool')
+        `).run();
+      }).toThrow();
+
+      // Insert step with valid session_id (should succeed)
       db.prepare(`
         INSERT INTO steps (session_id, step_number, action)
-        VALUES ('invalid-session', 1, 'CallTool')
+        VALUES ('test-session', 1, 'CallTool')
       `).run();
-    }).toThrow();
 
-    // Insert step with valid session_id (should succeed)
-    db.prepare(`
-      INSERT INTO steps (session_id, step_number, action)
-      VALUES ('test-session', 1, 'CallTool')
-    `).run();
-
-    const step = db.prepare('SELECT * FROM steps WHERE session_id = ?').get('test-session');
-    expect(step).toBeDefined();
-
-    db.close();
+      const step = db.prepare('SELECT * FROM steps WHERE session_id = ?').get('test-session');
+      expect(step).toBeDefined();
+    } finally {
+      db.close();
+    }
   });
 });

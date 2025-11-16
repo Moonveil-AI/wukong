@@ -25,6 +25,8 @@
     "typecheck": "pnpm -r run typecheck",
     "check": "pnpm typecheck && pnpm lint && pnpm test",
     "clean": "pnpm -r run clean && rm -rf node_modules",
+    "clean:processes": "bash scripts/cleanup-processes.sh",
+    "clean:processes:force": "bash scripts/cleanup-processes.sh --force",
     "prepare": "pnpm build"
   },
   "devDependencies": {

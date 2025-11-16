@@ -18,5 +18,12 @@ export default defineConfig({
     },
     include: ['packages/**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules', 'dist', 'build'],
+    // Ensure proper cleanup after test timeout
+    testTimeout: 30000,
+    hookTimeout: 10000,
+    // Use process pool isolation to ensure processes can exit
+    pool: 'forks',
+    // Exit immediately after tests complete
+    teardownTimeout: 5000,
   },
 });
