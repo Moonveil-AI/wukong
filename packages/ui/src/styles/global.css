@@ -1,0 +1,125 @@
+/**
+ * Global styles for Wukong UI components
+ */
+
+/* CSS Custom Properties (will be set by ThemeProvider) */
+:root {
+  /* Colors */
+  --wukong-primary: #0070f3;
+  --wukong-secondary: #7928ca;
+  --wukong-success: #0070f3;
+  --wukong-warning: #f5a623;
+  --wukong-error: #ff0080;
+  --wukong-background: #ffffff;
+  --wukong-surface: #f5f5f5;
+  --wukong-text: #000000;
+  --wukong-text-secondary: #666666;
+  --wukong-border: #e5e5e5;
+
+  /* Spacing */
+  --wukong-spacing-xs: 4px;
+  --wukong-spacing-sm: 8px;
+  --wukong-spacing-md: 16px;
+  --wukong-spacing-lg: 24px;
+  --wukong-spacing-xl: 32px;
+
+  /* Border Radius */
+  --wukong-border-radius-sm: 4px;
+  --wukong-border-radius-md: 8px;
+  --wukong-border-radius-lg: 12px;
+
+  /* Shadows */
+  --wukong-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --wukong-shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --wukong-shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.1);
+
+  /* Typography */
+  --wukong-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --wukong-font-size-xs: 12px;
+  --wukong-font-size-sm: 14px;
+  --wukong-font-size-md: 16px;
+  --wukong-font-size-lg: 18px;
+  --wukong-font-size-xl: 24px;
+  --wukong-font-weight-regular: 400;
+  --wukong-font-weight-medium: 500;
+  --wukong-font-weight-bold: 700;
+}
+
+/* Base styles for Wukong components */
+.wukong-ui {
+  font-family: var(--wukong-font-family);
+  font-size: var(--wukong-font-size-md);
+  color: var(--wukong-text);
+  line-height: 1.5;
+}
+
+/* Reset button styles */
+.wukong-button {
+  font-family: var(--wukong-font-family);
+  font-size: var(--wukong-font-size-md);
+  font-weight: var(--wukong-font-weight-medium);
+  border: none;
+  border-radius: var(--wukong-border-radius-md);
+  padding: var(--wukong-spacing-sm) var(--wukong-spacing-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: var(--wukong-primary);
+  color: white;
+}
+
+.wukong-button:hover {
+  opacity: 0.9;
+}
+
+.wukong-button:active {
+  transform: scale(0.98);
+}
+
+.wukong-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Card styles */
+.wukong-card {
+  background-color: var(--wukong-surface);
+  border-radius: var(--wukong-border-radius-md);
+  padding: var(--wukong-spacing-md);
+  box-shadow: var(--wukong-shadow-sm);
+}
+
+/* Input styles */
+.wukong-input {
+  font-family: var(--wukong-font-family);
+  font-size: var(--wukong-font-size-md);
+  padding: var(--wukong-spacing-sm) var(--wukong-spacing-md);
+  border: 1px solid var(--wukong-border);
+  border-radius: var(--wukong-border-radius-md);
+  background-color: var(--wukong-background);
+  color: var(--wukong-text);
+  width: 100%;
+}
+
+.wukong-input:focus {
+  outline: none;
+  border-color: var(--wukong-primary);
+}
+
+/* Utility classes */
+.wukong-text-secondary {
+  color: var(--wukong-text-secondary);
+}
+
+.wukong-text-error {
+  color: var(--wukong-error);
+}
+
+.wukong-text-success {
+  color: var(--wukong-success);
+}
+
+.wukong-text-warning {
+  color: var(--wukong-warning);
+}
+
