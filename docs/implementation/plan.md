@@ -14,8 +14,9 @@
 - [Phase 3: Tools & Knowledge Base](#phase-3-tools--knowledge-base) ✅
 - [Phase 4: Advanced Features](#phase-4-advanced-features) ✅
 - [Phase 5: Optimization & Polish](#phase-5-optimization--polish)
-- [Phase 6: UI Components Package](#phase-6-ui-components-package)
-- [Phase 7: Documentation & Examples](#phase-7-documentation--examples)
+- [Phase 6: Backend Server Package](#phase-6-backend-server-package)
+- [Phase 7: UI Components Package](#phase-7-ui-components-package)
+- [Phase 8: Documentation & Examples](#phase-8-documentation--examples)
 
 ---
 
@@ -233,9 +234,550 @@ expect(sanitized.prompt).not.toContain('<script>')
 
 ---
 
-## Phase 6: UI Components Package
+## Phase 6: Backend Server Package
 
-### Task 6.1: UI Package Setup ✅
+### Task 6.1: Server Package Setup
+
+**Purpose:** Create the @wukong/server package to provide a production-ready backend server for agent execution.
+
+**Referenced Documentation:**
+- `docs/design/02-architecture.md` - System architecture
+- `examples/ui/README.md` - Backend integration example
+
+**Implementation:**
+1. Initialize `packages/server`:
+   - Add Express/Fastify for HTTP server
+   - Add WebSocket support (ws library)
+   - Add Server-Sent Events support
+   - TypeScript configuration
+   - Build tooling
+
+2. Package structure:
+   ```
+   packages/server/
+   ├── src/
+   │   ├── index.ts              # Main exports
+   │   ├── WukongServer.ts       # Core server class
+   │   ├── routes/               # HTTP routes
+   │   ├── websocket/            # WebSocket handlers
+   │   ├── middleware/           # Express middleware
+   │   └── utils/                # Utilities
+   ├── package.json
+   └── tsconfig.json
+   ```
+
+**Tests:**
+- Package builds correctly
+- Server starts and stops
+- Basic HTTP endpoints work
+
+**Verify Steps:**
+```typescript
+import { WukongServer } from '@wukong/server'
+
+const server = new WukongServer({
+  port: 3000,
+  adapter: new LocalAdapter({ dbPath: './data/wukong.db' }),
+  llm: { models: [new ClaudeAdapter()] }
+})
+
+await server.start()
+```
+
+---
+
+### Task 6.2: WebSocket Communication
+
+**Purpose:** Implement real-time bidirectional communication for agent execution.
+
+**Implementation:**
+1. Create `packages/server/src/websocket/WebSocketManager.ts`:
+   - Connection management
+   - Message routing
+   - Event streaming
+   - Error handling
+   - Heartbeat/ping-pong
+
+2. Event streaming:
+   - `llm:streaming` → Send text chunks to client
+   - `tool:executing` → Send tool start events
+   - `tool:completed` → Send tool results
+   - `agent:progress` → Send progress updates
+   - `agent:complete` → Send final result
+   - `agent:error` → Send error information
+
+3. Client message handling:
+   - `execute` - Start agent execution
+   - `stop` - Stop running agent
+   - `pause` - Pause execution
+   - `resume` - Resume execution
+   - `feedback` - Submit user feedback
+
+**Tests:**
+- WebSocket connections work
+- Messages are routed correctly
+- Events stream in real-time
+- Connection cleanup works
+- Handles multiple concurrent clients
+
+**Verify Steps:**
+```typescript
+// Server side
+server.on('connection', (ws, sessionId) => {
+  console.log(`Client connected: ${sessionId}`)
+})
+
+// Client side (from UI)
+const ws = new WebSocket('ws://localhost:3000')
+ws.send(JSON.stringify({ 
+  type: 'execute', 
+  goal: 'Calculate 2 + 2' 
+}))
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data)
+  console.log(message.type, message.data)
+}
+```
+
+---
+
+### Task 6.3: Server-Sent Events (SSE)
+
+**Purpose:** Implement SSE as an alternative to WebSocket for streaming responses.
+
+**Implementation:**
+1. Create `packages/server/src/routes/sse.ts`:
+   - SSE endpoint setup
+   - Event stream management
+   - Connection tracking
+   - Automatic reconnection support
+
+2. Event types:
+   - Same events as WebSocket
+   - Text-based streaming
+   - Works with standard HTTP
+
+3. Advantages over WebSocket:
+   - Simpler for one-way streaming
+   - Better proxy/firewall compatibility
+   - Automatic reconnection
+   - Standard HTTP
+
+**Tests:**
+- SSE connections work
+- Events stream correctly
+- Reconnection works
+- Multiple concurrent streams
+
+**Verify Steps:**
+```typescript
+// Server provides SSE endpoint
+server.enableSSE('/events/:sessionId')
+
+// Client connects
+const eventSource = new EventSource('/events/session123')
+eventSource.addEventListener('agent:progress', (e) => {
+  const data = JSON.parse(e.data)
+  console.log('Progress:', data)
+})
+```
+
+---
+
+### Task 6.4: REST API Endpoints
+
+**Purpose:** Provide REST API for non-streaming operations and management.
+
+**Implementation:**
+1. Create `packages/server/src/routes/`:
+   - `POST /api/sessions` - Create new session
+   - `GET /api/sessions/:id` - Get session details
+   - `GET /api/sessions` - List sessions
+   - `DELETE /api/sessions/:id` - Delete session
+   - `POST /api/sessions/:id/execute` - Execute (non-streaming)
+   - `POST /api/sessions/:id/stop` - Stop execution
+   - `GET /api/sessions/:id/history` - Get chat history
+   - `POST /api/feedback` - Submit feedback
+   - `GET /api/capabilities` - Get agent capabilities
+   - `GET /api/health` - Health check
+
+2. Response format:
+   ```typescript
+   {
+     success: boolean
+     data?: any
+     error?: {
+       code: string
+       message: string
+       details?: any
+     }
+   }
+   ```
+
+**Tests:**
+- All endpoints work correctly
+- Error handling is robust
+- Request validation works
+- Response format is consistent
+
+**Verify Steps:**
+```bash
+# Create session
+curl -X POST http://localhost:3000/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"userId": "user123"}'
+
+# Execute task
+curl -X POST http://localhost:3000/api/sessions/session123/execute \
+  -H "Content-Type: application/json" \
+  -d '{"goal": "Calculate 2 + 2"}'
+
+# Get history
+curl http://localhost:3000/api/sessions/session123/history
+```
+
+---
+
+### Task 6.5: Session Management
+
+**Purpose:** Manage agent sessions with proper lifecycle and cleanup.
+
+**Implementation:**
+1. Create `packages/server/src/SessionManager.ts`:
+   - Create and track sessions
+   - Associate sessions with users
+   - Session timeout and cleanup
+   - Session persistence
+   - Concurrent session limits
+
+2. Features:
+   - Session ID generation
+   - User → Sessions mapping
+   - Active session tracking
+   - Automatic cleanup of stale sessions
+   - Session restore on reconnection
+
+3. Configuration:
+   ```typescript
+   {
+     sessionTimeout: 30 * 60 * 1000, // 30 minutes
+     maxSessionsPerUser: 5,
+     cleanupInterval: 5 * 60 * 1000, // 5 minutes
+     persistSessions: true
+   }
+   ```
+
+**Tests:**
+- Sessions are created correctly
+- Timeout works
+- Cleanup removes stale sessions
+- Session restore works
+- Concurrent limits are enforced
+
+**Verify Steps:**
+```typescript
+const sessionManager = new SessionManager(adapter)
+
+// Create session
+const session = await sessionManager.create('user123')
+
+// Get active sessions
+const sessions = await sessionManager.getActiveSessions('user123')
+
+// Cleanup automatically runs in background
+```
+
+---
+
+### Task 6.6: Authentication & Authorization (Optional)
+
+**Purpose:** Add authentication and authorization for production use.
+
+**Implementation:**
+1. Create `packages/server/src/middleware/auth.ts`:
+   - API key authentication
+   - JWT token authentication
+   - User identification
+   - Rate limiting per user
+
+2. Configuration:
+   ```typescript
+   {
+     auth: {
+       enabled: true,
+       type: 'apikey' | 'jwt' | 'custom',
+       apiKeys?: string[],
+       jwtSecret?: string,
+       customValidator?: (req) => Promise<User>
+     }
+   }
+   ```
+
+3. Middleware:
+   - Validate authentication
+   - Extract user info
+   - Attach to request
+   - Handle auth errors
+
+**Tests:**
+- Valid credentials work
+- Invalid credentials fail
+- User info is attached
+- Rate limiting works
+
+**Verify Steps:**
+```typescript
+const server = new WukongServer({
+  auth: {
+    enabled: true,
+    type: 'apikey',
+    apiKeys: ['secret-key-1', 'secret-key-2']
+  }
+})
+
+// Client must send API key
+fetch('/api/sessions', {
+  headers: {
+    'Authorization': 'Bearer secret-key-1'
+  }
+})
+```
+
+---
+
+### Task 6.7: Rate Limiting & Throttling
+
+**Purpose:** Prevent abuse and ensure fair resource usage.
+
+**Implementation:**
+1. Create `packages/server/src/middleware/rateLimit.ts`:
+   - Request rate limiting
+   - Token usage limiting
+   - Concurrent execution limiting
+   - IP-based limits
+   - User-based limits
+
+2. Configuration:
+   ```typescript
+   {
+     rateLimit: {
+       windowMs: 60 * 1000, // 1 minute
+       maxRequests: 60, // 60 requests per minute
+       maxTokensPerMinute: 100000,
+       maxConcurrentExecutions: 3
+     }
+   }
+   ```
+
+3. Storage:
+   - Use cache adapter for counters
+   - Sliding window algorithm
+   - Distributed rate limiting
+
+**Tests:**
+- Rate limits are enforced
+- Limits reset correctly
+- Distributed limiting works
+- Error messages are clear
+
+**Verify Steps:**
+```typescript
+const server = new WukongServer({
+  rateLimit: {
+    maxRequests: 10,
+    windowMs: 60000
+  }
+})
+
+// After 10 requests in 1 minute, returns 429 Too Many Requests
+```
+
+---
+
+### Task 6.8: Error Handling & Logging
+
+**Purpose:** Comprehensive error handling and logging for production.
+
+**Implementation:**
+1. Create `packages/server/src/middleware/errorHandler.ts`:
+   - Catch all errors
+   - Format error responses
+   - Log errors appropriately
+   - Send error events to client
+
+2. Create `packages/server/src/utils/logger.ts`:
+   - Structured logging
+   - Log levels (debug, info, warn, error)
+   - Request logging
+   - Performance logging
+   - Integration with popular loggers (Winston, Pino)
+
+3. Error types:
+   - Validation errors (400)
+   - Authentication errors (401)
+   - Authorization errors (403)
+   - Not found errors (404)
+   - Rate limit errors (429)
+   - Internal errors (500)
+
+**Tests:**
+- Errors are caught
+- Error format is correct
+- Logs are generated
+- Sensitive data is not logged
+
+**Verify Steps:**
+```typescript
+const server = new WukongServer({
+  logging: {
+    level: 'info',
+    format: 'json',
+    destination: './logs/server.log'
+  }
+})
+
+// All requests and errors are logged
+```
+
+---
+
+### Task 6.9: CORS & Security Headers
+
+**Purpose:** Secure the server for production deployment.
+
+**Implementation:**
+1. Add CORS support:
+   - Configurable origins
+   - Credentials support
+   - Preflight handling
+
+2. Security headers:
+   - Helmet.js integration
+   - Content Security Policy
+   - HTTPS enforcement
+   - X-Frame-Options
+   - X-Content-Type-Options
+
+3. Configuration:
+   ```typescript
+   {
+     cors: {
+       origin: ['https://app.example.com'],
+       credentials: true
+     },
+     security: {
+       enforceHttps: true,
+       hsts: true
+     }
+   }
+   ```
+
+**Tests:**
+- CORS works correctly
+- Security headers are set
+- HTTPS enforcement works
+
+**Verify Steps:**
+```typescript
+const server = new WukongServer({
+  cors: {
+    origin: 'https://app.example.com',
+    credentials: true
+  }
+})
+```
+
+---
+
+### Task 6.10: Deployment Utilities
+
+**Purpose:** Make deployment easy with common platforms.
+
+**Implementation:**
+1. Create deployment configs:
+   - Vercel (`vercel.json`)
+   - Docker (`Dockerfile`, `docker-compose.yml`)
+   - Railway (`railway.json`)
+   - Render (`render.yaml`)
+
+2. Create CLI for server management:
+   ```bash
+   wukong-server start --port 3000
+   wukong-server migrate --adapter local
+   wukong-server health --url http://localhost:3000
+   ```
+
+3. Environment variable support:
+   - `PORT` - Server port
+   - `DATABASE_URL` - Database connection
+   - `REDIS_URL` - Cache connection
+   - `ANTHROPIC_API_KEY` - LLM API key
+   - `NODE_ENV` - Environment
+
+**Tests:**
+- Docker image builds
+- CLI commands work
+- Environment variables are read
+- Health checks work
+
+**Verify Steps:**
+```bash
+# Using Docker
+docker build -t wukong-server .
+docker run -p 3000:3000 wukong-server
+
+# Using CLI
+pnpm wukong-server start
+```
+
+---
+
+### Task 6.11: Complete Server Example
+
+**Purpose:** Provide a fully configured example server.
+
+**Implementation:**
+1. Create `examples/server/`:
+   ```
+   examples/server/
+   ├── index.ts              # Main server file
+   ├── config.ts             # Configuration
+   ├── tools/                # Custom tools
+   ├── .env.example          # Environment variables
+   ├── Dockerfile            # Docker configuration
+   ├── docker-compose.yml    # Docker Compose
+   └── README.md             # Documentation
+   ```
+
+2. Features:
+   - Complete setup with all options
+   - Custom tools examples
+   - Authentication configured
+   - Rate limiting enabled
+   - Logging configured
+   - Ready for production
+
+**Verify Steps:**
+```bash
+cd examples/server
+cp .env.example .env
+# Edit .env with your API keys
+pnpm install
+pnpm dev
+
+# In another terminal
+cd examples/ui
+pnpm dev
+
+# UI connects to server and works end-to-end
+```
+
+---
+
+## Phase 7: UI Components Package
+
+### Task 7.1: UI Package Setup ✅
 
 **Status:** Completed
 
@@ -250,7 +792,7 @@ expect(sanitized.prompt).not.toContain('<script>')
    - Add React, TypeScript, and necessary dependencies ✅
    - Set up build tooling for React components ✅
    - Configure CSS-in-JS or CSS modules ✅
-   - Add Storybook for component development (Deferred to Task 6.14)
+   - Add Storybook for component development (Deferred to Task 7.14)
 
 2. Create theme system: ✅
    - Define theme interface and default themes ✅
@@ -274,7 +816,7 @@ import { ThemeProvider } from '@wukong/ui'
 
 ---
 
-### Task 6.2: Core UI Components - Startup Phase ✅
+### Task 7.2: Core UI Components - Startup Phase ✅
 
 **Status:** Completed
 
@@ -329,7 +871,7 @@ import { CapabilitiesPanel, SkillsTree, ExamplePrompts } from '@wukong/ui'
 
 ---
 
-### Task 6.3: Core UI Components - Before Execution
+### Task 7.3: Core UI Components - Before Execution
 
 **Purpose:** Implement UI components for principles 6-11 (Before Execution).
 
@@ -380,7 +922,7 @@ import { PlanPreview, ExecutionPlan, TodoList, ThinkingBox } from '@wukong/ui'
 
 ---
 
-### Task 6.4: Core UI Components - During Execution
+### Task 7.4: Core UI Components - During Execution
 
 **Purpose:** Implement UI components for principles 12-17 (During Execution).
 
@@ -445,7 +987,7 @@ import {
 
 ---
 
-### Task 6.5: Core UI Components - Error Handling
+### Task 7.5: Core UI Components - Error Handling
 
 **Purpose:** Implement UI components for principles 18-24 (After Errors).
 
@@ -521,7 +1063,7 @@ import {
 
 ---
 
-### Task 6.6: Core UI Components - Feedback & Metrics
+### Task 7.6: Core UI Components - Feedback & Metrics
 
 **Purpose:** Implement UI components for principles 25-30 (New Loop).
 
@@ -589,7 +1131,7 @@ import {
 
 ---
 
-### Task 6.7: Complete Chat Interface
+### Task 7.7: Complete Chat Interface
 
 **Purpose:** Implement the all-in-one AgentChat component.
 
@@ -639,7 +1181,7 @@ import { AgentChat } from '@wukong/ui'
 
 ---
 
-### Task 6.8: React Hooks
+### Task 7.8: React Hooks
 
 **Purpose:** Implement custom React hooks for agent integration.
 
@@ -710,7 +1252,7 @@ function MyComponent() {
 
 ---
 
-### Task 6.9: Providers and Context
+### Task 7.9: Providers and Context
 
 **Purpose:** Implement React context providers for global state.
 
@@ -766,7 +1308,7 @@ import {
 
 ---
 
-### Task 6.10: Styling and Theming
+### Task 7.10: Styling and Theming
 
 **Purpose:** Implement comprehensive theming system.
 
@@ -814,7 +1356,7 @@ import {
 
 ---
 
-### Task 6.11: Accessibility
+### Task 7.11: Accessibility
 
 **Purpose:** Ensure all components meet WCAG 2.1 AA standards.
 
@@ -861,7 +1403,7 @@ import {
 
 ---
 
-### Task 6.12: Internationalization
+### Task 7.12: Internationalization
 
 **Purpose:** Support multiple languages.
 
@@ -900,7 +1442,7 @@ import {
 
 ---
 
-### Task 6.13: Responsive Design
+### Task 7.13: Responsive Design
 
 **Purpose:** Ensure all components work on all screen sizes.
 
@@ -947,7 +1489,7 @@ import {
 
 ---
 
-### Task 6.14: Component Documentation with Storybook
+### Task 7.14: Component Documentation with Storybook
 
 **Purpose:** Document all components with interactive examples.
 
@@ -984,9 +1526,9 @@ pnpm storybook
 
 ---
 
-## Phase 7: Documentation & Examples
+## Phase 8: Documentation & Examples
 
-### Task 7.1: API Documentation
+### Task 8.1: API Documentation
 
 **Purpose:** Generate comprehensive API documentation for all public interfaces.
 
@@ -1003,7 +1545,7 @@ pnpm storybook
 
 ---
 
-### Task 7.2: Usage Examples
+### Task 8.2: Usage Examples
 
 **Purpose:** Provide working examples for common use cases.
 
@@ -1018,6 +1560,8 @@ pnpm storybook
    - `examples/ui-components` - UI components showcase
    - `examples/custom-adapter` - Custom storage adapter
    - `examples/custom-tools` - Custom tool creation
+   - `examples/server` - Complete server setup (created in Phase 7)
+   - `examples/ui` - UI connecting to server (already exists, enhance with real connection)
 
 **Verify Steps:**
 ```bash
@@ -1029,7 +1573,7 @@ pnpm dev
 
 ---
 
-### Task 7.3: Migration Guide
+### Task 8.3: Migration Guide
 
 **Purpose:** Help users migrate from other agent frameworks.
 
@@ -1041,7 +1585,7 @@ pnpm dev
 
 ---
 
-### Task 7.4: Tutorial Series
+### Task 8.4: Tutorial Series
 
 **Purpose:** Guide users through building real applications.
 
@@ -1156,14 +1700,16 @@ Test complete user scenarios:
 ### P1 (Should Have - Full Feature Set)
 - Phase 3: Tasks 3.4-3.8, 3.10 ✅
 - Phase 4: All tasks ✅
-- Phase 6: Tasks 6.1-6.7
-- Complete feature set with UI components
+- Phase 6: Tasks 6.1-6.5 (Basic server functionality)
+- Phase 7: Tasks 7.1-7.7 (Core UI components)
+- Complete feature set with server and UI components
 
 ### P2 (Nice to Have - Polish & Enhancement)
-- Phase 5: All tasks
-- Phase 6: Tasks 6.8-6.14
-- Phase 7: All tasks
-- Optimization, advanced UI features, and documentation
+- Phase 5: All tasks (Optimization)
+- Phase 6: Tasks 6.6-6.11 (Advanced server features)
+- Phase 7: Tasks 7.8-7.14 (Advanced UI features)
+- Phase 8: All tasks (Documentation & Examples)
+- Optimization, advanced server/UI features, and documentation
 
 ---
 

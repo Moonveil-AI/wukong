@@ -22,24 +22,23 @@ This example demonstrates a production-ready agent UI pattern:
 - Tool execution visualization
 - Theme management with `@wukong/ui`
 
-### Backend (Server - Not Included)
-In a production setup, you would:
-1. Run a Node.js server with the Wukong agent
-2. Use WebSocket or Server-Sent Events for real-time communication
-3. Store conversation history in a database
-4. Handle authentication and authorization
+### Backend (Server)
+Wukong provides a production-ready backend server package (`@wukong/server`) that:
+1. Runs the Wukong agent with full capabilities
+2. Provides WebSocket and Server-Sent Events for real-time communication
+3. Manages conversation sessions and history
+4. Includes authentication and rate limiting
+5. Offers deployment configurations for major platforms
+
+See `examples/server` for a complete backend implementation.
 
 ### Current Implementation
 This demo includes:
 - **UI Components**: Full chat interface with sidebar
-- **Simulated Responses**: Demonstrates the interaction patterns
+- **Simulated Responses**: Demonstrates the interaction patterns without a real backend
 - **Tool Display**: Shows how tool executions would be visualized
 
-To connect to a real agent backend, you would:
-1. Replace the `simulateAgentResponse` function with API calls
-2. Set up WebSocket connection for streaming
-3. Implement proper session management
-4. Add error handling and retry logic
+**Note:** This example currently uses simulated responses for demonstration purposes. To connect to a real Wukong backend server, see the [Connecting to a Real Backend](#connecting-to-a-real-agent-backend) section below.
 
 ## Quick Start
 
