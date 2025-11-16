@@ -67,9 +67,21 @@ importers:
 
   examples/ui:
     dependencies:
+      '@wukong/adapter-local':
+        specifier: workspace:*
+        version: link:../../packages/adapter-local
       '@wukong/agent':
         specifier: workspace:*
         version: link:../../packages/agent
+      '@wukong/llm-anthropic':
+        specifier: workspace:*
+        version: link:../../packages/llm-anthropic
+      '@wukong/llm-google':
+        specifier: workspace:*
+        version: link:../../packages/llm-google
+      '@wukong/llm-openai':
+        specifier: workspace:*
+        version: link:../../packages/llm-openai
       '@wukong/ui':
         specifier: workspace:*
         version: link:../../packages/ui

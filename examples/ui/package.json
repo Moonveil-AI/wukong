@@ -12,6 +12,10 @@
   "dependencies": {
     "@wukong/ui": "workspace:*",
     "@wukong/agent": "workspace:*",
+    "@wukong/adapter-local": "workspace:*",
+    "@wukong/llm-anthropic": "workspace:*",
+    "@wukong/llm-google": "workspace:*",
+    "@wukong/llm-openai": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

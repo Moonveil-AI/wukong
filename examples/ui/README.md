@@ -1,158 +1,215 @@
-# Wukong UI Example
+# Wukong Agent UI Example
 
-This example demonstrates how to use the `@wukong/ui` React component library, showcasing the theme system and UI components.
+A real agent UI demonstration using React and the Wukong agent framework. This example provides a complete chat interface for interacting with a Wukong agent.
 
-## Features Demonstrated
+## Features
 
-- **ThemeProvider**: Context provider for theme management
-- **useTheme Hook**: Access and modify theme dynamically
-- **Theme Modes**: Light, Dark, and Auto (system preference)
-- **CSS Variables**: Automatic CSS variable injection
-- **Color Palette**: Primary, Secondary, Success, Warning, Error colors
-- **Typography System**: Font sizes and weights
-- **Spacing System**: Consistent spacing values
-- **Border Radius**: Different border radius sizes
-- **Shadow System**: Small, medium, and large shadows
-- **Interactive Theming**: Real-time theme customization
+- **Real-time Chat Interface**: Interactive chat UI with message history
+- **Agent Capabilities Display**: Shows what the agent can and cannot do
+- **Example Prompts**: Pre-built prompts to help users get started
+- **Tool Execution Visualization**: Real-time display of tool executions
+- **Streaming Responses**: Agent responses stream in real-time
+- **Theme Support**: Light, dark, and auto theme modes
+- **Responsive Design**: Works on desktop and mobile devices
 
-## Getting Started
+## Architecture
 
-### Prerequisites
+This example demonstrates a production-ready agent UI pattern:
 
-Make sure you're in the Wukong monorepo root and have installed all dependencies:
+### Frontend (Browser)
+- React UI with chat interface
+- Real-time message streaming
+- Tool execution visualization
+- Theme management with `@wukong/ui`
+
+### Backend (Server - Not Included)
+In a production setup, you would:
+1. Run a Node.js server with the Wukong agent
+2. Use WebSocket or Server-Sent Events for real-time communication
+3. Store conversation history in a database
+4. Handle authentication and authorization
+
+### Current Implementation
+This demo includes:
+- **UI Components**: Full chat interface with sidebar
+- **Simulated Responses**: Demonstrates the interaction patterns
+- **Tool Display**: Shows how tool executions would be visualized
+
+To connect to a real agent backend, you would:
+1. Replace the `simulateAgentResponse` function with API calls
+2. Set up WebSocket connection for streaming
+3. Implement proper session management
+4. Add error handling and retry logic
+
+## Quick Start
 
 ```bash
-# From the monorepo root
-pnpm install
-```
-
-### Building Dependencies
-
-Build the UI package first:
-
-```bash
-# From the monorepo root
-cd packages/ui
-pnpm build
-
-# Or build all packages
-cd ../..
-pnpm build
-```
-
-### Running the Example
-
-```bash
-# From the monorepo root
-cd examples/ui
-
-# Install dependencies (if not already installed)
+# Install dependencies (from workspace root)
 pnpm install
 
 # Start the development server
+cd examples/ui
 pnpm dev
 ```
 
-The application will be available at `http://localhost:3000`.
+Then open http://localhost:5173 in your browser.
 
-## Project Structure
+## Usage
+
+1. **View Capabilities**: Check the sidebar to see what the agent can do
+2. **Try Examples**: Click any example prompt to populate the input
+3. **Chat**: Type your message and press Send
+4. **Watch Tools**: See tool executions in real-time
+5. **Theme**: Switch between light, dark, or auto themes
+
+## Example Prompts
+
+Try these prompts to see the agent in action:
+
+- "Calculate the result of 15 multiplied by 8, then add 42 to it"
+- "What is the square root of 144, then multiply it by 5, and finally subtract 10?"
+- "What can you help me with? What are your capabilities?"
+
+## Components Used
+
+This example uses several components from `@wukong/ui`:
+
+- **ThemeProvider**: Manages theme state and color schemes
+- **CapabilitiesPanel**: Displays agent capabilities
+- **ExamplePrompts**: Shows clickable example prompts
+- **useTheme**: Hook for accessing theme state
+
+## Connecting to a Real Agent Backend
+
+To connect this UI to a real Wukong agent backend:
+
+### 1. Create a Backend Server
+
+```typescript
+// server.ts
+import { WukongAgent } from '@wukong/agent';
+import { LocalAdapter } from '@wukong/adapter-local';
+import { ClaudeAdapter } from '@wukong/llm-anthropic';
+import express from 'express';
+import { WebSocketServer } from 'ws';
+
+const app = express();
+const server = app.listen(3000);
+const wss = new WebSocketServer({ server });
+
+const adapter = new LocalAdapter({ dbPath: './data/wukong.db' });
+const agent = new WukongAgent({
+  adapter,
+  llm: { models: [new ClaudeAdapter()] },
+  tools: [/* your tools */],
+});
+
+wss.on('connection', (ws) => {
+  // Handle agent execution with streaming
+  ws.on('message', async (data) => {
+    const { goal } = JSON.parse(data.toString());
+    
+    // Set up streaming
+    agent.on('llm:streaming', (event) => {
+      ws.send(JSON.stringify({ type: 'stream', data: event.chunk }));
+    });
+    
+    agent.on('tool:executing', (event) => {
+      ws.send(JSON.stringify({ type: 'tool_start', data: event }));
+    });
+    
+    agent.on('tool:completed', (event) => {
+      ws.send(JSON.stringify({ type: 'tool_complete', data: event }));
+    });
+    
+    // Execute the task
+    const result = await agent.execute({ goal });
+    ws.send(JSON.stringify({ type: 'complete', data: result }));
+  });
+});
+```
+
+### 2. Update the Frontend
+
+```typescript
+// Connect to WebSocket in useEffect
+const ws = new WebSocket('ws://localhost:3000');
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  
+  switch (message.type) {
+    case 'stream':
+      // Update streaming message
+      break;
+    case 'tool_start':
+      // Add tool execution
+      break;
+    case 'tool_complete':
+      // Update tool status
+      break;
+    case 'complete':
+      // Finalize response
+      break;
+  }
+};
+
+// Send messages
+const handleSubmit = () => {
+  ws.send(JSON.stringify({ goal: inputValue }));
+};
+```
+
+## Development
+
+### Project Structure
 
 ```
 examples/ui/
 ├── src/
-│   ├── App.tsx          # Main component with theme demos
-│   ├── App.css          # Component styles using CSS variables
+│   ├── App.tsx          # Main agent UI component
+│   ├── App.css          # Agent UI styles
 │   ├── main.tsx         # React entry point
 │   └── index.css        # Global styles
 ├── index.html           # HTML template
 ├── package.json         # Dependencies
-├── tsconfig.json        # TypeScript config
-├── vite.config.ts       # Vite config
-└── README.md            # This file
+└── vite.config.ts       # Vite configuration
 ```
 
-## Usage Examples
-
-### Basic Theme Provider
-
-```tsx
-import { ThemeProvider } from '@wukong/ui';
-
-function App() {
-  return (
-    <ThemeProvider defaultMode="light">
-      <YourApp />
-    </ThemeProvider>
-  );
-}
-```
-
-### Using the Theme Hook
-
-```tsx
-import { useTheme } from '@wukong/ui';
-
-function MyComponent() {
-  const { theme, mode, setMode } = useTheme();
-
-  return (
-    <div style={{ color: theme.colors.primary }}>
-      <button onClick={() => setMode('dark')}>
-        Switch to Dark Mode
-      </button>
-    </div>
-  );
-}
-```
-
-### Using CSS Variables
-
-```css
-.my-component {
-  color: var(--wukong-primary);
-  background: var(--wukong-background);
-  padding: var(--wukong-spacing-md);
-  border-radius: var(--wukong-border-radius-md);
-  box-shadow: var(--wukong-shadow-md);
-}
-```
-
-### Custom Theme
-
-```tsx
-import { ThemeProvider, type Theme } from '@wukong/ui';
-
-const customTheme: Theme = {
-  colors: {
-    primary: '#ff6b6b',
-    secondary: '#4ecdc4',
-    // ... other colors
-  },
-  // ... other theme properties
-};
-
-function App() {
-  return (
-    <ThemeProvider theme={customTheme}>
-      <YourApp />
-    </ThemeProvider>
-  );
-}
-```
-
-## Available Scripts
+### Available Scripts
 
 - `pnpm dev` - Start development server
 - `pnpm build` - Build for production
 - `pnpm preview` - Preview production build
 
+## Technologies
+
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **@wukong/ui** - Wukong UI components
+- **@wukong/agent** - Wukong agent framework (types)
+
+## Next Steps
+
+To make this a fully functional agent UI:
+
+1. **Backend Integration**: Set up a Node.js server running the Wukong agent
+2. **WebSocket Connection**: Implement real-time bidirectional communication
+3. **Session Management**: Persist and restore conversation sessions
+4. **Authentication**: Add user authentication and authorization
+5. **File Upload**: Allow users to upload documents for the agent to process
+6. **History**: Show previous conversations and sessions
+7. **Settings**: Allow users to configure agent behavior
+8. **Export**: Let users export conversation transcripts
+
 ## Learn More
 
-- [@wukong/ui Documentation](../../packages/ui/README.md)
-- [Wukong Implementation Plan](../../docs/implementation/plan.md)
-- [UI Components Design](../../docs/design/appendix-ui-components.md)
+- [Wukong Documentation](../../docs/)
+- [Agent Architecture](../../docs/design/02-architecture.md)
+- [UI Components](../../packages/ui/)
+- [Basic Example](../basic/) - Backend agent implementation
 
 ## License
 
 MIT
-
