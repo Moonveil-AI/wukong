@@ -6,6 +6,9 @@
 // Theme system
 export * from './theme';
 
+// Components
+export * from './components';
+
 // Version
 export const version = '0.1.0';
 

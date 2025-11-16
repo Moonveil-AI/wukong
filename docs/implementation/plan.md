@@ -274,7 +274,9 @@ import { ThemeProvider } from '@wukong/ui'
 
 ---
 
-### Task 6.2: Core UI Components - Startup Phase
+### Task 6.2: Core UI Components - Startup Phase ✅
+
+**Status:** Completed
 
 **Purpose:** Implement UI components for principles 1-5 (Startup Phase).
 
@@ -283,36 +285,36 @@ import { ThemeProvider } from '@wukong/ui'
 - `docs/design/appendix-trustworthiness.md` - Principles 1-5
 
 **Implementation:**
-1. **CapabilitiesPanel** (Principle 1):
+1. **CapabilitiesPanel** (Principle 1): ✅
    - Display what agent can/cannot do
    - Collapsible sections
    - Support for custom styling
 
-2. **SkillsTree** (Principle 2):
+2. **SkillsTree** (Principle 2): ✅
    - Tree or grid view of available skills
    - Filtering and search
    - Skill categories
 
-3. **ExamplePrompts** (Principle 3):
+3. **ExamplePrompts** (Principle 3): ✅
    - List of example commands
    - Click to use
    - Categorized by use case
 
-4. **UpdateBanner** (Principle 4):
+4. **UpdateBanner** (Principle 4): ✅
    - Show new features/updates
    - Dismissible
    - Version comparison
 
-5. **SourceIndicator** (Principle 5):
+5. **SourceIndicator** (Principle 5): ✅
    - Mark information sources
    - Link to original sources
    - Source type badges
 
 **Tests:**
-- All components render correctly
-- Interactive features work
-- Theme integration works
-- Accessibility standards met
+- All components render correctly ✅
+- Interactive features work ✅
+- Theme integration works ✅
+- Accessibility standards met ✅
 
 **Verify Steps:**
 ```tsx
