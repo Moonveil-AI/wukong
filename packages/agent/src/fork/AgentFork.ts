@@ -104,12 +104,6 @@ export class AgentFork {
     private companyName?: string,
   ) {
     // If no execution adapter provided, create a default Promise-based one
-    if (!this.executionAdapter) {
-      console.warn(
-        '[AgentFork] No ExecutionAdapter provided, using legacy Promise-based execution. ' +
-          'For production serverless environments, consider using InngestAdapter.',
-      );
-    }
   }
 
   /**

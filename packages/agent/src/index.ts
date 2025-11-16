@@ -123,6 +123,18 @@ export type {
   InngestAdapterConfig,
 } from './fork/InngestAdapter';
 
+// Export skills system
+export type {
+  SkillMetadata,
+  MatchedSkill,
+  SkillsAdapter,
+  MatchOptions,
+  SkillsRegistryConfig,
+} from './skills/types';
+export { SkillsRegistry } from './skills/SkillsRegistry';
+export { LocalSkillsAdapter } from './skills/LocalSkillsAdapter';
+export type { LocalSkillsAdapterConfig } from './skills/LocalSkillsAdapter';
+
 // Version
 export const version = '0.1.0';
 
