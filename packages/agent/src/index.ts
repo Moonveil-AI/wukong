@@ -135,6 +135,17 @@ export { SkillsRegistry } from './skills/SkillsRegistry';
 export { LocalSkillsAdapter } from './skills/LocalSkillsAdapter';
 export type { LocalSkillsAdapterConfig } from './skills/LocalSkillsAdapter';
 
+// Export monitoring utilities
+export {
+  TokenMonitor,
+  CostCalculator,
+  DEFAULT_MODEL_PRICING,
+  estimateTokens,
+  countTokens,
+  countTokensForJSON,
+} from './monitoring/TokenMonitor';
+export type { ModelPricing } from './monitoring/TokenMonitor';
+
 // Version
 export const version = '0.1.0';
 
