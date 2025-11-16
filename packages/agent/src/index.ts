@@ -146,6 +146,20 @@ export {
 } from './monitoring/TokenMonitor';
 export type { ModelPricing } from './monitoring/TokenMonitor';
 
+// Export security utilities
+export {
+  sanitizeString,
+  sanitizeToolParameters,
+  sanitizePath,
+  sanitizeSQLIdentifier,
+  sanitizeForDisplay,
+  sanitizeEmail,
+  sanitizeURL,
+  sanitizeCommandArgs,
+  deepSanitize,
+} from './utils/sanitize';
+export type { SanitizeOptions } from './utils/sanitize';
+
 // Version
 export const version = '0.1.0';
 

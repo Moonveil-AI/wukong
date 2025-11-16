@@ -7,6 +7,7 @@
 import Ajv, { type ValidateFunction, type ErrorObject } from 'ajv';
 import addFormats from 'ajv-formats';
 import type { Tool, ToolContext, ToolResult } from '../types';
+import { deepSanitize } from '../utils/sanitize';
 import type { ToolRegistry } from './ToolRegistry';
 
 /**
@@ -161,6 +162,13 @@ export class ToolExecutor {
     params: Record<string, any>,
   ): { valid: true; params: Record<string, any> } | { valid: false; errors: string[] } {
     try {
+      // First, sanitize the parameters to prevent injection attacks
+      const sanitizedParams = deepSanitize(params, {
+        maxLength: 100000, // Allow large parameters but prevent abuse
+        allowHtml: false,
+        allowNewlines: true,
+      });
+
       // Get or create validator for this tool
       let validator = this.validatorCache.get(tool.metadata.name);
       if (!validator) {
@@ -168,8 +176,8 @@ export class ToolExecutor {
         this.validatorCache.set(tool.metadata.name, validator);
       }
 
-      // Validate parameters
-      const valid = validator(params);
+      // Validate sanitized parameters
+      const valid = validator(sanitizedParams);
 
       if (!valid && validator.errors) {
         const errors = validator.errors.map((err: ErrorObject) => {
@@ -179,7 +187,7 @@ export class ToolExecutor {
         return { valid: false, errors };
       }
 
-      return { valid: true, params };
+      return { valid: true, params: sanitizedParams };
     } catch (error) {
       return {
         valid: false,
