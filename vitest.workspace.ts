@@ -9,4 +9,5 @@ export default defineWorkspace([
   'packages/documents',
   'packages/embeddings',
   'packages/ui',
+  'packages/server',
 ]);
