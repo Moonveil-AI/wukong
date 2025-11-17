@@ -4,8 +4,14 @@ import {
   type Capability,
   type ExamplePrompt,
   ExamplePrompts,
+  ExecutionPlan,
+  type ExecutionStep,
+  PlanPreview,
   type ThemeMode,
   ThemeProvider,
+  ThinkingBox,
+  type Todo,
+  TodoList,
   useTheme,
 } from '@wukong/ui';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -174,6 +180,13 @@ function AgentUI() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const _streamingMessageRef = useRef<string>('');
 
+  // New component states
+  const [showPlan, setShowPlan] = useState(false);
+  const [showExecutionPlan, setShowExecutionPlan] = useState(false);
+  const [currentThinking, setCurrentThinking] = useState('');
+  const [showThinking, setShowThinking] = useState(false);
+  const [todos, setTodos] = useState<Todo[]>([]);
+
   // Initialize agent
   useEffect(() => {
     const initAgent = () => {
@@ -190,6 +203,35 @@ function AgentUI() {
             content:
               '🐒 Welcome to Wukong Agent! This is a demo UI showing the agent interface. To use the full agent capabilities, connect to a backend server running the Wukong agent.',
             timestamp: new Date(),
+          },
+        ]);
+
+        // Initialize demo todos
+        setTodos([
+          {
+            id: 'todo-1',
+            title: 'Parse user request',
+            status: 'completed',
+            progress: 100,
+          },
+          {
+            id: 'todo-2',
+            title: 'Break down into steps',
+            status: 'completed',
+            progress: 100,
+          },
+          {
+            id: 'todo-3',
+            title: 'Execute calculations',
+            status: 'in_progress',
+            progress: 60,
+            dependencies: ['todo-2'],
+          },
+          {
+            id: 'todo-4',
+            title: 'Format and return result',
+            status: 'pending',
+            dependencies: ['todo-3'],
           },
         ]);
       } catch (error) {
@@ -232,6 +274,19 @@ function AgentUI() {
 
       // Simulate agent response (in production, this would call the actual agent)
       try {
+        // Show plan and thinking for demo
+        if (
+          userMessage.content.toLowerCase().includes('calculate') ||
+          userMessage.content.toLowerCase().includes('multiply')
+        ) {
+          setShowPlan(true);
+          setShowExecutionPlan(true);
+          setShowThinking(true);
+          setCurrentThinking(
+            '# Analyzing Request\n\nUser wants to perform a calculation...\n\n## Breaking Down Steps\n\n1. Identify the operations needed\n2. Execute in correct order\n3. Format the result\n\n**Current Step:** Parsing mathematical expression...',
+          );
+        }
+
         // Add a streaming message placeholder
         const assistantMessageId = `assistant-${Date.now()}`;
         setMessages((prev) => [
@@ -440,10 +495,118 @@ function AgentUI() {
               compact={true}
             />
           </div>
+
+          <div className="sidebar-section">
+            <h2 style={{ color: theme.colors.text }}>Current Tasks</h2>
+            <TodoList
+              todos={todos}
+              groupBy="status"
+              showProgress={true}
+              showDependencies={true}
+              onUpdate={(todoId, updates) => {
+                setTodos((prev) => prev.map((t) => (t.id === todoId ? { ...t, ...updates } : t)));
+              }}
+            />
+          </div>
         </aside>
 
         {/* Main chat area */}
         <main className="agent-chat">
+          {/* Before Execution Components */}
+          {showPlan && (
+            <PlanPreview
+              plan={{
+                title: 'Calculation Task Plan',
+                description: 'Perform mathematical operations step by step',
+                steps: [
+                  {
+                    id: 'step-1',
+                    description: 'Parse the mathematical expression from user input',
+                    type: 'query',
+                  },
+                  {
+                    id: 'step-2',
+                    description: 'Execute multiplication: 15 × 8',
+                    type: 'action',
+                    dependencies: ['step-1'],
+                  },
+                  {
+                    id: 'step-3',
+                    description: 'Add 42 to the result',
+                    type: 'action',
+                    dependencies: ['step-2'],
+                  },
+                  {
+                    id: 'step-4',
+                    description: 'Format and return the final result',
+                    type: 'query',
+                    dependencies: ['step-3'],
+                  },
+                ],
+                estimatedTime: 3,
+                estimatedCost: 0.002,
+              }}
+              onAccept={() => setShowPlan(false)}
+              onCancel={() => {
+                setShowPlan(false);
+                setIsExecuting(false);
+              }}
+            />
+          )}
+
+          {showExecutionPlan && (
+            <ExecutionPlan
+              steps={
+                [
+                  {
+                    id: 'exec-1',
+                    title: 'Parse Expression',
+                    description: 'Extract numbers and operations from the user request',
+                    estimatedTime: 1,
+                  },
+                  {
+                    id: 'exec-2',
+                    title: 'Execute Multiplication',
+                    description: 'Calculate 15 × 8 using the calculator tool',
+                    risk: {
+                      level: 'low',
+                      description: 'Simple arithmetic operation with no side effects',
+                    },
+                    estimatedTime: 1,
+                  },
+                  {
+                    id: 'exec-3',
+                    title: 'Add Result',
+                    description: 'Add 42 to the multiplication result',
+                    risk: {
+                      level: 'low',
+                      description: 'Simple arithmetic operation with no side effects',
+                    },
+                    estimatedTime: 1,
+                  },
+                ] as ExecutionStep[]
+              }
+              showRisks={true}
+              showEstimates={true}
+              onAccept={() => setShowExecutionPlan(false)}
+              onCancel={() => {
+                setShowExecutionPlan(false);
+                setIsExecuting(false);
+              }}
+            />
+          )}
+
+          {showThinking && currentThinking && (
+            <ThinkingBox
+              thinking={currentThinking}
+              streaming={isExecuting}
+              autoScroll={true}
+              collapsible={true}
+              showTimestamp={true}
+              onClose={() => setShowThinking(false)}
+            />
+          )}
+
           {/* Messages */}
           <div className="messages-container">
             {messages.map((message) => (

@@ -20,3 +20,16 @@ export type { UpdateBannerProps, Update } from './UpdateBanner';
 
 export { SourceIndicator } from './SourceIndicator';
 export type { SourceIndicatorProps, Source } from './SourceIndicator';
+
+// Before Execution Components (Principles 6-11)
+export { PlanPreview } from './PlanPreview';
+export type { PlanPreviewProps, Plan, PlanStep } from './PlanPreview';
+
+export { ExecutionPlan } from './ExecutionPlan';
+export type { ExecutionPlanProps, ExecutionStep, RiskLevel } from './ExecutionPlan';
+
+export { TodoList } from './TodoList';
+export type { TodoListProps, Todo, TodoStatus } from './TodoList';
+
+export { ThinkingBox } from './ThinkingBox';
+export type { ThinkingBoxProps } from './ThinkingBox';
