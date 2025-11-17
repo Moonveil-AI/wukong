@@ -1,6 +1,6 @@
 import type { WukongServerConfig } from '../types.js';
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 interface LogData {
   [key: string]: any;
@@ -15,6 +15,7 @@ export function createLogger(config: Required<WukongServerConfig>['logging']) {
     info: 1,
     warn: 2,
     error: 3,
+    silent: 999, // Silent suppresses all logs
   };
 
   const currentLevel = levelPriority[config.level ?? 'info'];

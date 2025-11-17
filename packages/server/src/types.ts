@@ -67,7 +67,7 @@ export interface WukongServerConfig {
   /** Logging configuration */
   logging?: {
     /** Log level */
-    level?: 'debug' | 'info' | 'warn' | 'error';
+    level?: 'debug' | 'info' | 'warn' | 'error' | 'silent';
     /** Log format */
     format?: 'json' | 'text';
     /** Log destination */
@@ -149,12 +149,17 @@ export type WebSocketMessage =
  */
 export type WebSocketEvent =
   | { type: 'connected'; sessionId: string }
+  | { type: 'execution:started'; sessionId: string }
   | { type: 'llm:streaming'; text: string; delta: string }
   | { type: 'tool:executing'; tool: string; parameters: any }
   | { type: 'tool:completed'; tool: string; result: any }
   | { type: 'agent:progress'; step: number; total: number; message: string }
   | { type: 'agent:complete'; result: any }
   | { type: 'agent:error'; error: string; details?: any }
+  | { type: 'agent:stopped'; sessionId: string }
+  | { type: 'agent:paused'; sessionId: string }
+  | { type: 'agent:resumed'; sessionId: string }
+  | { type: 'feedback:received'; success: boolean }
   | { type: 'pong' };
 
 /**

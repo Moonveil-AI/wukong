@@ -24,6 +24,9 @@ describe('WukongServer', () => {
         agent: {
           factory: mockAgentFactory,
         },
+        logging: {
+          level: 'error', // Suppress logs in tests
+        },
       });
 
       const info = server.getInfo();
@@ -43,6 +46,9 @@ describe('WukongServer', () => {
         websocket: {
           enabled: false,
         },
+        logging: {
+          level: 'error', // Suppress logs in tests
+        },
       });
 
       const info = server.getInfo();
@@ -59,6 +65,9 @@ describe('WukongServer', () => {
         agent: {
           factory: mockAgentFactory,
         },
+        logging: {
+          level: 'error', // Suppress logs in tests
+        },
       });
 
       await server.start();
@@ -74,6 +83,9 @@ describe('WukongServer', () => {
         agent: {
           factory: mockAgentFactory,
         },
+        logging: {
+          level: 'error', // Suppress logs in tests
+        },
       });
 
       await server.start();
@@ -84,6 +96,9 @@ describe('WukongServer', () => {
         port: 3002,
         agent: {
           factory: mockAgentFactory,
+        },
+        logging: {
+          level: 'error', // Suppress logs in tests
         },
       });
       await server.start();
@@ -98,7 +113,7 @@ describe('WukongServer', () => {
           factory: mockAgentFactory,
         },
         logging: {
-          level: 'debug',
+          level: 'error', // Use error level to suppress logs in tests
           format: 'json',
         },
       });
@@ -115,6 +130,9 @@ describe('WukongServer', () => {
           timeout: 60000,
           maxSessionsPerUser: 10,
         },
+        logging: {
+          level: 'error', // Suppress logs in tests
+        },
       });
 
       expect(server.getInfo()).toBeDefined();
@@ -129,6 +147,9 @@ describe('WukongServer', () => {
           origin: 'https://example.com',
           credentials: true,
         },
+        logging: {
+          level: 'error', // Suppress logs in tests
+        },
       });
 
       expect(server.getInfo()).toBeDefined();
@@ -140,6 +161,9 @@ describe('WukongServer', () => {
       server = new WukongServer({
         agent: {
           factory: mockAgentFactory,
+        },
+        logging: {
+          level: 'error', // Suppress logs in tests
         },
       });
 

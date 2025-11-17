@@ -232,8 +232,8 @@ describe('SkillsRegistry', () => {
       const matches = await registry.match('excel', { maxResults: 1 });
       const contents = await registry.loadSkillsContent(matches.map((m) => m.name));
 
-      // Calculate approximate token count
-      const totalSize = Array.from(contents.values()).reduce(
+      // Calculate approximate token count (for debugging if needed)
+      const _totalSize = Array.from(contents.values()).reduce(
         (sum, content) => sum + content.length,
         0,
       );
@@ -242,8 +242,9 @@ describe('SkillsRegistry', () => {
       const allMetadata = registry.getAllMetadata();
       expect(contents.size).toBeLessThan(allMetadata.length);
 
-      console.log(`Loaded ${contents.size}/${allMetadata.length} skills`);
-      console.log(`Total content size: ~${totalSize} chars`);
+      // Debug output (commented out to keep test output clean)
+      // console.log(`Loaded ${contents.size}/${allMetadata.length} skills`);
+      // console.log(`Total content size: ~${_totalSize} chars`);
     });
   });
 });

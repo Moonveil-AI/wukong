@@ -37,11 +37,31 @@ interface DbMigrationRow {
 export class MigrationRunner {
   private migrationsPath: string;
   private dbPath: string;
+  private silent: boolean;
 
-  constructor(dbPath: string, migrationsPath?: string) {
+  constructor(dbPath: string, migrationsPath?: string, silent = false) {
     this.dbPath = dbPath;
     // Default to migrations directory relative to this file
     this.migrationsPath = migrationsPath || join(__dirname, '../migrations');
+    this.silent = silent;
+  }
+
+  /**
+   * Log to console if not in silent mode
+   */
+  private log(...args: any[]): void {
+    if (!this.silent) {
+      console.log(...args);
+    }
+  }
+
+  /**
+   * Log error to console if not in silent mode
+   */
+  private logError(...args: any[]): void {
+    if (!this.silent) {
+      console.error(...args);
+    }
   }
 
   /**
@@ -170,7 +190,7 @@ export class MigrationRunner {
     const filePath = join(this.migrationsPath, migration.filename);
 
     try {
-      console.log(`Running migration ${migration.version}: ${migration.description}...`);
+      this.log(`Running migration ${migration.version}: ${migration.description}...`);
 
       // Read migration file
       const migrationSQL = await readFile(filePath, 'utf-8');
@@ -189,7 +209,7 @@ export class MigrationRunner {
         throw error;
       }
 
-      console.log(`✓ Migration ${migration.version} completed successfully`);
+      this.log(`✓ Migration ${migration.version} completed successfully`);
 
       return {
         version: migration.version,
@@ -198,7 +218,7 @@ export class MigrationRunner {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      console.error(`✗ Migration ${migration.version} failed:`, errorMessage);
+      this.logError(`✗ Migration ${migration.version} failed:`, errorMessage);
 
       return {
         version: migration.version,
@@ -216,11 +236,11 @@ export class MigrationRunner {
     const pending = await this.getPendingMigrations();
 
     if (pending.length === 0) {
-      console.log('✓ No pending migrations');
+      this.log('✓ No pending migrations');
       return [];
     }
 
-    console.log(`Found ${pending.length} pending migration(s)`);
+    this.log(`Found ${pending.length} pending migration(s)`);
 
     const results: MigrationResult[] = [];
 
@@ -230,13 +250,13 @@ export class MigrationRunner {
 
       // Stop on first failure
       if (!result.success) {
-        console.error('Migration failed. Stopping migration process.');
+        this.logError('Migration failed. Stopping migration process.');
         break;
       }
     }
 
     const successful = results.filter((r) => r.success).length;
-    console.log(`\n✓ Applied ${successful}/${pending.length} migration(s)`);
+    this.log(`\n✓ Applied ${successful}/${pending.length} migration(s)`);
 
     return results;
   }
@@ -272,27 +292,27 @@ export class MigrationRunner {
   async printStatus(): Promise<void> {
     const status = await this.status();
 
-    console.log('\n=== Database Migration Status ===\n');
-    console.log(`Database: ${this.dbPath}`);
-    console.log(`Current version: ${status.currentVersion}`);
-    console.log(`Applied migrations: ${status.appliedCount}`);
-    console.log(`Pending migrations: ${status.pendingCount}`);
+    this.log('\n=== Database Migration Status ===\n');
+    this.log(`Database: ${this.dbPath}`);
+    this.log(`Current version: ${status.currentVersion}`);
+    this.log(`Applied migrations: ${status.appliedCount}`);
+    this.log(`Pending migrations: ${status.pendingCount}`);
 
     if (status.applied.length > 0) {
-      console.log('\n✓ Applied:');
+      this.log('\n✓ Applied:');
       for (const migration of status.applied) {
-        console.log(`  ${migration.version}. ${migration.description} (${migration.appliedAt})`);
+        this.log(`  ${migration.version}. ${migration.description} (${migration.appliedAt})`);
       }
     }
 
     if (status.pending.length > 0) {
-      console.log('\n⧗ Pending:');
+      this.log('\n⧗ Pending:');
       for (const migration of status.pending) {
-        console.log(`  ${migration.version}. ${migration.description}`);
+        this.log(`  ${migration.version}. ${migration.description}`);
       }
     }
 
-    console.log('');
+    this.log('');
   }
 }
 

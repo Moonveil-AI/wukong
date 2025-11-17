@@ -32,14 +32,14 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should initialize with version 0 on empty database', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
     const version = await runner.getCurrentVersion();
 
     expect(version).toBe(0);
   });
 
   it('should find all available migrations', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
     const available = await runner.getAvailableMigrations();
 
     expect(available.length).toBeGreaterThanOrEqual(5);
@@ -48,7 +48,7 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should run all pending migrations', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
 
     // Initially all migrations should be pending
     const pendingBefore = await runner.getPendingMigrations();
@@ -69,7 +69,7 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should create all tables correctly', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
     await runner.migrate();
 
     const db = new Database(TEST_DB_PATH);
@@ -101,7 +101,7 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should track applied migrations in schema_versions', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
     await runner.migrate();
 
     const applied = await runner.getAppliedMigrations();
@@ -111,7 +111,7 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should not re-run already applied migrations', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
 
     // Run migrations first time
     const results1 = await runner.migrate();
@@ -123,7 +123,7 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should provide accurate status', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
 
     // Before migration
     const statusBefore = await runner.status();
@@ -140,7 +140,7 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should create indexes on tables', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
     await runner.migrate();
 
     const db = new Database(TEST_DB_PATH);
@@ -170,7 +170,7 @@ describe('MigrationRunner - SQLite', () => {
   });
 
   it('should support foreign key constraints', async () => {
-    const runner = new MigrationRunner(TEST_DB_PATH);
+    const runner = new MigrationRunner(TEST_DB_PATH, undefined, true); // silent=true
     await runner.migrate();
 
     const db = new Database(TEST_DB_PATH);

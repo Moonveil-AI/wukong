@@ -2,7 +2,7 @@
  * Tests for Token Monitor
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { WukongEventEmitter } from '../../EventEmitter';
 import {
   CostCalculator,
@@ -60,9 +60,16 @@ describe('Token Counter Functions', () => {
 
 describe('CostCalculator', () => {
   let calculator: CostCalculator;
+  let consoleWarnSpy: any;
 
   beforeEach(() => {
     calculator = new CostCalculator();
+    // Suppress console.warn for tests
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    consoleWarnSpy.mockRestore();
   });
 
   describe('calculateCost', () => {

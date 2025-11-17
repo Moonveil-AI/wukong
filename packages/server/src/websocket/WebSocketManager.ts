@@ -97,6 +97,11 @@ export class WebSocketManager {
         // Execute
         try {
           this.sessionManager.updateStatus(sessionId, 'running');
+          this.sendEvent(ws, {
+            type: 'execution:started',
+            sessionId,
+          });
+
           const result = await session.agent.execute({ goal, context });
 
           this.sessionManager.updateStatus(sessionId, 'completed');
@@ -106,9 +111,20 @@ export class WebSocketManager {
           });
         } catch (error: any) {
           this.sessionManager.updateStatus(sessionId, 'error');
+          this.logger.error('Agent execution error', {
+            sessionId,
+            error: error.message,
+            stack: error.stack,
+          });
+
           this.sendEvent(ws, {
             type: 'agent:error',
             error: error.message,
+            details: {
+              name: error.name,
+              code: error.code,
+              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+            },
           });
         }
         break;
@@ -124,7 +140,69 @@ export class WebSocketManager {
               // The agent doesn't have a public stop() method
               // We need to use the StopController or implement a stop mechanism
               this.sessionManager.updateStatus(sessionId, 'idle');
+              this.sendEvent(ws, {
+                type: 'agent:stopped',
+                sessionId,
+              });
             }
+            break;
+          }
+        }
+        break;
+      }
+
+      case 'pause': {
+        // Find session for this connection
+        for (const [sessionId, connections] of this.sessionConnections) {
+          if (connections.has(connectionId)) {
+            const session = this.sessionManager.get(sessionId);
+            if (session) {
+              this.sessionManager.updateStatus(sessionId, 'paused');
+              this.sendEvent(ws, {
+                type: 'agent:paused',
+                sessionId,
+              });
+            }
+            break;
+          }
+        }
+        break;
+      }
+
+      case 'resume': {
+        // Find session for this connection
+        for (const [sessionId, connections] of this.sessionConnections) {
+          if (connections.has(connectionId)) {
+            const session = this.sessionManager.get(sessionId);
+            if (session) {
+              this.sessionManager.updateStatus(sessionId, 'running');
+              this.sendEvent(ws, {
+                type: 'agent:resumed',
+                sessionId,
+              });
+            }
+            break;
+          }
+        }
+        break;
+      }
+
+      case 'feedback': {
+        // Handle user feedback
+        const { feedback } = message;
+        this.logger.info('Received user feedback', {
+          connectionId,
+          feedback,
+        });
+
+        // Find session for this connection
+        for (const [_sessionId, connections] of this.sessionConnections) {
+          if (connections.has(connectionId)) {
+            // Store feedback or emit event for processing
+            this.sendEvent(ws, {
+              type: 'feedback:received',
+              success: true,
+            });
             break;
           }
         }
@@ -194,11 +272,29 @@ export class WebSocketManager {
   /**
    * Send error to WebSocket client
    */
-  private sendError(ws: WebSocket, error: string): void {
+  private sendError(ws: WebSocket, error: string, details?: any): void {
     this.sendEvent(ws, {
       type: 'agent:error',
       error,
+      details,
     });
+  }
+
+  /**
+   * Broadcast event to all connections in a session
+   */
+  broadcastToSession(sessionId: string, event: WebSocketEvent): void {
+    const connections = this.sessionConnections.get(sessionId);
+    if (!connections) {
+      return;
+    }
+
+    for (const connectionId of connections) {
+      const ws = this.connections.get(connectionId);
+      if (ws) {
+        this.sendEvent(ws, event);
+      }
+    }
   }
 
   /**

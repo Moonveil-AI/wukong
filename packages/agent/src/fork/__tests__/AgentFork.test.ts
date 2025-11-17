@@ -6,7 +6,7 @@
  */
 
 import { EventEmitter } from 'eventemitter3';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ForkAgentTask, Session, Step, StorageAdapter } from '../../types/index';
 import { AgentFork } from '../AgentFork';
 
@@ -130,11 +130,15 @@ describe('AgentFork', () => {
   let storageAdapter: MockStorageAdapter;
   let llmCaller: MockLLMCaller;
   let eventEmitter: EventEmitter;
+  let consoleErrorSpy: any;
 
   beforeEach(() => {
     storageAdapter = new MockStorageAdapter() as any;
     llmCaller = new MockLLMCaller() as any;
     eventEmitter = new EventEmitter();
+
+    // Suppress console.error for tests
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
     agentFork = new AgentFork(
       storageAdapter as any,
@@ -143,6 +147,10 @@ describe('AgentFork', () => {
       [], // tools
       {}, // apiKeys
     );
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   describe('forkAutoAgent', () => {
