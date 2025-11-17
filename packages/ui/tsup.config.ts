@@ -1,3 +1,5 @@
+import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
@@ -15,5 +17,11 @@ export default defineConfig({
   },
   // Copy CSS to output
   publicDir: false,
-  onSuccess: 'cp src/styles/global.css dist/styles.css',
+  onSuccess: () => {
+    const distDir = join(__dirname, 'dist');
+    if (!existsSync(distDir)) {
+      mkdirSync(distDir, { recursive: true });
+    }
+    copyFileSync(join(__dirname, 'src', 'styles', 'global.css'), join(distDir, 'styles.css'));
+  },
 });
