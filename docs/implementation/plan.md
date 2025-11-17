@@ -236,7 +236,9 @@ expect(sanitized.prompt).not.toContain('<script>')
 
 ## Phase 6: Backend Server Package
 
-### Task 6.1: Server Package Setup
+### Task 6.1: Server Package Setup ✅
+
+**Status:** Completed
 
 **Purpose:** Create the @wukong/server package to provide a production-ready backend server for agent execution.
 
@@ -245,31 +247,43 @@ expect(sanitized.prompt).not.toContain('<script>')
 - `examples/ui/README.md` - Backend integration example
 
 **Implementation:**
-1. Initialize `packages/server`:
-   - Add Express/Fastify for HTTP server
-   - Add WebSocket support (ws library)
-   - Add Server-Sent Events support
-   - TypeScript configuration
-   - Build tooling
+1. Initialize `packages/server`: ✅
+   - Add Express/Fastify for HTTP server ✅
+   - Add WebSocket support (ws library) ✅
+   - Add Server-Sent Events support ✅
+   - TypeScript configuration ✅
+   - Build tooling ✅
 
-2. Package structure:
+2. Package structure: ✅
    ```
    packages/server/
    ├── src/
    │   ├── index.ts              # Main exports
    │   ├── WukongServer.ts       # Core server class
-   │   ├── routes/               # HTTP routes
-   │   ├── websocket/            # WebSocket handlers
-   │   ├── middleware/           # Express middleware
-   │   └── utils/                # Utilities
+   │   ├── SessionManager.ts     # Session lifecycle management
+   │   ├── types.ts              # TypeScript types
+   │   ├── routes/
+   │   │   └── index.ts          # HTTP REST API endpoints
+   │   ├── websocket/
+   │   │   └── WebSocketManager.ts # WebSocket handlers
+   │   ├── middleware/
+   │   │   └── errorHandler.ts   # Error handling middleware
+   │   ├── utils/
+   │   │   └── logger.ts         # Logging utility
+   │   └── __tests__/            # Test files
    ├── package.json
-   └── tsconfig.json
+   ├── tsconfig.json
+   ├── tsup.config.ts
+   ├── vitest.config.ts
+   └── README.md
    ```
 
-**Tests:**
-- Package builds correctly
-- Server starts and stops
-- Basic HTTP endpoints work
+**Tests:** ✅
+- ✅ Package builds correctly
+- ✅ Server starts and stops
+- ✅ Basic HTTP endpoints work
+- ✅ 46 unit tests (WukongServer, SessionManager, errorHandler, logger)
+- ✅ All tests passing
 
 **Verify Steps:**
 ```typescript
@@ -277,8 +291,12 @@ import { WukongServer } from '@wukong/server'
 
 const server = new WukongServer({
   port: 3000,
-  adapter: new LocalAdapter({ dbPath: './data/wukong.db' }),
-  llm: { models: [new ClaudeAdapter()] }
+  agent: {
+    factory: () => new WukongAgent({
+      adapter: new LocalAdapter({ dbPath: './data/wukong.db' }),
+      llm: { models: [new ClaudeAdapter()] }
+    })
+  }
 })
 
 await server.start()
