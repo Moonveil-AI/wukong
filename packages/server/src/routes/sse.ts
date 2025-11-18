@@ -195,7 +195,7 @@ export function setupSSERoutes(
    */
   app.get('/events/:sessionId', (req: Request, res: Response, next: any) => {
     try {
-      const sessionId = req.params['sessionId'];
+      const sessionId = req.params.sessionId;
       if (!sessionId) {
         throw errors.badRequest('Session ID is required');
       }
@@ -224,7 +224,7 @@ export function setupSSERoutes(
    */
   app.post('/events/:sessionId/execute', async (req: Request, res: Response, next: any) => {
     try {
-      const sessionId = req.params['sessionId'];
+      const sessionId = req.params.sessionId;
       if (!sessionId) {
         throw errors.badRequest('Session ID is required');
       }
@@ -290,7 +290,7 @@ export function setupSSERoutes(
    */
   app.post('/events/:sessionId/stop', (req: Request, res: Response, next: any) => {
     try {
-      const sessionId = req.params['sessionId'];
+      const sessionId = req.params.sessionId;
       if (!sessionId) {
         throw errors.badRequest('Session ID is required');
       }
@@ -328,7 +328,7 @@ export function setupSSERoutes(
    */
   app.post('/events/:sessionId/disconnect', (req: Request, res: Response, next: any) => {
     try {
-      const sessionId = req.params['sessionId'];
+      const sessionId = req.params.sessionId;
       if (!sessionId) {
         throw errors.badRequest('Session ID is required');
       }

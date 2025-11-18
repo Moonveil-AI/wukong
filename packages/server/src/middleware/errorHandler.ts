@@ -27,6 +27,7 @@ export function errorHandler(logger: ReturnType<typeof createLogger>) {
       error: {
         code: errorCode,
         message: err.message || 'An unexpected error occurred',
+        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for process.env
         details: process.env['NODE_ENV'] === 'development' ? err.stack : undefined,
       },
     };
