@@ -123,7 +123,7 @@ export class WebSocketManager {
             details: {
               name: error.name,
               code: error.code,
-              stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+              stack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
             },
           });
         }
