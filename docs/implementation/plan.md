@@ -432,7 +432,8 @@ fetch('/events/session123/execute', {
    - `GET /api/sessions/:id` - Get session details
    - `GET /api/sessions` - List sessions
    - `DELETE /api/sessions/:id` - Delete session
-   - `POST /api/sessions/:id/execute` - Execute (non-streaming)
+   - `POST /api/sessions/:id/execute` - Start execution (async, returns immediately)
+   - `POST /api/sessions/:id/execute-stream` - Execute with streaming (chunked transfer)
    - `POST /api/sessions/:id/stop` - Stop execution
    - `GET /api/sessions/:id/history` - Get chat history
    - `POST /api/feedback` - Submit feedback
@@ -452,11 +453,21 @@ fetch('/events/session123/execute', {
    }
    ```
 
+3. Execution modes:
+   - **Async execution**: `POST /execute` starts execution and returns immediately
+     - Client uses SSE/WebSocket for streaming updates
+     - Client polls `GET /sessions/:id` for status
+   - **Streaming execution**: `POST /execute-stream` returns chunked response
+     - Uses Transfer-Encoding: chunked
+     - Each line is a JSON event (newline-delimited JSON)
+     - Compatible with standard HTTP clients
+
 **Tests:**
 - All endpoints work correctly
 - Error handling is robust
 - Request validation works
 - Response format is consistent
+- Streaming execution sends events properly
 
 **Verify Steps:**
 ```bash
@@ -465,10 +476,17 @@ curl -X POST http://localhost:3000/api/sessions \
   -H "Content-Type: application/json" \
   -d '{"userId": "user123"}'
 
-# Execute task
+# Option 1: Async execution (use with SSE/WebSocket)
 curl -X POST http://localhost:3000/api/sessions/session123/execute \
   -H "Content-Type: application/json" \
   -d '{"goal": "Calculate 2 + 2"}'
+# → Returns immediately with status
+
+# Option 2: Streaming execution (chunked response)
+curl -X POST http://localhost:3000/api/sessions/session123/execute-stream \
+  -H "Content-Type: application/json" \
+  -d '{"goal": "Calculate 2 + 2"}'
+# → Streams events as newline-delimited JSON
 
 # Get history
 curl http://localhost:3000/api/sessions/session123/history
