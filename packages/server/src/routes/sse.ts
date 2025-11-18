@@ -132,54 +132,50 @@ export function setupAgentSSEListeners(
   // LLM streaming
   agent.on('llm:streaming', (data) => {
     sseManager.sendEvent(sessionId, 'llm:streaming', {
-      text: data.text,
-      delta: data.delta,
+      text: data.chunk.text,
+      fullText: data.chunk.fullText,
+      index: data.chunk.index,
+      isFinal: data.chunk.isFinal,
     });
   });
 
   // Tool execution
   agent.on('tool:executing', (data) => {
     sseManager.sendEvent(sessionId, 'tool:executing', {
-      tool: data.name,
+      tool: data.toolName,
       parameters: data.parameters,
+      description: data.description,
     });
   });
 
   agent.on('tool:completed', (data) => {
     sseManager.sendEvent(sessionId, 'tool:completed', {
-      tool: data.name,
+      tool: data.toolName,
       result: data.result,
+      durationMs: data.durationMs,
     });
   });
 
   // Progress updates
-  agent.on('step:executed', (data) => {
+  agent.on('step:completed', (data) => {
     sseManager.sendEvent(sessionId, 'agent:progress', {
-      step: data.stepNumber || 0,
-      total: 0, // TODO: Get actual total from agent if available
-      message: `Executed step: ${data.action?.type || 'unknown'}`,
+      step: data.step.id,
+      message: `Completed step ${data.step.id}`,
     });
   });
 
   // Completion
-  agent.on('agent:complete', (data) => {
+  agent.on('task:completed', (data) => {
     sseManager.sendEvent(sessionId, 'agent:complete', {
       result: data.result,
     });
   });
 
   // Errors
-  agent.on('agent:error', (data) => {
+  agent.on('task:failed', (data) => {
     sseManager.sendEvent(sessionId, 'agent:error', {
-      error: data.error?.message || 'Unknown error',
-      details: data.error,
-    });
-  });
-
-  // Status changes
-  agent.on('status:changed', (data) => {
-    sseManager.sendEvent(sessionId, 'status:changed', {
-      status: data.status,
+      error: data.error || 'Unknown error',
+      partialResult: data.partialResult,
     });
   });
 }
@@ -199,7 +195,10 @@ export function setupSSERoutes(
    */
   app.get('/events/:sessionId', (req: Request, res: Response, next: any) => {
     try {
-      const { sessionId } = req.params;
+      const sessionId = req.params.sessionId;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
 
       // Validate session exists
       const session = sessionManager.get(sessionId);
@@ -225,7 +224,11 @@ export function setupSSERoutes(
    */
   app.post('/events/:sessionId/execute', async (req: Request, res: Response, next: any) => {
     try {
-      const { sessionId } = req.params;
+      const sessionId = req.params.sessionId;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
+
       const { goal, context } = req.body;
 
       if (!goal) {
@@ -260,7 +263,7 @@ export function setupSSERoutes(
 
       // Execute in background
       try {
-        const _result = await session.agent.execute({ goal, context });
+        await session.agent.execute({ goal, context });
         sessionManager.updateStatus(sessionId, 'completed');
 
         // Final event already sent by agent:complete listener
@@ -287,7 +290,10 @@ export function setupSSERoutes(
    */
   app.post('/events/:sessionId/stop', (req: Request, res: Response, next: any) => {
     try {
-      const { sessionId } = req.params;
+      const sessionId = req.params.sessionId;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
 
       const session = sessionManager.get(sessionId);
       if (!session) {
@@ -322,7 +328,10 @@ export function setupSSERoutes(
    */
   app.post('/events/:sessionId/disconnect', (req: Request, res: Response, next: any) => {
     try {
-      const { sessionId } = req.params;
+      const sessionId = req.params.sessionId;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
 
       sseManager.disconnect(sessionId);
 

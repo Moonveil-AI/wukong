@@ -292,10 +292,9 @@ describe('setupAgentSSEListeners', () => {
     expect(mockAgent.on).toHaveBeenCalledWith('llm:streaming', expect.any(Function));
     expect(mockAgent.on).toHaveBeenCalledWith('tool:executing', expect.any(Function));
     expect(mockAgent.on).toHaveBeenCalledWith('tool:completed', expect.any(Function));
-    expect(mockAgent.on).toHaveBeenCalledWith('step:executed', expect.any(Function));
-    expect(mockAgent.on).toHaveBeenCalledWith('agent:complete', expect.any(Function));
-    expect(mockAgent.on).toHaveBeenCalledWith('agent:error', expect.any(Function));
-    expect(mockAgent.on).toHaveBeenCalledWith('status:changed', expect.any(Function));
+    expect(mockAgent.on).toHaveBeenCalledWith('step:completed', expect.any(Function));
+    expect(mockAgent.on).toHaveBeenCalledWith('task:completed', expect.any(Function));
+    expect(mockAgent.on).toHaveBeenCalledWith('task:failed', expect.any(Function));
   });
 
   it('should forward llm:streaming events to SSE', () => {
@@ -308,7 +307,11 @@ describe('setupAgentSSEListeners', () => {
     vi.clearAllMocks();
 
     const handler = eventHandlers.get('llm:streaming');
-    handler?.({ text: 'Hello', delta: 'Hello' });
+    handler?.({
+      sessionId,
+      stepId: 1,
+      chunk: { text: 'Hello', fullText: 'Hello', index: 0, isFinal: false },
+    });
 
     expect(mockRes.write).toHaveBeenCalledWith('event: llm:streaming\n');
     expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('"text":"Hello"'));
@@ -324,7 +327,13 @@ describe('setupAgentSSEListeners', () => {
     vi.clearAllMocks();
 
     const handler = eventHandlers.get('tool:executing');
-    handler?.({ name: 'calculator', parameters: { a: 1, b: 2 } });
+    handler?.({
+      sessionId,
+      stepId: 1,
+      toolName: 'calculator',
+      parameters: { a: 1, b: 2 },
+      description: 'Calculate sum',
+    });
 
     expect(mockRes.write).toHaveBeenCalledWith('event: tool:executing\n');
     expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('"tool":"calculator"'));
@@ -340,13 +349,19 @@ describe('setupAgentSSEListeners', () => {
     vi.clearAllMocks();
 
     const handler = eventHandlers.get('tool:completed');
-    handler?.({ name: 'calculator', result: 3 });
+    handler?.({
+      sessionId,
+      stepId: 1,
+      toolName: 'calculator',
+      result: { success: true, data: 3 },
+      durationMs: 100,
+    });
 
     expect(mockRes.write).toHaveBeenCalledWith('event: tool:completed\n');
     expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('"tool":"calculator"'));
   });
 
-  it('should forward agent:complete events to SSE', () => {
+  it('should forward task:completed events to SSE', () => {
     const mockRes = createMockResponse();
     const sessionId = 'test-session';
 
@@ -355,14 +370,17 @@ describe('setupAgentSSEListeners', () => {
 
     vi.clearAllMocks();
 
-    const handler = eventHandlers.get('agent:complete');
-    handler?.({ result: { success: true } });
+    const handler = eventHandlers.get('task:completed');
+    handler?.({
+      sessionId,
+      result: { success: true, data: 'Task completed' },
+    });
 
     expect(mockRes.write).toHaveBeenCalledWith('event: agent:complete\n');
     expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('"success":true'));
   });
 
-  it('should forward agent:error events to SSE', () => {
+  it('should forward task:failed events to SSE', () => {
     const mockRes = createMockResponse();
     const sessionId = 'test-session';
 
@@ -371,8 +389,12 @@ describe('setupAgentSSEListeners', () => {
 
     vi.clearAllMocks();
 
-    const handler = eventHandlers.get('agent:error');
-    handler?.({ error: new Error('Test error') });
+    const handler = eventHandlers.get('task:failed');
+    handler?.({
+      sessionId,
+      error: 'Test error',
+      partialResult: null,
+    });
 
     expect(mockRes.write).toHaveBeenCalledWith('event: agent:error\n');
     expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('"error":"Test error"'));
