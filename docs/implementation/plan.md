@@ -363,44 +363,60 @@ ws.onmessage = (event) => {
 
 ---
 
-### Task 6.3: Server-Sent Events (SSE)
+### Task 6.3: Server-Sent Events (SSE) ✅
+
+**Status:** Completed
 
 **Purpose:** Implement SSE as an alternative to WebSocket for streaming responses.
 
 **Implementation:**
-1. Create `packages/server/src/routes/sse.ts`:
-   - SSE endpoint setup
-   - Event stream management
-   - Connection tracking
-   - Automatic reconnection support
+1. Create `packages/server/src/routes/sse.ts`: ✅
+   - SSE endpoint setup ✅
+   - Event stream management ✅
+   - Connection tracking ✅
+   - Automatic reconnection support ✅
 
-2. Event types:
-   - Same events as WebSocket
-   - Text-based streaming
-   - Works with standard HTTP
+2. Event types: ✅
+   - Same events as WebSocket ✅
+   - Text-based streaming ✅
+   - Works with standard HTTP ✅
 
-3. Advantages over WebSocket:
-   - Simpler for one-way streaming
-   - Better proxy/firewall compatibility
-   - Automatic reconnection
-   - Standard HTTP
+3. Advantages over WebSocket: ✅
+   - Simpler for one-way streaming ✅
+   - Better proxy/firewall compatibility ✅
+   - Automatic reconnection ✅
+   - Standard HTTP ✅
 
-**Tests:**
-- SSE connections work
-- Events stream correctly
-- Reconnection works
-- Multiple concurrent streams
+**Tests:** ✅
+- ✅ SSE connections work
+- ✅ Events stream correctly
+- ✅ Reconnection works (client disconnect handling)
+- ✅ Multiple concurrent streams
+- ✅ Keep-alive mechanism
+- ✅ Broadcast functionality
+- ✅ Agent event forwarding
+- ✅ 48 unit tests covering all functionality
 
 **Verify Steps:**
 ```typescript
-// Server provides SSE endpoint
-server.enableSSE('/events/:sessionId')
+// Server provides SSE endpoint automatically at /events/:sessionId
+const server = new WukongServer({ 
+  sse: { enabled: true, path: '/events' } 
+})
+await server.start()
 
 // Client connects
 const eventSource = new EventSource('/events/session123')
 eventSource.addEventListener('agent:progress', (e) => {
   const data = JSON.parse(e.data)
   console.log('Progress:', data)
+})
+
+// Execute task with SSE streaming
+fetch('/events/session123/execute', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ goal: 'Calculate 2 + 2' })
 })
 ```
 

@@ -6,6 +6,7 @@ import { WebSocketServer } from 'ws';
 import { SessionManager } from './SessionManager.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { setupRoutes } from './routes/index.js';
+import { SSEManager } from './routes/sse.js';
 import type { WukongServerConfig } from './types.js';
 import { createLogger } from './utils/logger.js';
 import { WebSocketManager } from './websocket/WebSocketManager.js';
@@ -38,6 +39,7 @@ export class WukongServer {
   private wsServer: WebSocketServer | null = null;
   private sessionManager: SessionManager;
   private wsManager: WebSocketManager | null = null;
+  private sseManager: SSEManager | null = null;
   private config: Required<WukongServerConfig>;
   private logger: ReturnType<typeof createLogger>;
 
@@ -116,11 +118,20 @@ export class WukongServer {
    * Start the server
    */
   async start(): Promise<void> {
+    // Set up SSE manager if enabled
+    if (this.config.sse.enabled) {
+      this.sseManager = new SSEManager(this.logger);
+      this.logger.info('SSE enabled', {
+        path: this.config.sse.path,
+      });
+    }
+
     // Set up routes
     setupRoutes(this.app, {
       sessionManager: this.sessionManager,
       config: this.config,
       logger: this.logger,
+      sseManager: this.sseManager ?? undefined,
     });
 
     // Error handler (must be last)
@@ -166,6 +177,11 @@ export class WukongServer {
 
     // Stop session cleanup
     this.sessionManager.stopCleanup();
+
+    // Close SSE connections
+    if (this.sseManager) {
+      this.sseManager.closeAll();
+    }
 
     // Close WebSocket connections
     if (this.wsManager) {

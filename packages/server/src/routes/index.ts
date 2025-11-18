@@ -3,18 +3,25 @@ import type { SessionManager } from '../SessionManager.js';
 import { errors } from '../middleware/errorHandler.js';
 import type { ApiResponse, WukongServerConfig } from '../types.js';
 import type { createLogger } from '../utils/logger.js';
+import { type SSEManager, setupSSERoutes } from './sse.js';
 
 interface RouteContext {
   sessionManager: SessionManager;
   config: Required<WukongServerConfig>;
   logger: ReturnType<typeof createLogger>;
+  sseManager?: SSEManager;
 }
 
 /**
  * Set up all HTTP routes
  */
 export function setupRoutes(app: Express, context: RouteContext): void {
-  const { sessionManager, logger } = context;
+  const { sessionManager, logger, sseManager } = context;
+
+  // Set up SSE routes if enabled
+  if (sseManager) {
+    setupSSERoutes(app, sessionManager, sseManager, logger);
+  }
 
   /**
    * Health check endpoint
