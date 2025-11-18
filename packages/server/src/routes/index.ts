@@ -45,13 +45,15 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       const { userId = 'anonymous' } = req.body;
 
       const { sessionId } = await sessionManager.create(userId);
+      const session = sessionManager.get(sessionId);
+
+      if (!session) {
+        throw errors.internalError('Failed to retrieve created session');
+      }
 
       const response: ApiResponse = {
         success: true,
-        data: {
-          sessionId,
-          createdAt: new Date().toISOString(),
-        },
+        data: session.info,
       };
 
       logger.info('Session created', { sessionId, userId });

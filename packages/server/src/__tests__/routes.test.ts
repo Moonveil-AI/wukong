@@ -115,8 +115,11 @@ describe('REST API Routes', () => {
       expect(response.body).toEqual({
         success: true,
         data: {
-          sessionId: expect.any(String),
+          id: expect.any(String),
+          userId: 'test-user',
           createdAt: expect.any(String),
+          lastActivityAt: expect.any(String),
+          status: 'idle',
         },
       });
     });
@@ -125,7 +128,8 @@ describe('REST API Routes', () => {
       const response = await request(app).post('/api/sessions').send({}).expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.sessionId).toBeDefined();
+      expect(response.body.data.id).toBeDefined();
+      expect(response.body.data.userId).toBe('anonymous');
     });
   });
 
@@ -134,7 +138,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Get session details
       const response = await request(app).get(`/api/sessions/${sessionId}`).expect(200);
@@ -164,7 +168,7 @@ describe('REST API Routes', () => {
       // Create a session
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // List sessions
       const response = await request(app)
@@ -193,7 +197,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Delete session
       const response = await request(app).delete(`/api/sessions/${sessionId}`).expect(200);
@@ -213,7 +217,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Execute
       const response = await request(app)
@@ -242,7 +246,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Execute without goal
       const response = await request(app)
@@ -270,7 +274,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Execute with streaming
       const response = await request(app)
@@ -301,7 +305,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Execute without goal
       const response = await request(app)
@@ -328,7 +332,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Stop execution
       const response = await request(app).post(`/api/sessions/${sessionId}/stop`).expect(200);
@@ -354,7 +358,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Get history
       const response = await request(app).get(`/api/sessions/${sessionId}/history`).expect(200);
@@ -376,7 +380,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Get history with custom limit and offset
       const response = await request(app)
@@ -403,7 +407,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       // Submit feedback
       const response = await request(app)
@@ -443,7 +447,7 @@ describe('REST API Routes', () => {
       // Create session first
       const createResponse = await request(app).post('/api/sessions').send({ userId: 'test-user' });
 
-      const { sessionId } = createResponse.body.data;
+      const { id: sessionId } = createResponse.body.data;
 
       const response = await request(app)
         .post('/api/feedback')

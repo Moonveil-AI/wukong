@@ -495,6 +495,59 @@ curl -X POST http://localhost:3000/api/sessions/session123/execute-stream \
 curl http://localhost:3000/api/sessions/session123/history
 ```
 
+**Integration with UI:** ✅
+
+The backend server (Task 6.1-6.4) has been successfully integrated with `examples/ui`:
+
+**Implementation Details:**
+1. **Backend Server** (`examples/ui/server.ts`):
+   - Uses `@wukong/server` as a library (not reimplementation)
+   - Configured with `LocalAdapter` and multiple LLM providers
+   - Includes calculator tool for demonstration
+   - Runs on port 3001 by default
+
+2. **API Client** (`examples/ui/src/api/client.ts`):
+   - Full TypeScript client for REST API, WebSocket, and SSE
+   - Provides methods: `createSession()`, `execute()`, `getCapabilities()`, etc.
+   - Event-based architecture for real-time updates
+   - Singleton pattern for easy usage
+
+3. **Frontend Integration** (`examples/ui/src/App.tsx`):
+   - Connects to backend on component mount
+   - Establishes SSE connection for streaming events
+   - Real-time message streaming and tool execution display
+   - Error handling and status indicators
+
+4. **Configuration**:
+   - `package.json`: Added `@wukong/server` dependency and run scripts
+   - `vite.config.ts`: Proxy configuration for API/WebSocket/SSE
+   - `env.template`: Environment variables template
+   - `SETUP.md`: Complete setup and troubleshooting guide
+
+**Usage:**
+```bash
+# From examples/ui directory
+cp env.template .env
+# Edit .env and add LLM API key(s)
+
+# Run both frontend and backend
+pnpm dev:all
+
+# Or run separately:
+pnpm dev:server  # Backend on :3001
+pnpm dev         # Frontend on :5173
+```
+
+**Features Demonstrated:**
+- ✅ Session management
+- ✅ Real-time streaming via SSE
+- ✅ Tool execution visualization
+- ✅ Multiple LLM provider support
+- ✅ Error handling and reconnection
+- ✅ Beautiful UI with theme support
+
+See `examples/ui/README.md` and `examples/ui/SETUP.md` for complete documentation.
+
 ---
 
 ### Task 6.5: Session Management

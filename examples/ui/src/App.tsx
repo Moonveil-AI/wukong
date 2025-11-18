@@ -1,4 +1,3 @@
-import type { WukongAgent } from '@wukong/agent';
 import {
   CapabilitiesPanel,
   type Capability,
@@ -16,6 +15,7 @@ import {
 } from '@wukong/ui';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
+import { type AgentEvent, type WukongClient, getClient } from './api/client';
 
 // Message types for the chat interface
 interface Message {
@@ -37,38 +37,6 @@ interface ToolExecution {
   error?: string;
   timestamp: Date;
 }
-
-// Agent capabilities - these would come from the actual agent configuration
-const agentCapabilities: Capability[] = [
-  {
-    id: 'reasoning',
-    name: 'Multi-Step Reasoning',
-    description: 'Break down complex tasks into logical steps',
-    enabled: true,
-    category: 'core',
-  },
-  {
-    id: 'memory',
-    name: 'Conversation Memory',
-    description: 'Remember context from previous messages',
-    enabled: true,
-    category: 'core',
-  },
-  {
-    id: 'tools',
-    name: 'Tool Execution',
-    description: 'Execute custom tools and functions',
-    enabled: true,
-    category: 'tools',
-  },
-  {
-    id: 'streaming',
-    name: 'Real-time Streaming',
-    description: 'Stream responses as they are generated',
-    enabled: true,
-    category: 'core',
-  },
-];
 
 // Example prompts to help users get started
 const examplePrompts: ExamplePrompt[] = [
@@ -95,90 +63,21 @@ const examplePrompts: ExamplePrompt[] = [
   },
 ];
 
-// Calculator tool implementation
-const _calculatorTool = {
-  metadata: {
-    name: 'calculator',
-    description: 'Perform basic mathematical calculations (add, subtract, multiply, divide)',
-    version: '1.0.0',
-    category: 'data' as const,
-    riskLevel: 'low' as const,
-    timeout: 30,
-    requiresConfirmation: false,
-    async: false,
-    estimatedTime: 1,
-  },
-  schema: {
-    type: 'object' as const,
-    properties: {
-      operation: {
-        type: 'string',
-        enum: ['add', 'subtract', 'multiply', 'divide'],
-        description: 'The mathematical operation to perform',
-      },
-      a: {
-        type: 'number',
-        description: 'First number',
-      },
-      b: {
-        type: 'number',
-        description: 'Second number',
-      },
-    },
-    required: ['operation', 'a', 'b'],
-  },
-  handler: (params: any) => {
-    const { operation, a, b } = params;
-
-    let result: number;
-    switch (operation) {
-      case 'add':
-        result = a + b;
-        break;
-      case 'subtract':
-        result = a - b;
-        break;
-      case 'multiply':
-        result = a * b;
-        break;
-      case 'divide':
-        if (b === 0) {
-          return {
-            success: false,
-            error: 'Cannot divide by zero',
-          };
-        }
-        result = a / b;
-        break;
-      default:
-        return {
-          success: false,
-          error: `Unknown operation: ${operation}`,
-        };
-    }
-
-    return {
-      success: true,
-      result,
-      output: `${a} ${operation} ${b} = ${result}`,
-    };
-  },
-};
-
 function AgentUI() {
   const { theme, mode, setMode } = useTheme();
-  const [_agent, _setAgent] = useState<WukongAgent | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isExecuting, setIsExecuting] = useState(false);
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
-  const [_currentSessionId, _setCurrentSessionId] = useState<string | null>(null);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [agentStatus, setAgentStatus] = useState<'initializing' | 'ready' | 'error'>(
     'initializing',
   );
-  const [_errorMessage, setErrorMessage] = useState<string>('');
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [capabilities, setCapabilities] = useState<Capability[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const _streamingMessageRef = useRef<string>('');
+  const clientRef = useRef<WukongClient | null>(null);
+  const currentMessageIdRef = useRef<string | null>(null);
 
   // New component states
   const [showPlan, setShowPlan] = useState(false);
@@ -187,67 +86,185 @@ function AgentUI() {
   const [showThinking, setShowThinking] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
 
-  // Initialize agent
+  // Initialize client and session
   useEffect(() => {
-    const initAgent = () => {
+    let isActive = true; // Flag to prevent state updates after cleanup
+
+    const initClient = async () => {
       try {
-        // Note: In a real browser environment, we can't use the LocalAdapter directly
-        // This is a placeholder that demonstrates the UI structure
-        // In production, you'd communicate with a backend server that runs the agent
+        // Get client instance
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+        const client = getClient(apiUrl);
+
+        if (!isActive) return;
+        clientRef.current = client;
+
+        // Check health
+        await client.healthCheck();
+        if (!isActive) return;
+
+        // Get capabilities
+        const caps = await client.getCapabilities();
+        if (!isActive) return;
+        setCapabilities(caps);
+
+        // Create a session
+        const session = await client.createSession('ui-user');
+        console.log('Session response:', session);
+        console.log('Session ID:', session.id);
+        if (!isActive) return;
+        setCurrentSessionId(session.id);
+
+        // Connect to SSE for streaming events (check isActive first)
+        if (!isActive) return;
+        client.connectSSE(session.id);
+
+        // Set up event handler
+        const eventHandler = (event: AgentEvent) => {
+          handleAgentEvent(event);
+        };
+        client.on(eventHandler);
 
         setAgentStatus('ready');
         setMessages([
           {
             id: 'welcome',
             role: 'system',
-            content:
-              '🐒 Welcome to Wukong Agent! This is a demo UI showing the agent interface. To use the full agent capabilities, connect to a backend server running the Wukong agent.',
+            content: `🐒 Welcome to Wukong Agent! Connected to backend server. Session ID: ${session.id}`,
             timestamp: new Date(),
           },
         ]);
-
-        // Initialize demo todos
-        setTodos([
+      } catch (error) {
+        console.error('Failed to initialize client:', error);
+        setAgentStatus('error');
+        setErrorMessage(error instanceof Error ? error.message : 'Failed to connect to server');
+        setMessages([
           {
-            id: 'todo-1',
-            title: 'Parse user request',
-            status: 'completed',
-            progress: 100,
-          },
-          {
-            id: 'todo-2',
-            title: 'Break down into steps',
-            status: 'completed',
-            progress: 100,
-          },
-          {
-            id: 'todo-3',
-            title: 'Execute calculations',
-            status: 'in_progress',
-            progress: 60,
-            dependencies: ['todo-2'],
-          },
-          {
-            id: 'todo-4',
-            title: 'Format and return result',
-            status: 'pending',
-            dependencies: ['todo-3'],
+            id: 'error',
+            role: 'system',
+            content: `❌ Failed to connect to server. Make sure the backend is running on port 3001. Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            timestamp: new Date(),
           },
         ]);
-      } catch (error) {
-        console.error('Failed to initialize agent:', error);
-        setAgentStatus('error');
-        setErrorMessage(error instanceof Error ? error.message : 'Failed to initialize agent');
       }
     };
 
-    initAgent();
+    initClient();
+
+    // Cleanup on unmount
+    return () => {
+      isActive = false; // Prevent any pending async operations from updating state
+      if (clientRef.current) {
+        clientRef.current.disconnect();
+      }
+    };
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We want to scroll when messages changes
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  });
+  }, [messages]);
+
+  // Handle agent events
+  const handleAgentEvent = useCallback((event: AgentEvent) => {
+    console.log('Agent event:', event);
+
+    switch (event.type) {
+      case 'llm:started':
+        setShowThinking(true);
+        setCurrentThinking('🤖 LLM is thinking...');
+        break;
+
+      case 'llm:streaming':
+        if (event.text && currentMessageIdRef.current) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === currentMessageIdRef.current
+                ? { ...msg, content: msg.content + event.text }
+                : msg,
+            ),
+          );
+        }
+        break;
+
+      case 'llm:complete':
+        setShowThinking(false);
+        if (currentMessageIdRef.current) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg,
+            ),
+          );
+        }
+        break;
+
+      case 'step:started':
+        console.log('Step started:', event.step);
+        // Update thinking box with step info
+        if (event.step.reasoning) {
+          setCurrentThinking(event.step.reasoning);
+          setShowThinking(true);
+        }
+        break;
+
+      case 'step:completed':
+        console.log('Step completed:', event.step);
+        break;
+
+      case 'tool:executing': {
+        const executingTool: ToolExecution = {
+          id: `${event.sessionId}-${event.toolName}-${Date.now()}`,
+          name: event.toolName,
+          status: 'executing',
+          parameters: event.parameters,
+          timestamp: new Date(),
+        };
+        setToolExecutions((prev) => [...prev, executingTool]);
+        break;
+      }
+
+      case 'tool:completed':
+        setToolExecutions((prev) =>
+          prev.map((tool) =>
+            tool.name === event.toolName && tool.status === 'executing'
+              ? { ...tool, status: 'completed', result: event.result }
+              : tool,
+          ),
+        );
+        break;
+
+      case 'agent:complete':
+        setIsExecuting(false);
+        setShowThinking(false);
+
+        // Add final result message if needed
+        if (event.result && currentMessageIdRef.current) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg,
+            ),
+          );
+        }
+        currentMessageIdRef.current = null;
+        break;
+
+      case 'agent:error':
+        setIsExecuting(false);
+        setShowThinking(false);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `error-${Date.now()}`,
+            role: 'system',
+            content: `❌ Error: ${event.error}`,
+            timestamp: new Date(),
+          },
+        ]);
+        currentMessageIdRef.current = null;
+        break;
+    }
+  }, []);
 
   // Handle example prompt selection
   const handlePromptSelect = useCallback((prompt: ExamplePrompt) => {
@@ -258,7 +275,9 @@ function AgentUI() {
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
       e.preventDefault();
-      if (!inputValue.trim() || isExecuting) return;
+      if (!inputValue.trim() || isExecuting || !currentSessionId || !clientRef.current) {
+        return;
+      }
 
       const userMessage: Message = {
         id: `user-${Date.now()}`,
@@ -272,23 +291,11 @@ function AgentUI() {
       setIsExecuting(true);
       setToolExecutions([]);
 
-      // Simulate agent response (in production, this would call the actual agent)
       try {
-        // Show plan and thinking for demo
-        if (
-          userMessage.content.toLowerCase().includes('calculate') ||
-          userMessage.content.toLowerCase().includes('multiply')
-        ) {
-          setShowPlan(true);
-          setShowExecutionPlan(true);
-          setShowThinking(true);
-          setCurrentThinking(
-            '# Analyzing Request\n\nUser wants to perform a calculation...\n\n## Breaking Down Steps\n\n1. Identify the operations needed\n2. Execute in correct order\n3. Format the result\n\n**Current Step:** Parsing mathematical expression...',
-          );
-        }
-
         // Add a streaming message placeholder
         const assistantMessageId = `assistant-${Date.now()}`;
+        currentMessageIdRef.current = assistantMessageId;
+
         setMessages((prev) => [
           ...prev,
           {
@@ -300,44 +307,18 @@ function AgentUI() {
           },
         ]);
 
-        // Simulate streaming response
-        const response = simulateAgentResponse(userMessage.content);
+        // Execute task via REST API (events will come via SSE)
+        await clientRef.current.execute(currentSessionId, {
+          goal: userMessage.content,
+          maxSteps: 10,
+          mode: 'auto',
+        });
 
-        for (const chunk of response.chunks) {
-          await new Promise((resolve) => setTimeout(resolve, 30));
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId ? { ...msg, content: msg.content + chunk } : msg,
-            ),
-          );
-        }
-
-        // Mark streaming as complete
-        setMessages((prev) =>
-          prev.map((msg) => (msg.id === assistantMessageId ? { ...msg, streaming: false } : msg)),
-        );
-
-        // Simulate tool execution if the response involved tools
-        if (response.usedTool) {
-          const toolExec: ToolExecution = {
-            id: `tool-${Date.now()}`,
-            name: 'calculator',
-            status: 'executing',
-            parameters: response.toolParams,
-            timestamp: new Date(),
-          };
-          setToolExecutions([toolExec]);
-
-          await new Promise((resolve) => setTimeout(resolve, 500));
-
-          setToolExecutions((prev) =>
-            prev.map((t) =>
-              t.id === toolExec.id ? { ...t, status: 'completed', result: response.toolResult } : t,
-            ),
-          );
-        }
+        // Note: The execution happens asynchronously, and we receive updates via SSE
+        // The agent:complete or agent:error event will set isExecuting to false
       } catch (error) {
         console.error('Error executing task:', error);
+        setIsExecuting(false);
         setMessages((prev) => [
           ...prev,
           {
@@ -347,66 +328,11 @@ function AgentUI() {
             timestamp: new Date(),
           },
         ]);
-      } finally {
-        setIsExecuting(false);
+        currentMessageIdRef.current = null;
       }
     },
-    [inputValue, isExecuting],
+    [inputValue, isExecuting, currentSessionId],
   );
-
-  // Simulate agent response (this would be replaced with actual agent execution)
-  const simulateAgentResponse = (input: string) => {
-    const lowerInput = input.toLowerCase();
-
-    if (
-      lowerInput.includes('multiply') ||
-      lowerInput.includes('add') ||
-      lowerInput.includes('calculate')
-    ) {
-      return {
-        chunks: [
-          "I'll help you with that calculation. ",
-          'Let me break this down into steps:\n\n',
-          "1. First, I'll multiply 15 by 8\n",
-          '2. Then add 42 to the result\n\n',
-          'Using the calculator tool...\n\n',
-          '15 × 8 = 120\n',
-          '120 + 42 = 162\n\n',
-          'The final result is **162**.',
-        ],
-        usedTool: true,
-        toolParams: { operation: 'multiply', a: 15, b: 8 },
-        toolResult: { result: 120, output: '15 multiply 8 = 120' },
-      };
-    }
-
-    if (lowerInput.includes('capabilities') || lowerInput.includes('can you')) {
-      return {
-        chunks: [
-          "I'm Wukong, an AI agent with several capabilities:\n\n",
-          '**Core Features:**\n',
-          '• Multi-step reasoning to break down complex tasks\n',
-          '• Conversation memory to maintain context\n',
-          '• Real-time streaming responses\n\n',
-          '**Tools:**\n',
-          '• Calculator for mathematical operations\n',
-          '• Custom tools can be added as needed\n\n',
-          'I can help you with problem-solving, calculations, and general assistance. ',
-          'Try asking me to perform a calculation or explain something!',
-        ],
-        usedTool: false,
-      };
-    }
-
-    return {
-      chunks: [
-        'I understand your request. ',
-        'As this is a demo UI, I can show you the interface, but full agent capabilities require a backend connection. ',
-        'Try one of the example prompts to see how the interaction would work!',
-      ],
-      usedTool: false,
-    };
-  };
 
   const handleModeChange = (newMode: ThemeMode) => {
     setMode(newMode);
@@ -438,10 +364,10 @@ function AgentUI() {
             >
               <span className="status-dot" />
               {agentStatus === 'ready'
-                ? 'Ready'
+                ? 'Connected'
                 : agentStatus === 'error'
-                  ? 'Error'
-                  : 'Initializing...'}
+                  ? `Error: ${errorMessage}`
+                  : 'Connecting...'}
             </div>
             <div className="theme-switcher">
               <button
@@ -484,7 +410,43 @@ function AgentUI() {
         >
           <div className="sidebar-section">
             <h2 style={{ color: theme.colors.text }}>Capabilities</h2>
-            <CapabilitiesPanel capabilities={agentCapabilities} compact={true} />
+            <CapabilitiesPanel
+              capabilities={
+                capabilities.length > 0
+                  ? capabilities
+                  : [
+                      {
+                        id: 'reasoning',
+                        name: 'Multi-Step Reasoning',
+                        description: 'Break down complex tasks into logical steps',
+                        enabled: true,
+                        category: 'core',
+                      },
+                      {
+                        id: 'memory',
+                        name: 'Conversation Memory',
+                        description: 'Remember context from previous messages',
+                        enabled: true,
+                        category: 'core',
+                      },
+                      {
+                        id: 'tools',
+                        name: 'Tool Execution',
+                        description: 'Execute custom tools and functions',
+                        enabled: true,
+                        category: 'tools',
+                      },
+                      {
+                        id: 'streaming',
+                        name: 'Real-time Streaming',
+                        description: 'Stream responses as they are generated',
+                        enabled: true,
+                        category: 'core',
+                      },
+                    ]
+              }
+              compact={true}
+            />
           </div>
 
           <div className="sidebar-section">
@@ -496,18 +458,20 @@ function AgentUI() {
             />
           </div>
 
-          <div className="sidebar-section">
-            <h2 style={{ color: theme.colors.text }}>Current Tasks</h2>
-            <TodoList
-              todos={todos}
-              groupBy="status"
-              showProgress={true}
-              showDependencies={true}
-              onUpdate={(todoId, updates) => {
-                setTodos((prev) => prev.map((t) => (t.id === todoId ? { ...t, ...updates } : t)));
-              }}
-            />
-          </div>
+          {todos.length > 0 && (
+            <div className="sidebar-section">
+              <h2 style={{ color: theme.colors.text }}>Current Tasks</h2>
+              <TodoList
+                todos={todos}
+                groupBy="status"
+                showProgress={true}
+                showDependencies={true}
+                onUpdate={(todoId, updates) => {
+                  setTodos((prev) => prev.map((t) => (t.id === todoId ? { ...t, ...updates } : t)));
+                }}
+              />
+            </div>
+          )}
         </aside>
 
         {/* Main chat area */}

@@ -35,3 +35,11 @@ coverage
 .turbo
 .vercel
 .cache
+
+# Database files
+*.db
+*.db-wal
+*.db-shm
+
+# Example data directories
+examples/*/data/

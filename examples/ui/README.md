@@ -1,213 +1,321 @@
-# Wukong Agent UI Example
+# Wukong UI Example
 
-A real agent UI demonstration using React and the Wukong agent framework. This example provides a complete chat interface for interacting with a Wukong agent.
+A full-stack example demonstrating Wukong agent with a beautiful React UI connected to a real backend server.
 
 ## Features
 
-- **Real-time Chat Interface**: Interactive chat UI with message history
-- **Agent Capabilities Display**: Shows what the agent can and cannot do
-- **Example Prompts**: Pre-built prompts to help users get started
-- **Tool Execution Visualization**: Real-time display of tool executions
-- **Streaming Responses**: Agent responses stream in real-time
-- **Theme Support**: Light, dark, and auto theme modes
-- **Responsive Design**: Works on desktop and mobile devices
+✨ **Full Stack Integration**
+- React frontend with beautiful UI components from `@wukong/ui`
+- Backend server using `@wukong/server` library
+- Real-time communication via WebSocket and Server-Sent Events (SSE)
+- RESTful API for session management
 
-## Architecture
-
-This example demonstrates a production-ready agent UI pattern:
-
-### Frontend (Browser)
-- React UI with chat interface
-- Real-time message streaming
+🎨 **Rich UI Components**
+- Theme support (light/dark/auto)
+- Real-time streaming responses
 - Tool execution visualization
-- Theme management with `@wukong/ui`
+- Capabilities panel
+- Example prompts
+- Todo list for task tracking
 
-### Backend (Server)
-Wukong provides a production-ready backend server package (`@wukong/server`) that:
-1. Runs the Wukong agent with full capabilities
-2. Provides WebSocket and Server-Sent Events for real-time communication
-3. Manages conversation sessions and history
-4. Includes authentication and rate limiting
-5. Offers deployment configurations for major platforms
-
-See `examples/server` for a complete backend implementation.
-
-### Current Implementation
-This demo includes:
-- **UI Components**: Full chat interface with sidebar
-- **Simulated Responses**: Demonstrates the interaction patterns without a real backend
-- **Tool Display**: Shows how tool executions would be visualized
-
-**Note:** This example currently uses simulated responses for demonstration purposes. To connect to a real Wukong backend server, see the [Connecting to a Real Backend](#connecting-to-a-real-agent-backend) section below.
+🚀 **Production Ready**
+- TypeScript throughout
+- Error handling
+- Session management
+- Multiple LLM provider support (Claude, Gemini, OpenAI)
 
 ## Quick Start
 
-```bash
-# Install dependencies (from workspace root)
-pnpm install
+### 1. Install Dependencies
 
-# Start the development server
-cd examples/ui
+```bash
+# From the workspace root
+pnpm install
+```
+
+### 2. Set Up Environment Variables
+
+This example uses the `.env` file from the **workspace root** (not in examples/ui).
+
+If you don't have a `.env` file in the root yet:
+
+```bash
+# Go to workspace root
+cd ../..
+
+# Copy example
+cp env.example .env
+
+# Edit and add at least one LLM API key
+```
+
+Required environment variables in root `.env`:
+
+```env
+# Required: At least one LLM API key
+ANTHROPIC_API_KEY=sk-ant-...
+# or
+GEMINI_API_KEY=...
+# or
+OPENAI_API_KEY=sk-...
+```
+
+The backend will automatically use the root `.env` file - no need to copy it!
+
+### 3. Run the Application
+
+**Option A: Run both frontend and backend together (recommended)**
+
+```bash
+pnpm dev:all
+```
+
+This will start:
+- Backend server on `http://localhost:3001`
+- Frontend dev server on `http://localhost:5173`
+
+**Option B: Run separately**
+
+Terminal 1 (Backend):
+```bash
+pnpm dev:server
+```
+
+Terminal 2 (Frontend):
+```bash
 pnpm dev
 ```
 
-Then open http://localhost:5173 in your browser.
+### 4. Open in Browser
 
-## Usage
+Navigate to `http://localhost:5173` and start chatting with the agent!
 
-1. **View Capabilities**: Check the sidebar to see what the agent can do
-2. **Try Examples**: Click any example prompt to populate the input
-3. **Chat**: Type your message and press Send
-4. **Watch Tools**: See tool executions in real-time
-5. **Theme**: Switch between light, dark, or auto themes
+## Architecture
 
-## Example Prompts
-
-Try these prompts to see the agent in action:
-
-- "Calculate the result of 15 multiplied by 8, then add 42 to it"
-- "What is the square root of 144, then multiply it by 5, and finally subtract 10?"
-- "What can you help me with? What are your capabilities?"
-
-## Components Used
-
-This example uses several components from `@wukong/ui`:
-
-- **ThemeProvider**: Manages theme state and color schemes
-- **CapabilitiesPanel**: Displays agent capabilities
-- **ExamplePrompts**: Shows clickable example prompts
-- **useTheme**: Hook for accessing theme state
-
-## Connecting to a Real Agent Backend
-
-To connect this UI to a real Wukong agent backend:
-
-### 1. Create a Backend Server
-
-```typescript
-// server.ts
-import { WukongAgent } from '@wukong/agent';
-import { LocalAdapter } from '@wukong/adapter-local';
-import { ClaudeAdapter } from '@wukong/llm-anthropic';
-import express from 'express';
-import { WebSocketServer } from 'ws';
-
-const app = express();
-const server = app.listen(3000);
-const wss = new WebSocketServer({ server });
-
-const adapter = new LocalAdapter({ dbPath: './data/wukong.db' });
-const agent = new WukongAgent({
-  adapter,
-  llm: { models: [new ClaudeAdapter()] },
-  tools: [/* your tools */],
-});
-
-wss.on('connection', (ws) => {
-  // Handle agent execution with streaming
-  ws.on('message', async (data) => {
-    const { goal } = JSON.parse(data.toString());
-    
-    // Set up streaming
-    agent.on('llm:streaming', (event) => {
-      ws.send(JSON.stringify({ type: 'stream', data: event.chunk }));
-    });
-    
-    agent.on('tool:executing', (event) => {
-      ws.send(JSON.stringify({ type: 'tool_start', data: event }));
-    });
-    
-    agent.on('tool:completed', (event) => {
-      ws.send(JSON.stringify({ type: 'tool_complete', data: event }));
-    });
-    
-    // Execute the task
-    const result = await agent.execute({ goal });
-    ws.send(JSON.stringify({ type: 'complete', data: result }));
-  });
-});
+```
+┌─────────────────────────────────────────────────────┐
+│                   Frontend (React)                   │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  App.tsx                                       │  │
+│  │  ├─ UI Components (@wukong/ui)                │  │
+│  │  └─ API Client (src/api/client.ts)           │  │
+│  └───────────────────────────────────────────────┘  │
+└──────────────────┬──────────────────────────────────┘
+                   │
+                   │ REST API + WebSocket + SSE
+                   │
+┌──────────────────▼──────────────────────────────────┐
+│              Backend (Node.js)                       │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  server.ts                                     │  │
+│  │  ├─ WukongServer (@wukong/server)             │  │
+│  │  ├─ WukongAgent (@wukong/agent)               │  │
+│  │  ├─ LocalAdapter (@wukong/adapter-local)      │  │
+│  │  └─ LLM Adapters (Claude/Gemini/OpenAI)       │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
 ```
 
-### 2. Update the Frontend
+## API Client
 
-```typescript
-// Connect to WebSocket in useEffect
-const ws = new WebSocket('ws://localhost:3000');
+The frontend uses `src/api/client.ts` which provides:
 
-ws.onmessage = (event) => {
-  const message = JSON.parse(event.data);
-  
-  switch (message.type) {
-    case 'stream':
-      // Update streaming message
-      break;
-    case 'tool_start':
-      // Add tool execution
-      break;
-    case 'tool_complete':
-      // Update tool status
-      break;
-    case 'complete':
-      // Finalize response
-      break;
-  }
-};
+### REST API Methods
+- `createSession()` - Create a new agent session
+- `execute()` - Execute a task (async, returns immediately)
+- `getSession()` - Get session details
+- `getHistory()` - Get chat history
+- `stopExecution()` - Stop current execution
+- `getCapabilities()` - Get agent capabilities
+- `healthCheck()` - Check server health
 
-// Send messages
-const handleSubmit = () => {
-  ws.send(JSON.stringify({ goal: inputValue }));
-};
-```
+### Real-time Communication
+- **WebSocket**: Bidirectional communication for control commands
+- **SSE (Server-Sent Events)**: Streaming updates from the server
 
-## Development
+### Event Types
+The client emits various events:
+- `llm:started` - LLM generation started
+- `llm:streaming` - Streaming text chunk
+- `llm:complete` - LLM generation completed
+- `step:started` - Agent step started
+- `step:completed` - Agent step completed
+- `tool:executing` - Tool execution started
+- `tool:completed` - Tool execution completed
+- `agent:complete` - Task completed
+- `agent:error` - Error occurred
 
-### Project Structure
+## Project Structure
 
 ```
 examples/ui/
+├── server.ts              # Backend server using @wukong/server
 ├── src/
-│   ├── App.tsx          # Main agent UI component
-│   ├── App.css          # Agent UI styles
-│   ├── main.tsx         # React entry point
-│   └── index.css        # Global styles
-├── index.html           # HTML template
-├── package.json         # Dependencies
-└── vite.config.ts       # Vite configuration
+│   ├── api/
+│   │   └── client.ts     # API client for frontend
+│   ├── App.tsx           # Main React component
+│   ├── App.css           # Styles
+│   ├── main.tsx          # React entry point
+│   └── index.css         # Global styles
+├── package.json
+├── vite.config.ts        # Vite configuration with proxy
+├── env.template          # Environment variables template
+└── README.md            # This file
 ```
 
-### Available Scripts
+## Customization
 
-- `pnpm dev` - Start development server
-- `pnpm build` - Build for production
-- `pnpm preview` - Preview production build
+### Adding Custom Tools
 
-## Technologies
+Edit `server.ts` to add your custom tools:
 
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and dev server
-- **@wukong/ui** - Wukong UI components
-- **@wukong/agent** - Wukong agent framework (types)
+```typescript
+const myTool = {
+  metadata: {
+    name: 'my_tool',
+    description: 'Description of what the tool does',
+    version: '1.0.0',
+    category: 'data' as const,
+    riskLevel: 'low' as const,
+  },
+  schema: {
+    type: 'object' as const,
+    properties: {
+      param1: { type: 'string', description: 'Parameter description' },
+    },
+    required: ['param1'],
+  },
+  handler: (params: any) => {
+    // Tool implementation
+    return { success: true, result: 'Result' };
+  },
+};
 
-## Next Steps
+// Add to agent configuration
+const server = new WukongServer({
+  agent: {
+    factory: () => new WukongAgent({
+      tools: [calculatorTool, myTool], // Add your tool here
+      // ...
+    })
+  }
+});
+```
 
-To make this a fully functional agent UI:
+### Changing LLM Models
 
-1. **Backend Integration**: Set up a Node.js server running the Wukong agent
-2. **WebSocket Connection**: Implement real-time bidirectional communication
-3. **Session Management**: Persist and restore conversation sessions
-4. **Authentication**: Add user authentication and authorization
-5. **File Upload**: Allow users to upload documents for the agent to process
-6. **History**: Show previous conversations and sessions
-7. **Settings**: Allow users to configure agent behavior
-8. **Export**: Let users export conversation transcripts
+Edit `server.ts` to configure different models:
+
+```typescript
+llmAdapters.push(
+  new ClaudeAdapter({
+    model: 'claude-3-5-sonnet-20241022', // Change model
+    temperature: 0.7,                      // Adjust temperature
+    maxTokens: 4096,                       // Set max tokens
+  }),
+);
+```
+
+### Customizing UI Theme
+
+The UI uses `@wukong/ui` theme system. Customize in `App.tsx`:
+
+```typescript
+<ThemeProvider 
+  defaultMode="dark"  // light | dark | auto
+  customTheme={{
+    // Override theme colors
+    colors: {
+      primary: '#your-color',
+      // ...
+    }
+  }}
+>
+  <AgentUI />
+</ThemeProvider>
+```
+
+## Backend API Endpoints
+
+The server exposes these endpoints:
+
+- `POST /api/sessions` - Create session
+- `GET /api/sessions/:id` - Get session
+- `GET /api/sessions` - List sessions
+- `DELETE /api/sessions/:id` - Delete session
+- `POST /api/sessions/:id/execute` - Execute task
+- `POST /api/sessions/:id/stop` - Stop execution
+- `GET /api/sessions/:id/history` - Get history
+- `GET /api/capabilities` - Get capabilities
+- `GET /api/health` - Health check
+- `GET /events/:sessionId` - SSE endpoint
+- `WS /ws` - WebSocket endpoint
+
+## Troubleshooting
+
+### Backend won't start
+
+1. Check that you have at least one LLM API key in `.env`
+2. Ensure the database directory exists: `mkdir -p data`
+3. Check that port 3001 is available
+
+### Frontend can't connect to backend
+
+1. Make sure the backend is running on port 3001
+2. Check `VITE_API_URL` in `.env` (should be `http://localhost:3001`)
+3. Verify proxy settings in `vite.config.ts`
+
+### Database errors
+
+Delete the database and restart:
+```bash
+rm -rf data/wukong-ui.db*
+pnpm dev:server
+```
+
+### LLM errors
+
+1. Verify your API keys are correct
+2. Check your API quota/credits
+3. Look at the backend console for detailed error messages
+
+## Development
+
+### Running Tests
+
+```bash
+# Test the backend server
+cd ../../packages/server
+pnpm test
+
+# Test the agent
+cd ../agent
+pnpm test
+```
+
+### Building for Production
+
+```bash
+# Build frontend
+pnpm build
+
+# Preview production build
+pnpm preview
+```
+
+### Type Checking
+
+```bash
+# Check types
+pnpm tsc --noEmit
+```
 
 ## Learn More
 
-- [Wukong Documentation](../../docs/)
-- [Agent Architecture](../../docs/design/02-architecture.md)
-- [UI Components](../../packages/ui/)
-- [Basic Example](../basic/) - Backend agent implementation
+- [Wukong Agent Documentation](../../docs/)
+- [@wukong/server Package](../../packages/server/)
+- [@wukong/ui Components](../../packages/ui/)
+- [@wukong/agent Core](../../packages/agent/)
 
 ## License
 

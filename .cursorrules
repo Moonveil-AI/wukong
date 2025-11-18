@@ -1,0 +1,10 @@
+# Cursor AI Rules for Wukong Project
+
+- Do NOT automatically run development servers unless explicitly requested by the user.
+- Do NOT commit unless explicitly asked
+
+## Testing
+
+- Update tests when modifying functionality
+- Add tests for new features when appropriate
+
