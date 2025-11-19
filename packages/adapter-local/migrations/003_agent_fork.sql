@@ -62,3 +62,4 @@ CREATE INDEX idx_fork_tasks_depth ON fork_agent_tasks(depth);
 INSERT OR IGNORE INTO schema_versions (version, description) 
 VALUES (3, 'Added Agent Fork support');
 
+

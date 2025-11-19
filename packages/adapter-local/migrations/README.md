@@ -166,3 +166,4 @@ You can specify a custom path:
 tsx src/cli/migrate.ts migrate ./custom/path/mydb.db
 ```
 
+

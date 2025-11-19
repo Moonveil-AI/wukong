@@ -62,3 +62,4 @@ CREATE INDEX idx_parallel_status_count ON parallel_tool_calls(step_id, status);
 INSERT OR IGNORE INTO schema_versions (version, description) 
 VALUES (2, 'Added parallel execution support');
 
+

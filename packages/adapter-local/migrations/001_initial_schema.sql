@@ -201,3 +201,4 @@ CREATE INDEX idx_checkpoints_created_at ON checkpoints(created_at);
 INSERT OR IGNORE INTO schema_versions (version, description) 
 VALUES (1, 'Initial schema with core tables');
 
+

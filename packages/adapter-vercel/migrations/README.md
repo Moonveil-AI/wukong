@@ -130,3 +130,4 @@ SELECT * FROM schema_versions ORDER BY version;
 
 This table is automatically created by the first migration (001_initial_schema.sql).
 
+

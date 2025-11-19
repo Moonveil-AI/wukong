@@ -105,3 +105,4 @@ INSERT INTO schema_versions (version, description)
 VALUES (4, 'Added knowledge management tables')
 ON CONFLICT (version) DO NOTHING;
 
+

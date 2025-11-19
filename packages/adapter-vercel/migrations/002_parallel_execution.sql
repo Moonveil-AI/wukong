@@ -63,3 +63,4 @@ INSERT INTO schema_versions (version, description)
 VALUES (2, 'Added parallel execution support')
 ON CONFLICT (version) DO NOTHING;
 
+

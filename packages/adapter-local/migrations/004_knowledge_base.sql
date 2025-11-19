@@ -95,3 +95,4 @@ CREATE INDEX idx_feedback_user ON knowledge_feedback(user_id);
 INSERT OR IGNORE INTO schema_versions (version, description) 
 VALUES (4, 'Added knowledge management tables');
 
+

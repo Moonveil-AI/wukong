@@ -205,3 +205,4 @@ INSERT INTO schema_versions (version, description)
 VALUES (1, 'Initial schema with core tables')
 ON CONFLICT (version) DO NOTHING;
 
+
