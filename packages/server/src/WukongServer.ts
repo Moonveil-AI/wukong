@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import { WebSocketServer } from 'ws';
 import { SessionManager } from './SessionManager.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { type RateLimiter, createRateLimiter } from './middleware/rateLimit.js';
 import { setupRoutes } from './routes/index.js';
 import { SSEManager } from './routes/sse.js';
 import type { WukongServerConfig } from './types.js';
@@ -40,6 +41,7 @@ export class WukongServer {
   private sessionManager: SessionManager;
   private wsManager: WebSocketManager | null = null;
   private sseManager: SSEManager | null = null;
+  private rateLimiter: RateLimiter | null = null;
   private config: Required<WukongServerConfig>;
   private logger: ReturnType<typeof createLogger>;
 
@@ -93,6 +95,12 @@ export class WukongServer {
       cacheAdapter as any, // CacheAdapter is part of the combined adapter
     );
 
+    // Create rate limiter if configured
+    this.rateLimiter = createRateLimiter(
+      config.rateLimit,
+      cacheAdapter as any, // CacheAdapter is part of the combined adapter
+    );
+
     this.setupMiddleware();
   }
 
@@ -119,6 +127,15 @@ export class WukongServer {
       });
       next();
     });
+
+    // Rate limiting
+    if (this.rateLimiter) {
+      this.app.use(this.rateLimiter.middleware());
+      this.logger.info('Rate limiting enabled', {
+        maxRequests: this.config.rateLimit?.maxRequests,
+        windowMs: this.config.rateLimit?.windowMs,
+      });
+    }
   }
 
   /**
@@ -139,6 +156,7 @@ export class WukongServer {
       config: this.config,
       logger: this.logger,
       sseManager: this.sseManager ?? undefined,
+      rateLimiter: this.rateLimiter ?? undefined,
     });
 
     // Error handler (must be last)

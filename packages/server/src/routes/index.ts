@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from 'express';
 import type { SessionManager } from '../SessionManager.js';
 import { errors } from '../middleware/errorHandler.js';
+import { type RateLimiter, concurrentLimitMiddleware } from '../middleware/rateLimit.js';
 import type { ApiResponse, WukongServerConfig } from '../types.js';
 import type { createLogger } from '../utils/logger.js';
 import { type SSEManager, setupSSERoutes } from './sse.js';
@@ -10,13 +11,17 @@ interface RouteContext {
   config: Required<WukongServerConfig>;
   logger: ReturnType<typeof createLogger>;
   sseManager?: SSEManager;
+  rateLimiter?: RateLimiter;
 }
 
 /**
  * Set up all HTTP routes
  */
 export function setupRoutes(app: Express, context: RouteContext): void {
-  const { sessionManager, logger, sseManager } = context;
+  const { sessionManager, logger, sseManager, rateLimiter } = context;
+
+  // Create concurrent limit middleware
+  const concurrentLimit = concurrentLimitMiddleware(rateLimiter ?? null);
 
   // Set up SSE routes if enabled
   if (sseManager) {
@@ -131,138 +136,146 @@ export function setupRoutes(app: Express, context: RouteContext): void {
    * Execute task (non-streaming, async)
    * Returns immediately with status; use SSE/WebSocket for real-time updates
    */
-  app.post('/api/sessions/:sessionId/execute', async (req: Request, res: Response, next) => {
-    try {
-      const { sessionId } = req.params;
-      const { goal, context } = req.body;
+  app.post(
+    '/api/sessions/:sessionId/execute',
+    concurrentLimit,
+    async (req: Request, res: Response, next) => {
+      try {
+        const { sessionId } = req.params;
+        const { goal, context } = req.body;
 
-      if (!goal) {
-        throw errors.badRequest('Goal is required');
+        if (!goal) {
+          throw errors.badRequest('Goal is required');
+        }
+
+        const session = sessionManager.get(sessionId);
+        if (!session) {
+          throw errors.notFound(`Session ${sessionId} not found`);
+        }
+
+        // Update status
+        await sessionManager.updateStatus(sessionId, 'running');
+
+        // Return immediately - execution happens in background
+        const response: ApiResponse = {
+          success: true,
+          data: {
+            sessionId,
+            status: 'running',
+            message: 'Execution started. Use SSE or WebSocket for real-time updates.',
+          },
+        };
+
+        logger.info('Execution started (async)', { sessionId });
+        res.json(response);
+
+        // Execute in background
+        session.agent
+          .execute({ goal, context })
+          .then(async () => {
+            await sessionManager.updateStatus(sessionId, 'completed');
+            logger.info('Execution completed', { sessionId });
+          })
+          .catch(async (error: any) => {
+            await sessionManager.updateStatus(sessionId, 'error');
+            logger.error('Execution error', { sessionId, error: error.message });
+          });
+      } catch (error) {
+        next(error);
       }
-
-      const session = sessionManager.get(sessionId);
-      if (!session) {
-        throw errors.notFound(`Session ${sessionId} not found`);
-      }
-
-      // Update status
-      await sessionManager.updateStatus(sessionId, 'running');
-
-      // Return immediately - execution happens in background
-      const response: ApiResponse = {
-        success: true,
-        data: {
-          sessionId,
-          status: 'running',
-          message: 'Execution started. Use SSE or WebSocket for real-time updates.',
-        },
-      };
-
-      logger.info('Execution started (async)', { sessionId });
-      res.json(response);
-
-      // Execute in background
-      session.agent
-        .execute({ goal, context })
-        .then(async () => {
-          await sessionManager.updateStatus(sessionId, 'completed');
-          logger.info('Execution completed', { sessionId });
-        })
-        .catch(async (error: any) => {
-          await sessionManager.updateStatus(sessionId, 'error');
-          logger.error('Execution error', { sessionId, error: error.message });
-        });
-    } catch (error) {
-      next(error);
-    }
-  });
+    },
+  );
 
   /**
    * Execute task with streaming (chunked transfer)
    * Streams events as newline-delimited JSON
    */
-  app.post('/api/sessions/:sessionId/execute-stream', async (req: Request, res: Response, next) => {
-    try {
-      const { sessionId } = req.params;
-      const { goal, context } = req.body;
-
-      if (!goal) {
-        throw errors.badRequest('Goal is required');
-      }
-
-      const session = sessionManager.get(sessionId);
-      if (!session) {
-        throw errors.notFound(`Session ${sessionId} not found`);
-      }
-
-      // Set up streaming response
-      res.setHeader('Content-Type', 'application/x-ndjson');
-      res.setHeader('Transfer-Encoding', 'chunked');
-      res.setHeader('Cache-Control', 'no-cache');
-      res.setHeader('Connection', 'keep-alive');
-
-      // Helper to send events
-      const sendEvent = (type: string, data: any) => {
-        const event = { type, data, timestamp: new Date().toISOString() };
-        res.write(`${JSON.stringify(event)}\n`);
-      };
-
-      // Update status
-      await sessionManager.updateStatus(sessionId, 'running');
-      sendEvent('execution:started', { sessionId });
-
-      // Set up event listeners
-      const onStreaming = (data: { text: string; delta: string }) => {
-        sendEvent('llm:streaming', data);
-      };
-
-      const onToolExecuting = (data: { tool: string; parameters: any }) => {
-        sendEvent('tool:executing', data);
-      };
-
-      const onToolCompleted = (data: { tool: string; result: any }) => {
-        sendEvent('tool:completed', data);
-      };
-
-      const onProgress = (data: { step: number; total: number; message: string }) => {
-        sendEvent('agent:progress', data);
-      };
-
-      // Attach event listeners
-      session.agent.on('llm:streaming', onStreaming);
-      session.agent.on('tool:executing', onToolExecuting);
-      session.agent.on('tool:completed', onToolCompleted);
-      session.agent.on('agent:progress', onProgress);
-
+  app.post(
+    '/api/sessions/:sessionId/execute-stream',
+    concurrentLimit,
+    async (req: Request, res: Response, next) => {
       try {
-        // Execute
-        const result = await session.agent.execute({ goal, context });
+        const { sessionId } = req.params;
+        const { goal, context } = req.body;
 
-        await sessionManager.updateStatus(sessionId, 'completed');
-        sendEvent('agent:complete', result);
+        if (!goal) {
+          throw errors.badRequest('Goal is required');
+        }
 
-        logger.info('Streaming execution completed', { sessionId });
-      } catch (error: any) {
-        await sessionManager.updateStatus(sessionId, 'error');
-        sendEvent('agent:error', {
-          error: error.message,
-          details: error.stack,
-        });
-        logger.error('Streaming execution error', { sessionId, error: error.message });
-      } finally {
-        // Remove event listeners
-        session.agent.off('llm:streaming', onStreaming);
-        session.agent.off('tool:executing', onToolExecuting);
-        session.agent.off('tool:completed', onToolCompleted);
-        session.agent.off('agent:progress', onProgress);
+        const session = sessionManager.get(sessionId);
+        if (!session) {
+          throw errors.notFound(`Session ${sessionId} not found`);
+        }
 
-        // End response
-        res.end();
+        // Set up streaming response
+        res.setHeader('Content-Type', 'application/x-ndjson');
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+
+        // Helper to send events
+        const sendEvent = (type: string, data: any) => {
+          const event = { type, data, timestamp: new Date().toISOString() };
+          res.write(`${JSON.stringify(event)}\n`);
+        };
+
+        // Update status
+        await sessionManager.updateStatus(sessionId, 'running');
+        sendEvent('execution:started', { sessionId });
+
+        // Set up event listeners
+        const onStreaming = (data: { text: string; delta: string }) => {
+          sendEvent('llm:streaming', data);
+        };
+
+        const onToolExecuting = (data: { tool: string; parameters: any }) => {
+          sendEvent('tool:executing', data);
+        };
+
+        const onToolCompleted = (data: { tool: string; result: any }) => {
+          sendEvent('tool:completed', data);
+        };
+
+        const onProgress = (data: { step: number; total: number; message: string }) => {
+          sendEvent('agent:progress', data);
+        };
+
+        // Attach event listeners
+        session.agent.on('llm:streaming', onStreaming);
+        session.agent.on('tool:executing', onToolExecuting);
+        session.agent.on('tool:completed', onToolCompleted);
+        session.agent.on('agent:progress', onProgress);
+
+        try {
+          // Execute
+          const result = await session.agent.execute({ goal, context });
+
+          await sessionManager.updateStatus(sessionId, 'completed');
+          sendEvent('agent:complete', result);
+
+          logger.info('Streaming execution completed', { sessionId });
+        } catch (error: any) {
+          await sessionManager.updateStatus(sessionId, 'error');
+          sendEvent('agent:error', {
+            error: error.message,
+            details: error.stack,
+          });
+          logger.error('Streaming execution error', { sessionId, error: error.message });
+        } finally {
+          // Remove event listeners
+          session.agent.off('llm:streaming', onStreaming);
+          session.agent.off('tool:executing', onToolExecuting);
+          session.agent.off('tool:completed', onToolCompleted);
+          session.agent.off('agent:progress', onProgress);
+
+          // End response
+          res.end();
+        }
+      } catch (error) {
+        next(error);
       }
-    } catch (error) {
-      next(error);
-    }
-  });
+    },
+  );
 
   /**
    * Stop execution

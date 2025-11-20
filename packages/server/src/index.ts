@@ -42,6 +42,11 @@ export { WebSocketManager } from './websocket/WebSocketManager.js';
 export { SSEManager } from './routes/sse.js';
 export { errorHandler, ApiError, errors } from './middleware/errorHandler.js';
 export { createLogger } from './utils/logger.js';
+export {
+  RateLimiter,
+  createRateLimiter,
+  concurrentLimitMiddleware,
+} from './middleware/rateLimit.js';
 
 export type {
   WukongServerConfig,
