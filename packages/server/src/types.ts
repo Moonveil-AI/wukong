@@ -24,6 +24,14 @@ export interface WukongServerConfig {
     origin?: string | string[] | boolean;
     /** Allow credentials */
     credentials?: boolean;
+    /** Allowed HTTP methods */
+    methods?: string | string[];
+    /** Allowed headers */
+    allowedHeaders?: string | string[];
+    /** Exposed headers */
+    exposedHeaders?: string | string[];
+    /** Max age for preflight requests (in seconds) */
+    maxAge?: number;
   };
 
   /** Authentication configuration */
@@ -78,8 +86,18 @@ export interface WukongServerConfig {
   security?: {
     /** Enforce HTTPS */
     enforceHttps?: boolean;
-    /** Enable HSTS */
+    /** Enable HSTS (HTTP Strict Transport Security) */
     hsts?: boolean;
+    /** HSTS max age in seconds (default: 31536000 = 1 year) */
+    hstsMaxAge?: number;
+    /** Include subdomains in HSTS */
+    hstsIncludeSubDomains?: boolean;
+    /** Enable HSTS preload */
+    hstsPreload?: boolean;
+    /** Content Security Policy - false to disable, object to configure */
+    csp?: false | Record<string, string[]>;
+    /** Custom security headers */
+    customHeaders?: Record<string, string>;
   };
 
   /** WebSocket configuration */

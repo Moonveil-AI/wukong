@@ -850,48 +850,105 @@ app.get('/api/data', asyncHandler(async (req, res) => {
 
 ---
 
-### Task 6.9: CORS & Security Headers
+### Task 6.9: CORS & Security Headers ✅
 
 **Purpose:** Secure the server for production deployment.
 
-**Implementation:**
-1. Add CORS support:
-   - Configurable origins
+**Implementation:** ✅
+1. ✅ Enhanced CORS support:
+   - Configurable origins (string, array, or boolean)
    - Credentials support
-   - Preflight handling
+   - Configurable methods, allowed headers, exposed headers
+   - Max age for preflight requests
+   - Automatic preflight handling
 
-2. Security headers:
-   - Helmet.js integration
-   - Content Security Policy
-   - HTTPS enforcement
-   - X-Frame-Options
-   - X-Content-Type-Options
+2. ✅ Comprehensive security headers:
+   - Helmet.js integration with custom configuration
+   - Content Security Policy (configurable or disable)
+   - HTTPS enforcement middleware
+   - HSTS with configurable options (max age, subdomains, preload)
+   - X-Frame-Options (DENY by default)
+   - X-Content-Type-Options (nosniff)
+   - X-DNS-Prefetch-Control
+   - Referrer-Policy
+   - Custom security headers support
 
-3. Configuration:
+3. ✅ Enhanced configuration interface:
    ```typescript
    {
      cors: {
        origin: ['https://app.example.com'],
-       credentials: true
+       credentials: true,
+       methods: ['GET', 'POST', 'PUT', 'DELETE'],
+       allowedHeaders: ['Content-Type', 'Authorization'],
+       maxAge: 86400
      },
      security: {
        enforceHttps: true,
-       hsts: true
+       hsts: true,
+       hstsMaxAge: 31536000,
+       hstsIncludeSubDomains: true,
+       hstsPreload: false,
+       csp: {
+         defaultSrc: ["'self'"],
+         scriptSrc: ["'self'", "'unsafe-inline'"]
+       },
+       customHeaders: {
+         'X-API-Version': '1.0'
+       }
      }
    }
    ```
 
-**Tests:**
-- CORS works correctly
-- Security headers are set
-- HTTPS enforcement works
+**Files Created:**
+- ✅ `packages/server/src/middleware/security.ts` - Security middleware (createSecurityMiddleware, enforceHttps, customSecurityHeaders)
+- ✅ `packages/server/src/__tests__/security.test.ts` - Security middleware unit tests
+
+**Files Modified:**
+- ✅ `packages/server/src/types.ts` - Enhanced CORS and security configuration types
+- ✅ `packages/server/src/WukongServer.ts` - Integrated security middleware
+- ✅ `packages/server/src/index.ts` - Exported security middleware functions
+- ✅ `packages/server/src/__tests__/WukongServer.test.ts` - Added integration tests
+
+**Tests:** ✅
+- ✅ Unit tests for all security middleware functions
+- ✅ CORS headers are set correctly
+- ✅ Security headers (CSP, HSTS, X-Frame-Options, etc.) are applied
+- ✅ HTTPS enforcement blocks HTTP requests when enabled
+- ✅ HTTPS enforcement allows requests with X-Forwarded-Proto header
+- ✅ Custom security headers are applied
+- ✅ CSP can be disabled or customized
+- ✅ HSTS can be configured with custom settings
+- ✅ Integration tests with WukongServer
+- ✅ Preflight CORS requests handled correctly
+
+**Integration:** ✅
+- ✅ Security middleware applied to all routes
+- ✅ HTTPS enforcement configurable and functional
+- ✅ CORS configuration fully customizable
+- ✅ Logging for security configuration on startup
+- ✅ All security features exported from @wukong/server
 
 **Verify Steps:**
 ```typescript
 const server = new WukongServer({
   cors: {
     origin: 'https://app.example.com',
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST'],
+    maxAge: 86400
+  },
+  security: {
+    enforceHttps: true,
+    hsts: true,
+    hstsMaxAge: 31536000,
+    csp: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"]
+    },
+    customHeaders: {
+      'X-API-Version': '1.0'
+    }
   }
 })
 ```

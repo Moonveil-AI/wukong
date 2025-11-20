@@ -47,6 +47,11 @@ export {
   createRateLimiter,
   concurrentLimitMiddleware,
 } from './middleware/rateLimit.js';
+export {
+  createSecurityMiddleware,
+  enforceHttps,
+  customSecurityHeaders,
+} from './middleware/security.js';
 
 export type {
   WukongServerConfig,

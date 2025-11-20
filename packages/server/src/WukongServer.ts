@@ -1,11 +1,15 @@
 import { type Server as HTTPServer, createServer } from 'node:http';
 import cors from 'cors';
 import express, { type Express } from 'express';
-import helmet from 'helmet';
 import { WebSocketServer } from 'ws';
 import { SessionManager } from './SessionManager.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { type RateLimiter, createRateLimiter } from './middleware/rateLimit.js';
+import {
+  createSecurityMiddleware,
+  customSecurityHeaders,
+  enforceHttps,
+} from './middleware/security.js';
 import { setupRoutes } from './routes/index.js';
 import { SSEManager } from './routes/sse.js';
 import type { WukongServerConfig } from './types.js';
@@ -73,6 +77,11 @@ export class WukongServer {
       security: {
         enforceHttps: config.security?.enforceHttps ?? false,
         hsts: config.security?.hsts ?? false,
+        hstsMaxAge: config.security?.hstsMaxAge ?? 31536000,
+        hstsIncludeSubDomains: config.security?.hstsIncludeSubDomains ?? true,
+        hstsPreload: config.security?.hstsPreload ?? false,
+        csp: config.security?.csp,
+        customHeaders: config.security?.customHeaders,
       },
       websocket: {
         enabled: config.websocket?.enabled ?? true,
@@ -108,11 +117,31 @@ export class WukongServer {
    * Set up Express middleware
    */
   private setupMiddleware(): void {
-    // Security headers
-    this.app.use(helmet());
+    // Security headers (helmet with custom configuration)
+    this.app.use(createSecurityMiddleware(this.config.security));
+    this.logger.info('Security headers enabled', {
+      hsts: this.config.security?.hsts ?? false,
+      csp: this.config.security?.csp !== false,
+    });
+
+    // HTTPS enforcement
+    if (this.config.security?.enforceHttps) {
+      this.app.use(enforceHttps(true));
+      this.logger.info('HTTPS enforcement enabled');
+    }
+
+    // Custom security headers
+    if (this.config.security?.customHeaders) {
+      this.app.use(customSecurityHeaders(this.config.security.customHeaders));
+      this.logger.info('Custom security headers applied');
+    }
 
     // CORS
     this.app.use(cors(this.config.cors));
+    this.logger.info('CORS enabled', {
+      origin: this.config.cors?.origin,
+      credentials: this.config.cors?.credentials,
+    });
 
     // Body parsing
     this.app.use(express.json());
