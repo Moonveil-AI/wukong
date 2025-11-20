@@ -84,7 +84,14 @@ export class WukongServer {
 
     this.logger = createLogger(this.config.logging);
     this.app = express();
-    this.sessionManager = new SessionManager(this.config.agent, this.config.session);
+
+    // Try to get cache adapter from agent instance if available
+    const cacheAdapter = this.config.agent.instance?.adapter;
+    this.sessionManager = new SessionManager(
+      this.config.agent,
+      this.config.session,
+      cacheAdapter as any, // CacheAdapter is part of the combined adapter
+    );
 
     this.setupMiddleware();
   }
@@ -164,6 +171,14 @@ export class WukongServer {
         resolve();
       });
     });
+
+    // Restore sessions from persistent storage
+    if (this.config.session.persist) {
+      const restoredCount = await this.sessionManager.restoreSessions();
+      if (restoredCount > 0) {
+        this.logger.info('Restored sessions', { count: restoredCount });
+      }
+    }
 
     // Start session cleanup
     this.sessionManager.startCleanup();

@@ -146,7 +146,7 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       }
 
       // Update status
-      sessionManager.updateStatus(sessionId, 'running');
+      await sessionManager.updateStatus(sessionId, 'running');
 
       // Return immediately - execution happens in background
       const response: ApiResponse = {
@@ -164,12 +164,12 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       // Execute in background
       session.agent
         .execute({ goal, context })
-        .then(() => {
-          sessionManager.updateStatus(sessionId, 'completed');
+        .then(async () => {
+          await sessionManager.updateStatus(sessionId, 'completed');
           logger.info('Execution completed', { sessionId });
         })
-        .catch((error: any) => {
-          sessionManager.updateStatus(sessionId, 'error');
+        .catch(async (error: any) => {
+          await sessionManager.updateStatus(sessionId, 'error');
           logger.error('Execution error', { sessionId, error: error.message });
         });
     } catch (error) {
@@ -208,7 +208,7 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       };
 
       // Update status
-      sessionManager.updateStatus(sessionId, 'running');
+      await sessionManager.updateStatus(sessionId, 'running');
       sendEvent('execution:started', { sessionId });
 
       // Set up event listeners
@@ -238,12 +238,12 @@ export function setupRoutes(app: Express, context: RouteContext): void {
         // Execute
         const result = await session.agent.execute({ goal, context });
 
-        sessionManager.updateStatus(sessionId, 'completed');
+        await sessionManager.updateStatus(sessionId, 'completed');
         sendEvent('agent:complete', result);
 
         logger.info('Streaming execution completed', { sessionId });
       } catch (error: any) {
-        sessionManager.updateStatus(sessionId, 'error');
+        await sessionManager.updateStatus(sessionId, 'error');
         sendEvent('agent:error', {
           error: error.message,
           details: error.stack,
@@ -267,7 +267,7 @@ export function setupRoutes(app: Express, context: RouteContext): void {
   /**
    * Stop execution
    */
-  app.post('/api/sessions/:sessionId/stop', (req: Request, res: Response, next) => {
+  app.post('/api/sessions/:sessionId/stop', async (req: Request, res: Response, next) => {
     try {
       const { sessionId } = req.params;
 
@@ -280,7 +280,7 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       // The agent doesn't have a public stop() method
       // We need to use the StopController or implement a stop mechanism
 
-      sessionManager.updateStatus(sessionId, 'idle');
+      await sessionManager.updateStatus(sessionId, 'idle');
 
       const response: ApiResponse = {
         success: true,

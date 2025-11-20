@@ -93,18 +93,18 @@ describe('SessionManager', () => {
     it('should update session status', async () => {
       const { sessionId } = await sessionManager.create('user1');
 
-      sessionManager.updateStatus(sessionId, 'running');
+      await sessionManager.updateStatus(sessionId, 'running');
       let session = sessionManager.get(sessionId);
       expect(session?.info.status).toBe('running');
 
-      sessionManager.updateStatus(sessionId, 'completed');
+      await sessionManager.updateStatus(sessionId, 'completed');
       session = sessionManager.get(sessionId);
       expect(session?.info.status).toBe('completed');
     });
 
-    it('should do nothing for non-existent session', () => {
+    it('should do nothing for non-existent session', async () => {
       // Should not throw
-      sessionManager.updateStatus('non-existent-id', 'running');
+      await sessionManager.updateStatus('non-existent-id', 'running');
     });
   });
 
@@ -131,7 +131,7 @@ describe('SessionManager', () => {
     it('should remove a session', async () => {
       const { sessionId } = await sessionManager.create('user1');
 
-      sessionManager.destroy(sessionId);
+      await sessionManager.destroy(sessionId);
 
       const session = sessionManager.get(sessionId);
       expect(session).toBeUndefined();
@@ -141,16 +141,16 @@ describe('SessionManager', () => {
       const { sessionId } = await sessionManager.create('user1');
       await sessionManager.create('user1');
 
-      sessionManager.destroy(sessionId);
+      await sessionManager.destroy(sessionId);
 
       const activeSessions = sessionManager.getActiveSessions('user1');
       expect(activeSessions).toHaveLength(1);
       expect(activeSessions[0].id).not.toBe(sessionId);
     });
 
-    it('should do nothing for non-existent session', () => {
+    it('should do nothing for non-existent session', async () => {
       // Should not throw
-      sessionManager.destroy('non-existent-id');
+      await sessionManager.destroy('non-existent-id');
     });
   });
 
@@ -166,6 +166,49 @@ describe('SessionManager', () => {
       sessionManager.startCleanup();
       sessionManager.stopCleanup();
       // If no errors, test passes
+    });
+  });
+
+  describe('getStats', () => {
+    it('should return session statistics', async () => {
+      await sessionManager.create('user1');
+      await sessionManager.create('user1');
+      await sessionManager.create('user2');
+
+      const stats = sessionManager.getStats();
+
+      expect(stats.totalSessions).toBe(3);
+      expect(stats.totalUsers).toBe(2);
+      expect(stats.sessionsByStatus.idle).toBe(3);
+    });
+
+    it('should count sessions by status', async () => {
+      const { sessionId: s1 } = await sessionManager.create('user1');
+      const { sessionId: s2 } = await sessionManager.create('user1');
+
+      await sessionManager.updateStatus(s1, 'running');
+      await sessionManager.updateStatus(s2, 'completed');
+
+      const stats = sessionManager.getStats();
+
+      expect(stats.sessionsByStatus.running).toBe(1);
+      expect(stats.sessionsByStatus.completed).toBe(1);
+      expect(stats.sessionsByStatus.idle).toBe(0);
+    });
+  });
+
+  describe('persistence', () => {
+    it('should work without cache adapter', async () => {
+      const { sessionId } = await sessionManager.create('user1');
+
+      // These should not throw even without cache adapter
+      await sessionManager.updateStatus(sessionId, 'running');
+      await sessionManager.destroy(sessionId);
+    });
+
+    it('should restore sessions returns 0 without cache adapter', async () => {
+      const count = await sessionManager.restoreSessions();
+      expect(count).toBe(0);
     });
   });
 });

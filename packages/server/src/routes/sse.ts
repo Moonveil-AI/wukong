@@ -250,7 +250,7 @@ export function setupSSERoutes(
       sseManager.sendEvent(sessionId, 'execution:started', { sessionId });
 
       // Update status
-      sessionManager.updateStatus(sessionId, 'running');
+      await sessionManager.updateStatus(sessionId, 'running');
 
       // Return immediately (execution continues in background)
       res.json({
@@ -264,12 +264,12 @@ export function setupSSERoutes(
       // Execute in background
       try {
         await session.agent.execute({ goal, context });
-        sessionManager.updateStatus(sessionId, 'completed');
+        await sessionManager.updateStatus(sessionId, 'completed');
 
         // Final event already sent by agent:complete listener
         logger.info('Execution completed', { sessionId });
       } catch (error: any) {
-        sessionManager.updateStatus(sessionId, 'error');
+        await sessionManager.updateStatus(sessionId, 'error');
 
         // Send error event
         sseManager.sendEvent(sessionId, 'agent:error', {
@@ -288,7 +288,7 @@ export function setupSSERoutes(
    * Stop execution
    * POST /events/:sessionId/stop
    */
-  app.post('/events/:sessionId/stop', (req: Request, res: Response, next: any) => {
+  app.post('/events/:sessionId/stop', async (req: Request, res: Response, next: any) => {
     try {
       const sessionId = req.params.sessionId;
       if (!sessionId) {
@@ -304,7 +304,7 @@ export function setupSSERoutes(
       // The agent doesn't have a public stop() method
       // We need to use the StopController or implement a stop mechanism
 
-      sessionManager.updateStatus(sessionId, 'idle');
+      await sessionManager.updateStatus(sessionId, 'idle');
 
       // Send stopped event
       if (sseManager.isConnected(sessionId)) {

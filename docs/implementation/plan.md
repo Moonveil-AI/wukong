@@ -550,26 +550,29 @@ See `examples/ui/README.md` and `examples/ui/SETUP.md` for complete documentatio
 
 ---
 
-### Task 6.5: Session Management
+### Task 6.5: Session Management ✅
+
+**Status:** Completed
 
 **Purpose:** Manage agent sessions with proper lifecycle and cleanup.
 
 **Implementation:**
-1. Create `packages/server/src/SessionManager.ts`:
-   - Create and track sessions
-   - Associate sessions with users
-   - Session timeout and cleanup
-   - Session persistence
-   - Concurrent session limits
+1. Create `packages/server/src/SessionManager.ts`: ✅
+   - Create and track sessions ✅
+   - Associate sessions with users ✅
+   - Session timeout and cleanup ✅
+   - Session persistence with CacheAdapter ✅
+   - Concurrent session limits ✅
 
-2. Features:
-   - Session ID generation
-   - User → Sessions mapping
-   - Active session tracking
-   - Automatic cleanup of stale sessions
-   - Session restore on reconnection
+2. Features: ✅
+   - Session ID generation ✅
+   - User → Sessions mapping ✅
+   - Active session tracking ✅
+   - Automatic cleanup of stale sessions ✅
+   - Session restore on reconnection ✅
+   - Session statistics (getStats method) ✅
 
-3. Configuration:
+3. Configuration: ✅
    ```typescript
    {
      sessionTimeout: 30 * 60 * 1000, // 30 minutes
@@ -579,16 +582,19 @@ See `examples/ui/README.md` and `examples/ui/SETUP.md` for complete documentatio
    }
    ```
 
-**Tests:**
-- Sessions are created correctly
-- Timeout works
-- Cleanup removes stale sessions
-- Session restore works
-- Concurrent limits are enforced
+**Tests:** ✅
+- ✅ Sessions are created correctly
+- ✅ Timeout works
+- ✅ Cleanup removes stale sessions
+- ✅ Session restore works (returns 0 without cache adapter)
+- ✅ Concurrent limits are enforced
+- ✅ Session statistics tracking
+- ✅ Async operations handled correctly
+- ✅ All methods updated to support persistence
 
 **Verify Steps:**
 ```typescript
-const sessionManager = new SessionManager(adapter)
+const sessionManager = new SessionManager(agentConfig, sessionConfig, cacheAdapter)
 
 // Create session
 const session = await sessionManager.create('user123')
@@ -596,8 +602,21 @@ const session = await sessionManager.create('user123')
 // Get active sessions
 const sessions = await sessionManager.getActiveSessions('user123')
 
+// Get statistics
+const stats = sessionManager.getStats()
+
+// Restore sessions on server start
+const restoredCount = await sessionManager.restoreSessions()
+
 // Cleanup automatically runs in background
 ```
+
+**Integration:** ✅
+- ✅ WukongServer passes cache adapter to SessionManager
+- ✅ Server calls restoreSessions() on startup
+- ✅ All routes updated for async updateStatus
+- ✅ WebSocket manager updated for async operations
+- ✅ SSE manager updated for async operations
 
 ---
 

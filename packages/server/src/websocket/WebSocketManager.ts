@@ -96,7 +96,7 @@ export class WebSocketManager {
 
         // Execute
         try {
-          this.sessionManager.updateStatus(sessionId, 'running');
+          await this.sessionManager.updateStatus(sessionId, 'running');
           this.sendEvent(ws, {
             type: 'execution:started',
             sessionId,
@@ -104,13 +104,13 @@ export class WebSocketManager {
 
           const result = await session.agent.execute({ goal, context });
 
-          this.sessionManager.updateStatus(sessionId, 'completed');
+          await this.sessionManager.updateStatus(sessionId, 'completed');
           this.sendEvent(ws, {
             type: 'agent:complete',
             result,
           });
         } catch (error: any) {
-          this.sessionManager.updateStatus(sessionId, 'error');
+          await this.sessionManager.updateStatus(sessionId, 'error');
           this.logger.error('Agent execution error', {
             sessionId,
             error: error.message,
@@ -140,7 +140,7 @@ export class WebSocketManager {
               // TODO: Implement proper stop mechanism
               // The agent doesn't have a public stop() method
               // We need to use the StopController or implement a stop mechanism
-              this.sessionManager.updateStatus(sessionId, 'idle');
+              await this.sessionManager.updateStatus(sessionId, 'idle');
               this.sendEvent(ws, {
                 type: 'agent:stopped',
                 sessionId,
@@ -158,7 +158,7 @@ export class WebSocketManager {
           if (connections.has(connectionId)) {
             const session = this.sessionManager.get(sessionId);
             if (session) {
-              this.sessionManager.updateStatus(sessionId, 'paused');
+              await this.sessionManager.updateStatus(sessionId, 'paused');
               this.sendEvent(ws, {
                 type: 'agent:paused',
                 sessionId,
@@ -176,7 +176,7 @@ export class WebSocketManager {
           if (connections.has(connectionId)) {
             const session = this.sessionManager.get(sessionId);
             if (session) {
-              this.sessionManager.updateStatus(sessionId, 'running');
+              await this.sessionManager.updateStatus(sessionId, 'running');
               this.sendEvent(ws, {
                 type: 'agent:resumed',
                 sessionId,
