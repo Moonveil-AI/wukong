@@ -222,7 +222,7 @@ export class SessionManager {
 
     // Remove session
     const cacheKey = `wukong:server:session:${sessionId}`;
-    await this.cacheAdapter.del(cacheKey);
+    await this.cacheAdapter.delete(cacheKey);
 
     // Update user-to-sessions mapping
     const userSessionsKey = `wukong:server:user:sessions:${session.info.userId}`;
@@ -234,7 +234,7 @@ export class SessionManager {
           ttl: 7 * 24 * 60 * 60,
         });
       } else {
-        await this.cacheAdapter.del(userSessionsKey);
+        await this.cacheAdapter.delete(userSessionsKey);
       }
     }
   }
@@ -266,7 +266,7 @@ export class SessionManager {
           const timeout = this.config.timeout ?? 30 * 60 * 1000;
           if (timeSinceActivity > timeout) {
             // Session is stale, remove it
-            await this.cacheAdapter.del(key);
+            await this.cacheAdapter.delete(key);
             continue;
           }
 

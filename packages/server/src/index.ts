@@ -40,8 +40,8 @@ export { WukongServer } from './WukongServer.js';
 export { SessionManager } from './SessionManager.js';
 export { WebSocketManager } from './websocket/WebSocketManager.js';
 export { SSEManager } from './routes/sse.js';
-export { errorHandler, ApiError, errors } from './middleware/errorHandler.js';
-export { createLogger } from './utils/logger.js';
+export { errorHandler, ApiError, errors, asyncHandler } from './middleware/errorHandler.js';
+export { createLogger, requestLoggingMiddleware, PerformanceLogger } from './utils/logger.js';
 export {
   RateLimiter,
   createRateLimiter,

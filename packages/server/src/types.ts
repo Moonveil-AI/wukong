@@ -118,6 +118,7 @@ export interface ApiResponse<T = any> {
   error?: {
     code: string;
     message: string;
+    correlationId?: string;
     details?: any;
   };
 }

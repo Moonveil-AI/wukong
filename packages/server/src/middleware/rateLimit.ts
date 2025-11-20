@@ -142,7 +142,9 @@ export class RateLimiter {
 
       return { allowed: true, remaining, resetAt };
     } catch (error) {
-      getLogger().error('Error checking request limit:', error);
+      getLogger().error('Error checking request limit:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       // On error, allow the request
       return {
         allowed: true,
@@ -197,7 +199,9 @@ export class RateLimiter {
       const remaining = this.config.maxTokensPerMinute - (totalTokens + tokensUsed);
       return { allowed: true, remaining };
     } catch (error) {
-      getLogger().error('Error checking token limit:', error);
+      getLogger().error('Error checking token limit:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return { allowed: true, remaining: this.config.maxTokensPerMinute || 0 };
     }
   }
@@ -223,7 +227,9 @@ export class RateLimiter {
 
       return { allowed: true, current: count };
     } catch (error) {
-      getLogger().error('Error checking concurrent limit:', error);
+      getLogger().error('Error checking concurrent limit:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return { allowed: true, current: 0 };
     }
   }
@@ -242,7 +248,9 @@ export class RateLimiter {
       const count = (await this.cacheAdapter.get<number>(key)) || 0;
       await this.cacheAdapter.set(key, count + 1, { ttl: 3600 }); // 1 hour TTL
     } catch (error) {
-      getLogger().error('Error incrementing concurrent counter:', error);
+      getLogger().error('Error incrementing concurrent counter:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -262,7 +270,9 @@ export class RateLimiter {
         await this.cacheAdapter.set(key, count - 1, { ttl: 3600 });
       }
     } catch (error) {
-      getLogger().error('Error decrementing concurrent counter:', error);
+      getLogger().error('Error decrementing concurrent counter:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 
@@ -311,7 +321,9 @@ export class RateLimiter {
 
         next();
       } catch (error) {
-        getLogger().error('Rate limit middleware error:', error);
+        getLogger().error('Rate limit middleware error:', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         // On error, allow the request
         next();
       }
@@ -376,14 +388,18 @@ export function concurrentLimitMiddleware(rateLimiter: RateLimiter | null) {
       const originalSend = res.send;
       res.send = function (data) {
         rateLimiter.decrementConcurrent(req).catch((err) => {
-          getLogger().error('Error decrementing concurrent counter:', err);
+          getLogger().error('Error decrementing concurrent counter:', {
+            error: err instanceof Error ? err.message : String(err),
+          });
         });
         return originalSend.call(this, data);
       };
 
       next();
     } catch (error) {
-      getLogger().error('Concurrent limit middleware error:', error);
+      getLogger().error('Concurrent limit middleware error:', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       next();
     }
   };

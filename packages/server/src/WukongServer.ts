@@ -9,7 +9,7 @@ import { type RateLimiter, createRateLimiter } from './middleware/rateLimit.js';
 import { setupRoutes } from './routes/index.js';
 import { SSEManager } from './routes/sse.js';
 import type { WukongServerConfig } from './types.js';
-import { createLogger } from './utils/logger.js';
+import { createLogger, requestLoggingMiddleware } from './utils/logger.js';
 import { WebSocketManager } from './websocket/WebSocketManager.js';
 
 /**
@@ -88,7 +88,7 @@ export class WukongServer {
     this.app = express();
 
     // Try to get cache adapter from agent instance if available
-    const cacheAdapter = this.config.agent.instance?.adapter;
+    const cacheAdapter = this.config.agent.instance?.getAdapter();
     this.sessionManager = new SessionManager(
       this.config.agent,
       this.config.session,
@@ -118,15 +118,8 @@ export class WukongServer {
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
 
-    // Request logging
-    this.app.use((req, _res, next) => {
-      this.logger.info('Request', {
-        method: req.method,
-        path: req.path,
-        ip: req.ip,
-      });
-      next();
-    });
+    // Request logging with performance tracking
+    this.app.use(requestLoggingMiddleware(this.logger));
 
     // Rate limiting
     if (this.rateLimiter) {

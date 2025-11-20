@@ -53,7 +53,7 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       const session = sessionManager.get(sessionId);
 
       if (!session) {
-        throw errors.internalError('Failed to retrieve created session');
+        throw errors.internal('Failed to retrieve created session');
       }
 
       const response: ApiResponse = {
@@ -74,6 +74,9 @@ export function setupRoutes(app: Express, context: RouteContext): void {
   app.get('/api/sessions/:sessionId', (req: Request, res: Response, next) => {
     try {
       const { sessionId } = req.params;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
       const session = sessionManager.get(sessionId);
 
       if (!session) {
@@ -117,6 +120,9 @@ export function setupRoutes(app: Express, context: RouteContext): void {
   app.delete('/api/sessions/:sessionId', (req: Request, res: Response, next) => {
     try {
       const { sessionId } = req.params;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
 
       sessionManager.destroy(sessionId);
 
@@ -142,6 +148,9 @@ export function setupRoutes(app: Express, context: RouteContext): void {
     async (req: Request, res: Response, next) => {
       try {
         const { sessionId } = req.params;
+        if (!sessionId) {
+          throw errors.badRequest('Session ID is required');
+        }
         const { goal, context } = req.body;
 
         if (!goal) {
@@ -196,6 +205,9 @@ export function setupRoutes(app: Express, context: RouteContext): void {
     async (req: Request, res: Response, next) => {
       try {
         const { sessionId } = req.params;
+        if (!sessionId) {
+          throw errors.badRequest('Session ID is required');
+        }
         const { goal, context } = req.body;
 
         if (!goal) {
@@ -224,27 +236,31 @@ export function setupRoutes(app: Express, context: RouteContext): void {
         sendEvent('execution:started', { sessionId });
 
         // Set up event listeners
-        const onStreaming = (data: { text: string; delta: string }) => {
-          sendEvent('llm:streaming', data);
+        const onStreaming = (event: any) => {
+          sendEvent('llm:streaming', {
+            text: event.chunk?.fullText || '',
+            delta: event.chunk?.text || '',
+          });
         };
 
-        const onToolExecuting = (data: { tool: string; parameters: any }) => {
-          sendEvent('tool:executing', data);
+        const onToolExecuting = (event: any) => {
+          sendEvent('tool:executing', {
+            tool: event.toolName,
+            parameters: event.parameters,
+          });
         };
 
-        const onToolCompleted = (data: { tool: string; result: any }) => {
-          sendEvent('tool:completed', data);
-        };
-
-        const onProgress = (data: { step: number; total: number; message: string }) => {
-          sendEvent('agent:progress', data);
+        const onToolCompleted = (event: any) => {
+          sendEvent('tool:completed', {
+            tool: event.toolName,
+            result: event.result,
+          });
         };
 
         // Attach event listeners
         session.agent.on('llm:streaming', onStreaming);
         session.agent.on('tool:executing', onToolExecuting);
         session.agent.on('tool:completed', onToolCompleted);
-        session.agent.on('agent:progress', onProgress);
 
         try {
           // Execute
@@ -266,7 +282,6 @@ export function setupRoutes(app: Express, context: RouteContext): void {
           session.agent.off('llm:streaming', onStreaming);
           session.agent.off('tool:executing', onToolExecuting);
           session.agent.off('tool:completed', onToolCompleted);
-          session.agent.off('agent:progress', onProgress);
 
           // End response
           res.end();
@@ -283,6 +298,9 @@ export function setupRoutes(app: Express, context: RouteContext): void {
   app.post('/api/sessions/:sessionId/stop', async (req: Request, res: Response, next) => {
     try {
       const { sessionId } = req.params;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
 
       const session = sessionManager.get(sessionId);
       if (!session) {
@@ -313,6 +331,9 @@ export function setupRoutes(app: Express, context: RouteContext): void {
   app.get('/api/sessions/:sessionId/history', async (req: Request, res: Response, next) => {
     try {
       const { sessionId } = req.params;
+      if (!sessionId) {
+        throw errors.badRequest('Session ID is required');
+      }
       const { limit = '50', offset = '0' } = req.query;
 
       const session = sessionManager.get(sessionId);
@@ -321,12 +342,8 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       }
 
       // Get history from agent
-      // Note: This assumes the agent has a getHistory method
-      // In reality, we'd need to add this to the agent interface
-      const history = await session.agent.getHistory?.({
-        limit: Number.parseInt(limit as string, 10),
-        offset: Number.parseInt(offset as string, 10),
-      });
+      // Note: getHistory expects just sessionId
+      const history = await session.agent.getHistory?.(sessionId);
 
       const response: ApiResponse = {
         success: true,
