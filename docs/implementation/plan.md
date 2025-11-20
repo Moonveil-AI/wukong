@@ -620,7 +620,7 @@ const restoredCount = await sessionManager.restoreSessions()
 
 ---
 
-### Task 6.6: Authentication & Authorization (Optional)
+### Task 6.6: Authentication & Authorization
 
 **Purpose:** Add authentication and authorization for production use.
 
@@ -955,49 +955,6 @@ const server = new WukongServer({
 
 ---
 
-### Task 6.10: Deployment Utilities
-
-**Purpose:** Make deployment easy with common platforms.
-
-**Implementation:**
-1. Create deployment configs:
-   - Vercel (`vercel.json`)
-   - Docker (`Dockerfile`, `docker-compose.yml`)
-   - Railway (`railway.json`)
-   - Render (`render.yaml`)
-
-2. Create CLI for server management:
-   ```bash
-   wukong-server start --port 3000
-   wukong-server migrate --adapter local
-   wukong-server health --url http://localhost:3000
-   ```
-
-3. Environment variable support:
-   - `PORT` - Server port
-   - `DATABASE_URL` - Database connection
-   - `REDIS_URL` - Cache connection
-   - `ANTHROPIC_API_KEY` - LLM API key
-   - `NODE_ENV` - Environment
-
-**Tests:**
-- Docker image builds
-- CLI commands work
-- Environment variables are read
-- Health checks work
-
-**Verify Steps:**
-```bash
-# Using Docker
-docker build -t wukong-server .
-docker run -p 3000:3000 wukong-server
-
-# Using CLI
-pnpm wukong-server start
-```
-
----
-
 ### Task 6.11: Complete Server Example
 
 **Purpose:** Provide a fully configured example server.
@@ -1010,8 +967,6 @@ pnpm wukong-server start
    ├── config.ts             # Configuration
    ├── tools/                # Custom tools
    ├── .env.example          # Environment variables
-   ├── Dockerfile            # Docker configuration
-   ├── docker-compose.yml    # Docker Compose
    └── README.md             # Documentation
    ```
 
