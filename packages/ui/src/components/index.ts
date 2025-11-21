@@ -33,3 +33,22 @@ export type { TodoListProps, Todo, TodoStatus } from './TodoList';
 
 export { ThinkingBox } from './ThinkingBox';
 export type { ThinkingBoxProps } from './ThinkingBox';
+
+// During Execution Components (Principles 12-17)
+export { StatusIndicator } from './StatusIndicator';
+export type { StatusIndicatorProps, AgentStatus } from './StatusIndicator';
+
+export { ProgressBar } from './ProgressBar';
+export type { ProgressBarProps } from './ProgressBar';
+
+export { DecisionLog } from './DecisionLog';
+export type { DecisionLogProps, Decision } from './DecisionLog';
+
+export { ThinkingProcess } from './ThinkingProcess';
+export type { ThinkingProcessProps } from './ThinkingProcess';
+
+export { CostIndicator } from './CostIndicator';
+export type { CostIndicatorProps } from './CostIndicator';
+
+export { WhyButton } from './WhyButton';
+export type { WhyButtonProps } from './WhyButton';

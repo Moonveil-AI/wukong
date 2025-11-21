@@ -28,6 +28,7 @@ export const lightTheme: Theme = {
     sm: 4,
     md: 8,
     lg: 12,
+    full: 9999,
   },
   shadows: {
     sm: '0 1px 3px rgba(0, 0, 0, 0.1)',

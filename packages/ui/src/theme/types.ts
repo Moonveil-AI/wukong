@@ -27,6 +27,7 @@ export interface ThemeBorderRadius {
   sm: number;
   md: number;
   lg: number;
+  full: number;
 }
 
 export interface ThemeShadows {
