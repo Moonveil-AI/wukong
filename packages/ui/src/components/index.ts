@@ -52,3 +52,25 @@ export type { CostIndicatorProps } from './CostIndicator';
 
 export { WhyButton } from './WhyButton';
 export type { WhyButtonProps } from './WhyButton';
+
+// After Errors Components (Principles 18-24)
+export { UndoButton } from './UndoButton';
+export type { UndoButtonProps } from './UndoButton';
+
+export { VersionHistory } from './VersionHistory';
+export type { VersionHistoryProps, Version } from './VersionHistory';
+
+export { SandboxPreview } from './SandboxPreview';
+export type { SandboxPreviewProps } from './SandboxPreview';
+
+export { DiffView } from './DiffView';
+export type { DiffViewProps } from './DiffView';
+
+export { StopButton } from './StopButton';
+export type { StopButtonProps } from './StopButton';
+
+export { ConfirmDialog } from './ConfirmDialog';
+export type { ConfirmDialogProps } from './ConfirmDialog';
+
+export { EscalateButton } from './EscalateButton';
+export type { EscalateButtonProps, EscalateOption } from './EscalateButton';
