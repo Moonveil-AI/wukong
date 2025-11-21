@@ -74,3 +74,22 @@ export type { ConfirmDialogProps } from './ConfirmDialog';
 
 export { EscalateButton } from './EscalateButton';
 export type { EscalateButtonProps, EscalateOption } from './EscalateButton';
+
+// Feedback & Metrics Components (Principles 25-30)
+export { MemorySettings } from './MemorySettings';
+export type { MemorySettingsProps } from './MemorySettings';
+
+export { RetryButton } from './RetryButton';
+export type { RetryButtonProps } from './RetryButton';
+
+export { FeedbackButtons } from './FeedbackButtons';
+export type { FeedbackButtonsProps } from './FeedbackButtons';
+
+export { FeedbackForm } from './FeedbackForm';
+export type { FeedbackFormProps } from './FeedbackForm';
+
+export { MetricsDashboard } from './MetricsDashboard';
+export type { MetricsDashboardProps, Metric } from './MetricsDashboard';
+
+export { TrustScore } from './TrustScore';
+export type { TrustScoreProps, TrustFactor } from './TrustScore';
