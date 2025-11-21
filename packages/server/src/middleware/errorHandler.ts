@@ -51,7 +51,7 @@ export function errorHandler(logger: ReturnType<typeof createLogger>) {
         message: err.message || 'An unexpected error occurred',
         correlationId, // Include correlation ID for support
         // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for process.env
-        details: process.env['NODE_ENV'] === 'development' ? err.stack : undefined,
+        details: err.details || (process.env['NODE_ENV'] === 'development' ? err.stack : undefined),
       },
     };
 
@@ -77,6 +77,7 @@ export class ApiError extends Error {
     message: string,
     public statusCode = 500,
     public code = 'API_ERROR',
+    public details?: any,
   ) {
     super(message);
     this.name = 'ApiError';

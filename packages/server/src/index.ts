@@ -52,6 +52,7 @@ export {
   enforceHttps,
   customSecurityHeaders,
 } from './middleware/security.js';
+export { createAuthMiddleware, generateToken } from './middleware/auth.js';
 
 export type {
   WukongServerConfig,

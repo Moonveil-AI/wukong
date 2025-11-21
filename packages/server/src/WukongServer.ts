@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import { WebSocketServer } from 'ws';
 import { SessionManager } from './SessionManager.js';
+import { createAuthMiddleware } from './middleware/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { type RateLimiter, createRateLimiter } from './middleware/rateLimit.js';
 import {
@@ -146,6 +147,14 @@ export class WukongServer {
     // Body parsing
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
+
+    // Authentication
+    if (this.config.auth.enabled) {
+      this.app.use(createAuthMiddleware(this.config.auth));
+      this.logger.info('Authentication enabled', {
+        type: this.config.auth.type,
+      });
+    }
 
     // Request logging with performance tracking
     this.app.use(requestLoggingMiddleware(this.logger));
