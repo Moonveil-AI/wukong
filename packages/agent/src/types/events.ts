@@ -426,6 +426,25 @@ export interface TaskStoppingEvent {
 }
 
 /**
+ * Emitted when task starts
+ */
+export interface TaskStartedEvent {
+  event: 'task:started';
+  goal?: string;
+  mode: string;
+  timestamp: Date;
+}
+
+/**
+ * Emitted when task errors (exception)
+ */
+export interface TaskErrorEvent {
+  event: 'task:error';
+  error: Error;
+  timestamp: Date;
+}
+
+/**
  * Emitted when task has stopped
  */
 export interface TaskStoppedEvent {
@@ -715,10 +734,12 @@ export type WukongEvent =
   // Reasoning events
   | ReasoningAvailableEvent
   // Task events
+  | TaskStartedEvent
   | TaskStoppingEvent
   | TaskStoppedEvent
   | TaskCompletedEvent
   | TaskFailedEvent
+  | TaskErrorEvent
   | TaskTimeoutEvent
   // Token events
   | TokensUsedEvent
@@ -921,10 +942,12 @@ export function isLLMEvent(
 export function isTaskEvent(
   event: WukongEvent,
 ): event is
+  | TaskStartedEvent
   | TaskStoppingEvent
   | TaskStoppedEvent
   | TaskCompletedEvent
   | TaskFailedEvent
+  | TaskErrorEvent
   | TaskTimeoutEvent {
   return event.event.startsWith('task:');
 }

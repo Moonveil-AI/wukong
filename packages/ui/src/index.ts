@@ -9,6 +9,9 @@ export * from './theme';
 // Components
 export * from './components';
 
+// Hooks
+export * from './hooks';
+
 // Version
 export const version = '0.1.0';
 

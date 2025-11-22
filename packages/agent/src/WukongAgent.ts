@@ -231,6 +231,7 @@ export interface ExecutionResult {
 export class WukongAgent extends WukongEventEmitter {
   private config: WukongAgentConfig;
   private llmCaller: LLMCaller;
+  private activeAgent: { requestStop(graceful?: boolean): void } | null = null;
 
   /**
    * Create a new WukongAgent instance
@@ -369,6 +370,15 @@ export class WukongAgent extends WukongEventEmitter {
   }
 
   /**
+   * Stop the current execution
+   */
+  stop(graceful = true): void {
+    if (this.activeAgent) {
+      this.activeAgent.requestStop(graceful);
+    }
+  }
+
+  /**
    * Get step count for a session
    */
   private async getStepCount(sessionId: string): Promise<number> {
@@ -396,7 +406,14 @@ export class WukongAgent extends WukongEventEmitter {
       timeoutSeconds: options.timeout || this.config.timeout,
     });
 
-    return await agent.execute(options);
+    this.activeAgent = agent;
+    try {
+      return await agent.execute(options);
+    } finally {
+      if (this.activeAgent === agent) {
+        this.activeAgent = null;
+      }
+    }
   }
 
   /**
@@ -420,7 +437,14 @@ export class WukongAgent extends WukongEventEmitter {
       timeoutSeconds: options.timeout || this.config.timeout,
     });
 
-    return await agent.execute(options);
+    this.activeAgent = agent;
+    try {
+      return await agent.execute(options);
+    } finally {
+      if (this.activeAgent === agent) {
+        this.activeAgent = null;
+      }
+    }
   }
 
   /**
