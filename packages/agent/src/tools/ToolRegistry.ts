@@ -4,8 +4,6 @@
  * Discovers, registers, and manages available tools for agent execution.
  */
 
-import * as fs from 'node:fs';
-import * as path from 'node:path';
 import type { Tool, ToolsConfig } from '../types';
 
 /**
@@ -70,45 +68,64 @@ export class ToolRegistry {
   async discover(): Promise<void> {
     const toolsPath = this.config.path;
 
-    // Check if directory exists
-    if (!fs.existsSync(toolsPath)) {
-      console.warn(`[ToolRegistry] Tools directory not found: ${toolsPath}`);
-      return;
-    }
+    try {
+      // Dynamic imports for Node.js environment
+      const fs = await import('node:fs');
+      const path = await import('node:path');
 
-    const stat = fs.statSync(toolsPath);
-    if (!stat.isDirectory()) {
-      throw new Error(`[ToolRegistry] Tools path is not a directory: ${toolsPath}`);
-    }
-
-    // Scan directory for tool files
-    const files = fs.readdirSync(toolsPath, { withFileTypes: true });
-
-    for (const file of files) {
-      // Skip non-files and non-TypeScript/JavaScript files
-      if (!file.isFile()) continue;
-
-      const ext = path.extname(file.name);
-      if (!['.ts', '.js', '.mts', '.mjs', '.cts', '.cjs'].includes(ext)) {
-        continue;
+      // Check if directory exists
+      if (!fs.existsSync(toolsPath)) {
+        console.warn(`[ToolRegistry] Tools directory not found: ${toolsPath}`);
+        return;
       }
 
-      // Skip test files
-      if (file.name.includes('.test.') || file.name.includes('.spec.')) {
-        continue;
+      const stat = fs.statSync(toolsPath);
+      if (!stat.isDirectory()) {
+        throw new Error(`[ToolRegistry] Tools path is not a directory: ${toolsPath}`);
       }
 
-      const filePath = path.join(toolsPath, file.name);
+      // Scan directory for tool files
+      const files = fs.readdirSync(toolsPath, { withFileTypes: true });
 
-      try {
-        const tool = await this.config.loader(filePath);
-        await this.register(tool);
-      } catch (error) {
-        console.error(`[ToolRegistry] Failed to load tool from ${filePath}:`, error);
+      for (const file of files) {
+        // Skip non-files and non-TypeScript/JavaScript files
+        if (!file.isFile()) continue;
+
+        const ext = path.extname(file.name);
+        if (!['.ts', '.js', '.mts', '.mjs', '.cts', '.cjs'].includes(ext)) {
+          continue;
+        }
+
+        // Skip test files
+        if (file.name.includes('.test.') || file.name.includes('.spec.')) {
+          continue;
+        }
+
+        const filePath = path.join(toolsPath, file.name);
+
+        try {
+          const tool = await this.config.loader(filePath);
+          await this.register(tool);
+        } catch (error) {
+          console.error(`[ToolRegistry] Failed to load tool from ${filePath}:`, error);
+        }
       }
+
+      console.log(`[ToolRegistry] Discovered ${this.tools.size} tool(s) from ${toolsPath}`);
+    } catch (error) {
+      // Check if error is due to missing fs/path (browser environment)
+      if (
+        (error as any).code === 'ERR_MODULE_NOT_FOUND' ||
+        (error as any).message?.includes('fs') ||
+        (error as any).message?.includes('path')
+      ) {
+        console.warn(
+          '[ToolRegistry] Auto-discovery skipped: Filesystem access not available in this environment',
+        );
+        return;
+      }
+      throw error;
     }
-
-    console.log(`[ToolRegistry] Discovered ${this.tools.size} tool(s) from ${toolsPath}`);
   }
 
   /**

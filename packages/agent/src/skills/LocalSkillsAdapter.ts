@@ -8,8 +8,6 @@
  *     SKILL.md
  */
 
-import { readFile, readdir } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { SkillMetadata, SkillsAdapter } from './types';
 
 export interface LocalSkillsAdapterConfig {
@@ -36,6 +34,9 @@ export class LocalSkillsAdapter implements SkillsAdapter {
 
   async initialize(): Promise<void> {
     try {
+      const { readdir, readFile } = await import('node:fs/promises');
+      const { join } = await import('node:path');
+
       // Scan skills directory
       const entries = await readdir(this.skillsPath, { withFileTypes: true });
 
@@ -80,6 +81,9 @@ export class LocalSkillsAdapter implements SkillsAdapter {
         return cached;
       }
     }
+
+    const { readFile } = await import('node:fs/promises');
+    const { join } = await import('node:path');
 
     // Load SKILL.md
     const skillPath = join(this.skillsPath, skillName, 'SKILL.md');
