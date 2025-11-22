@@ -43,3 +43,5 @@ coverage
 
 # Example data directories
 examples/*/data/
+*storybook.log
+storybook-static

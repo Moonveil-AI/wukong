@@ -69,6 +69,21 @@ cp env.template .env
 pnpm dev
 ```
 
+### UI Component Development (Storybook)
+
+To view and develop UI components in isolation:
+
+```bash
+# Start Storybook
+cd packages/ui
+pnpm storybook
+
+# Or from the root directory
+pnpm --filter @wukong/ui run storybook
+```
+
+Visit `http://localhost:6006` to see the component library.
+
 ### Installation (Future)
 
 Once published to npm:

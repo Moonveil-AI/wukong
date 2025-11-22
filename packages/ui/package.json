@@ -18,17 +18,24 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@wukong/agent": "workspace:*"
   },
   "devDependencies": {
+    "@storybook/addon-docs": "^10.0.8",
+    "@storybook/addon-onboarding": "^10.0.8",
+    "@storybook/react": "^10.0.8",
+    "@storybook/react-vite": "^10.0.8",
     "@types/node": "^20.17.6",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "storybook": "^10.0.8",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   },

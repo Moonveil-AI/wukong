@@ -169,7 +169,16 @@
     }
   },
   "files": {
-    "ignore": ["node_modules", "dist", "build", ".next", "coverage", "*.min.js", "*.d.ts"],
+    "ignore": [
+      "node_modules",
+      "dist",
+      "build",
+      ".next",
+      "coverage",
+      "*.min.js",
+      "*.d.ts",
+      "storybook-static"
+    ],
     "include": [
       "packages/**/*.ts",
       "packages/**/*.tsx",

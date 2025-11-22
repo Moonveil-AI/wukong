@@ -35,9 +35,9 @@ export interface AgentChatProps {
   onProgress?: (progress: number) => void;
   onComplete?: (result: any) => void;
   layout?: {
-    mobile: 'stack';
-    tablet: 'sidebar';
-    desktop: 'split';
+    mobile: 'stack' | 'sidebar' | 'split';
+    tablet: 'stack' | 'sidebar' | 'split';
+    desktop: 'stack' | 'sidebar' | 'split';
   };
   breakpoints?: {
     mobile: number;
