@@ -44,6 +44,11 @@ export interface AgentChatProps {
     tablet: number;
     desktop: number;
   };
+  accessibility?: {
+    enableKeyboardNavigation?: boolean;
+    announceProgress?: boolean;
+    highContrast?: boolean;
+  };
   className?: string;
   initialMessages?: Message[];
 }
@@ -86,6 +91,11 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     tablet: 1024,
     desktop: 1280,
   },
+  accessibility = {
+    enableKeyboardNavigation: true,
+    announceProgress: false,
+    highContrast: false,
+  },
   className = '',
   initialMessages = [],
 }) => {
@@ -105,6 +115,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
   const [progress, setProgress] = useState(0);
   const [currentLayout, setCurrentLayout] = useState<'stack' | 'sidebar' | 'split'>('split');
   const [isRunning, setIsRunning] = useState(false);
+  const [announcement, setAnnouncement] = useState('');
 
   // UI State
   const [showSettings, setShowSettings] = useState(false);
@@ -159,6 +170,10 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     setIsThinking(true);
     setThinkingContent('Analyzing request...');
 
+    if (accessibility.announceProgress) {
+      setAnnouncement('Agent is analyzing your request...');
+    }
+
     // Simulate agent processing
     setTimeout(() => {
       setThinkingContent('Generating plan...');
@@ -194,6 +209,10 @@ export const AgentChat: React.FC<AgentChatProps> = ({
 
           setMessages((prev) => [...prev, assistantMessage]);
           onComplete?.(assistantMessage);
+
+          if (accessibility.announceProgress) {
+            setAnnouncement('Agent execution completed. New message available.');
+          }
         }, 1500);
       }, 1500);
     }, 1000);
@@ -213,7 +232,7 @@ export const AgentChat: React.FC<AgentChatProps> = ({
     setShowConfirmDialog(true);
   };
 
-  const styles = getStyles(theme, currentLayout);
+  const styles = getStyles(theme, currentLayout, accessibility.highContrast);
 
   return (
     <div className={`wukong-agent-chat ${className}`} style={styles.container}>
@@ -530,12 +549,35 @@ export const AgentChat: React.FC<AgentChatProps> = ({
           </div>
         </div>
       )}
+
+      {/* Accessibility Live Region */}
+      <output
+        aria-live="polite"
+        aria-atomic="true"
+        style={{
+          position: 'absolute',
+          width: '1px',
+          height: '1px',
+          padding: 0,
+          margin: '-1px',
+          overflow: 'hidden',
+          clip: 'rect(0, 0, 0, 0)',
+          whiteSpace: 'nowrap',
+          border: 0,
+        }}
+      >
+        {announcement}
+      </output>
     </div>
   );
 };
 
-function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
+function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split', highContrast = false) {
   const isStack = layout === 'stack';
+
+  // Helper for high contrast values
+  const hc = <T,>(normal: T, contrast: T): T => (highContrast ? contrast : normal);
+  const border = hc(theme.colors.border, '#000000');
 
   return {
     container: {
@@ -543,18 +585,18 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       flexDirection: (isStack ? 'column' : 'row') as 'column' | 'row',
       height: '100%',
       minHeight: '600px',
-      backgroundColor: theme.colors.background,
-      color: theme.colors.text,
+      backgroundColor: hc(theme.colors.background, '#ffffff'),
+      color: hc(theme.colors.text, '#000000'),
       fontFamily: theme.typography.fontFamily,
       overflow: 'hidden',
       position: 'relative' as const,
     },
     sidebar: {
       width: isStack ? '100%' : '280px',
-      borderRight: isStack ? 'none' : `1px solid ${theme.colors.border}`,
-      borderBottom: isStack ? `1px solid ${theme.colors.border}` : 'none',
+      borderRight: isStack ? 'none' : `1px solid ${border}`,
+      borderBottom: isStack ? `1px solid ${border}` : 'none',
       padding: `${theme.spacing.md}px`,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: hc(theme.colors.surface, '#ffffff'),
       overflowY: 'auto' as const,
       display: 'flex',
       flexDirection: 'column' as const,
@@ -573,11 +615,12 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       cursor: 'pointer',
       fontSize: '1.2em',
       padding: '4px',
+      color: hc('inherit', '#000000'),
     },
     sidebarSection: {
       marginBottom: `${theme.spacing.md}px`,
       paddingBottom: `${theme.spacing.md}px`,
-      borderBottom: `1px solid ${theme.colors.border}33`, // Light border
+      borderBottom: `1px solid ${highContrast ? '#000000' : `${theme.colors.border}33`}`,
     },
     mainContent: {
       flex: 1,
@@ -593,6 +636,7 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       display: 'flex',
       flexDirection: 'column' as const,
       gap: `${theme.spacing.md}px`,
+      backgroundColor: hc('transparent', '#ffffff'),
     },
     welcomeContainer: {
       display: 'flex',
@@ -605,24 +649,26 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
     welcomeTitle: {
       fontSize: `${theme.typography.fontSize.xl}px`,
       fontWeight: theme.typography.fontWeight.bold,
-      color: theme.colors.text,
+      color: hc(theme.colors.text, '#000000'),
     },
     message: {
       padding: `${theme.spacing.md}px`,
       borderRadius: `${theme.borderRadius.md}px`,
       maxWidth: isStack ? '95%' : '85%',
       position: 'relative' as const,
+      border: highContrast ? '1px solid #000000' : 'none',
     },
     userMessage: {
       alignSelf: 'flex-end',
-      backgroundColor: theme.colors.primary,
+      backgroundColor: hc(theme.colors.primary, '#000000'),
       color: '#ffffff',
     },
     assistantMessage: {
       alignSelf: 'flex-start',
-      backgroundColor: theme.colors.surface,
-      border: `1px solid ${theme.colors.border}`,
+      backgroundColor: hc(theme.colors.surface, '#ffffff'),
+      border: `1px solid ${border}`,
       width: '100%',
+      color: hc(theme.colors.text, '#000000'),
     },
     messageHeader: {
       display: 'flex',
@@ -630,7 +676,8 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       alignItems: 'center',
       marginBottom: `${theme.spacing.xs}px`,
       fontSize: `${theme.typography.fontSize.xs}px`,
-      opacity: 0.8,
+      opacity: highContrast ? 1 : 0.8,
+      color: hc('inherit', '#000000'),
     },
     timestamp: {
       marginLeft: `${theme.spacing.sm}px`,
@@ -639,11 +686,12 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       fontSize: `${theme.typography.fontSize.md}px`,
       lineHeight: 1.5,
       whiteSpace: 'pre-wrap' as const,
+      color: hc('inherit', '#000000'),
     },
     messageActions: {
       marginTop: `${theme.spacing.md}px`,
       paddingTop: `${theme.spacing.sm}px`,
-      borderTop: `1px solid ${theme.colors.border}33`,
+      borderTop: `1px solid ${highContrast ? '#000000' : `${theme.colors.border}33`}`,
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center',
@@ -652,13 +700,13 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
     },
     thinkingContainer: {
       margin: `${theme.spacing.sm}px 0`,
-      borderLeft: `3px solid ${theme.colors.primary}`,
+      borderLeft: `3px solid ${hc(theme.colors.primary, '#000000')}`,
       paddingLeft: `${theme.spacing.sm}px`,
     },
     inputArea: {
       padding: `${theme.spacing.md}px`,
-      borderTop: `1px solid ${theme.colors.border}`,
-      backgroundColor: theme.colors.surface,
+      borderTop: `1px solid ${border}`,
+      backgroundColor: hc(theme.colors.surface, '#ffffff'),
     },
     form: {
       display: 'flex',
@@ -668,16 +716,16 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       flex: 1,
       padding: `${theme.spacing.sm}px ${theme.spacing.md}px`,
       borderRadius: `${theme.borderRadius.md}px`,
-      border: `1px solid ${theme.colors.border}`,
+      border: `1px solid ${border}`,
       fontSize: `${theme.typography.fontSize.md}px`,
       outline: 'none',
-      backgroundColor: theme.colors.background,
-      color: theme.colors.text,
+      backgroundColor: hc(theme.colors.background, '#ffffff'),
+      color: hc(theme.colors.text, '#000000'),
     },
     sendButton: {
       padding: `${theme.spacing.sm}px ${theme.spacing.lg}px`,
       borderRadius: `${theme.borderRadius.md}px`,
-      backgroundColor: theme.colors.primary,
+      backgroundColor: hc(theme.colors.primary, '#000000'),
       color: '#ffffff',
       border: 'none',
       cursor: 'pointer',
@@ -685,13 +733,14 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
     },
     rightSidebar: {
       width: '320px',
-      borderLeft: `1px solid ${theme.colors.border}`,
+      borderLeft: `1px solid ${border}`,
       padding: `${theme.spacing.md}px`,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: hc(theme.colors.surface, '#ffffff'),
       overflowY: 'auto' as const,
       display: 'flex',
       flexDirection: 'column' as const,
       gap: `${theme.spacing.lg}px`,
+      color: hc(theme.colors.text, '#000000'),
     },
     modalOverlay: {
       position: 'absolute' as const,
@@ -706,7 +755,7 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       zIndex: 1000,
     },
     modalContent: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: hc(theme.colors.surface, '#ffffff'),
       padding: `${theme.spacing.lg}px`,
       borderRadius: `${theme.borderRadius.md}px`,
       boxShadow: theme.shadows.lg,
@@ -714,6 +763,7 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split') {
       maxWidth: '500px',
       display: 'flex',
       flexDirection: 'column' as const,
+      border: highContrast ? '2px solid #000000' : 'none',
     },
   };
 }
