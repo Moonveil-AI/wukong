@@ -714,7 +714,7 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split', highCont
     },
     input: {
       flex: 1,
-      padding: `${theme.spacing.sm}px ${theme.spacing.md}px`,
+      padding: isStack ? `${theme.spacing.md}px` : `${theme.spacing.sm}px ${theme.spacing.md}px`,
       borderRadius: `${theme.borderRadius.md}px`,
       border: `1px solid ${border}`,
       fontSize: `${theme.typography.fontSize.md}px`,
@@ -723,7 +723,9 @@ function getStyles(theme: Theme, layout: 'stack' | 'sidebar' | 'split', highCont
       color: hc(theme.colors.text, '#000000'),
     },
     sendButton: {
-      padding: `${theme.spacing.sm}px ${theme.spacing.lg}px`,
+      padding: isStack
+        ? `${theme.spacing.md}px ${theme.spacing.xl}px`
+        : `${theme.spacing.sm}px ${theme.spacing.lg}px`,
       borderRadius: `${theme.borderRadius.md}px`,
       backgroundColor: hc(theme.colors.primary, '#000000'),
       color: '#ffffff',

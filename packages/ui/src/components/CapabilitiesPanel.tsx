@@ -130,7 +130,7 @@ function getStyles(theme: Theme, layoutStyle: 'card' | 'list' | 'grid') {
       marginTop: `${theme.spacing.md}px`,
       display: layoutStyle === 'grid' ? 'grid' : 'block',
       gridTemplateColumns:
-        layoutStyle === 'grid' ? 'repeat(auto-fit, minmax(300px, 1fr))' : undefined,
+        layoutStyle === 'grid' ? 'repeat(auto-fit, minmax(250px, 1fr))' : undefined,
       gap: layoutStyle === 'grid' ? `${theme.spacing.md}px` : undefined,
     },
     category: {

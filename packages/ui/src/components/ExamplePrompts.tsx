@@ -205,8 +205,8 @@ function getStyles(theme: Theme, layout: 'list' | 'grid' | 'compact') {
       display: isList ? 'flex' : 'grid',
       flexDirection: isList ? ('column' as const) : undefined,
       gridTemplateColumns: isCompact
-        ? 'repeat(auto-fill, minmax(200px, 1fr))'
-        : 'repeat(auto-fill, minmax(280px, 1fr))',
+        ? 'repeat(auto-fill, minmax(160px, 1fr))'
+        : 'repeat(auto-fill, minmax(240px, 1fr))',
       gap: `${theme.spacing.md}px`,
     },
     exampleCard: {

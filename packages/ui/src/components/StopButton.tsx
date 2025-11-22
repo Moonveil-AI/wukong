@@ -46,7 +46,7 @@ export const StopButton: React.FC<StopButtonProps> = ({
       color: '#fff',
       border: 'none',
       borderRadius: theme.borderRadius.md,
-      padding: `${theme.spacing.sm}px ${theme.spacing.md}px`,
+      padding: `${theme.spacing.sm + 2}px ${theme.spacing.md + 4}px`,
       cursor: 'pointer',
       fontWeight: theme.typography.fontWeight.medium,
       display: 'flex',
