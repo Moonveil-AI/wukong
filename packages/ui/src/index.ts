@@ -12,6 +12,9 @@ export * from './components';
 // Hooks
 export * from './hooks';
 
+// Providers
+export * from './providers';
+
 // Version
 export const version = '0.1.0';
 
