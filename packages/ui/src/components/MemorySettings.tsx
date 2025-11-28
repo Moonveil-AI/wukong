@@ -48,6 +48,24 @@ export const MemorySettings: React.FC<MemorySettingsProps> = ({
         Memory Settings
       </h3>
 
+      <div
+        style={{
+          backgroundColor: `${theme.colors.warning}22`,
+          border: `1px solid ${theme.colors.warning}`,
+          color: theme.colors.warning,
+          padding: theme.spacing.sm,
+          borderRadius: theme.borderRadius.sm,
+          marginBottom: theme.spacing.md,
+          fontSize: theme.typography.fontSize.sm,
+          display: 'flex',
+          alignItems: 'center',
+          gap: theme.spacing.sm,
+        }}
+      >
+        <span>⚠️</span>
+        <span>These settings are currently mocked and not connected to the backend.</span>
+      </div>
+
       <div style={{ marginBottom: theme.spacing.md }}>
         <label
           style={{
