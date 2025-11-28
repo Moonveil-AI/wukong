@@ -91,9 +91,6 @@ export type { FeedbackFormProps } from './FeedbackForm';
 export { MetricsDashboard } from './MetricsDashboard';
 export type { MetricsDashboardProps, Metric } from './MetricsDashboard';
 
-export { TrustScore } from './TrustScore';
-export type { TrustScoreProps, TrustFactor } from './TrustScore';
-
 // All-in-one Chat Interface (Task 7.7)
 export { AgentChat } from './AgentChat';
 export type { AgentChatProps } from './AgentChat';

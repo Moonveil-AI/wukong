@@ -20,7 +20,6 @@ import { StatusIndicator } from './StatusIndicator';
 import { StopButton } from './StopButton';
 import { ThinkingBox } from './ThinkingBox';
 import { TodoList } from './TodoList';
-import { TrustScore } from './TrustScore';
 import { UndoButton } from './UndoButton';
 import { UpdateBanner } from './UpdateBanner';
 import { WhyButton } from './WhyButton';
@@ -301,32 +300,6 @@ export const AgentChat: React.FC<AgentChatProps> = ({
               {isRunning && <ProgressBar progress={progress} currentStep={2} totalSteps={5} />}
             </div>
           )}
-
-          <div style={styles.sidebarSection}>
-            <TrustScore
-              score={92}
-              factors={[
-                {
-                  label: 'Accuracy',
-                  score: 95,
-                  description: 'High accuracy in recent tasks',
-                  impact: 'positive',
-                },
-                {
-                  label: 'Safety',
-                  score: 98,
-                  description: 'No safety violations',
-                  impact: 'positive',
-                },
-                {
-                  label: 'Efficiency',
-                  score: 85,
-                  description: 'Room for token optimization',
-                  impact: 'neutral',
-                },
-              ]}
-            />
-          </div>
 
           <div style={styles.sidebarSection}>
             <CostIndicator

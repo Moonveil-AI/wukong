@@ -232,7 +232,6 @@ Wukong fully implements 30 trustworthiness principles across the entire agent li
 | 27 | Thumbs up/down feedback | ✅ Feedback API | ✅ `<FeedbackButtons>` | 100% |
 | 28 | Feedback form | ✅ Feedback API | ✅ `<FeedbackForm>` | 100% |
 | 29 | Task completion rate | ✅ Statistics API | ✅ `<MetricsDashboard>` | 100% |
-| 30 | Trust index | ✅ Calculation API | ✅ `<TrustScore>` | 100% |
 
 **Complete Support Rate: 30/30 (100%)** ✅
 

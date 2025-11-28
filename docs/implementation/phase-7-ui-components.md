@@ -132,8 +132,6 @@
 3. **FeedbackButtons** (Principle 27): Thumbs up/down, rating
 4. **FeedbackForm** (Principle 28): Detailed feedback
 5. **MetricsDashboard** (Principle 29): Task completion, token usage charts
-6. **TrustScore** (Principle 30): Overall trust score and breakdown
-
 **Tests:** ✅
 - ✅ All feedback mechanisms work
 - ✅ Metrics are calculated correctly

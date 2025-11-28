@@ -42,9 +42,8 @@ This appendix provides a complete checklist for implementing the 30 trustworthin
 | 27 | Thumbs up/down feedback | ✅ Feedback API | ✅ `<FeedbackButtons>` | 100% |
 | 28 | Feedback form | ✅ Feedback API | ✅ `<FeedbackForm>` | 100% |
 | 29 | Task completion rate | ✅ Statistics API | ✅ `<MetricsDashboard>` | 100% |
-| 30 | Trust index | ✅ Calculation API | ✅ `<TrustScore>` | 100% |
 
-**Complete Support Rate: 30/30 (100%)** ✅
+**Complete Support Rate: 29/29 (100%)** ✅
 
 ---
 
@@ -249,15 +248,11 @@ await agent.submitDetailedFeedback({
 })
 ```
 
-#### 29-30. Metrics and Trust Score
+#### 29. Metrics
 ```typescript
 // Task completion rate
 const metrics = await agent.getMetrics()
 // { successRate: 0.95, avgSteps: 12, ... }
-
-// Trust index (comprehensive multiple factors)
-const trustScore = agent.calculateTrustScore()
-// Based on: success rate, user feedback, undo count etc.
 ```
 
 ---

@@ -77,8 +77,7 @@ import {
   FeedbackForm,         // Feedback form
   
   // Statistics
-  MetricsDashboard,     // Metrics dashboard
-  TrustScore            // Trust score
+  MetricsDashboard      // Metrics dashboard
 } from '@wukong/agent-ui'
 
 // Custom layout
