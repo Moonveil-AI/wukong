@@ -29,7 +29,18 @@ function SimpleApp() {
         <AgentChat
           config={{
             name: 'Wukong',
-            capabilities: ['reasoning', 'tools', 'memory'],
+            capabilities: [
+              {
+                category: 'Reasoning',
+                can: ['Multi-step planning', 'Context retention'],
+                cannot: ['Real-time web browsing'],
+              },
+              {
+                category: 'Tools',
+                can: ['Calculator', 'Search'],
+                cannot: ['System file access'],
+              },
+            ],
           }}
           theme={mode}
           showCapabilities={true}

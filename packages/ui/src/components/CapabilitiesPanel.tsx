@@ -53,8 +53,8 @@ export const CapabilitiesPanel: React.FC<CapabilitiesPanelProps> = ({
 
       {isExpanded && (
         <div style={styles.content}>
-          {capabilities.map((capability) => (
-            <div key={capability.category} style={styles.category}>
+          {capabilities.map((capability, capIndex) => (
+            <div key={`${capability.category}-${capIndex}`} style={styles.category}>
               <h4 style={styles.categoryTitle}>{capability.category}</h4>
 
               <div style={styles.section}>
@@ -63,23 +63,23 @@ export const CapabilitiesPanel: React.FC<CapabilitiesPanelProps> = ({
                   <span style={styles.sectionTitle}>Can Do</span>
                 </div>
                 <ul style={styles.list}>
-                  {capability.can.map((item) => (
-                    <li key={item} style={styles.listItem}>
+                  {(capability.can || []).map((item, itemIndex) => (
+                    <li key={`${item}-${itemIndex}`} style={styles.listItem}>
                       {item}
                     </li>
                   ))}
                 </ul>
               </div>
 
-              {showLimitations && capability.cannot.length > 0 && (
+              {showLimitations && capability.cannot && capability.cannot.length > 0 && (
                 <div style={styles.section}>
                   <div style={styles.sectionHeader}>
                     <span style={styles.cannotIcon}>✗</span>
                     <span style={styles.sectionTitle}>Cannot Do</span>
                   </div>
                   <ul style={styles.list}>
-                    {capability.cannot.map((item) => (
-                      <li key={item} style={styles.listItem}>
+                    {(capability.cannot || []).map((item, itemIndex) => (
+                      <li key={`${item}-${itemIndex}`} style={styles.listItem}>
                         {item}
                       </li>
                     ))}
