@@ -65,7 +65,8 @@ pnpm install && pnpm build
 # Run the basic example
 cd examples/basic
 cp env.template .env
-# Edit .env and add your OPENAI_API_KEY
+# Edit .env and add your OPENAI_API_KEY or ANTHROPIC_API_KEY
+mkdir -p data
 pnpm dev
 ```
 

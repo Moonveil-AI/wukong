@@ -1,4 +1,9 @@
 packages:
-  - 'packages/*'
-  - 'examples/*'
+  - packages/*
+  - examples/*
 
+onlyBuiltDependencies:
+  - '@biomejs/biome'
+  - better-sqlite3
+  - bufferutil
+  - esbuild

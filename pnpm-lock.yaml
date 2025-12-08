@@ -57,6 +57,9 @@ importers:
       '@wukong/llm-anthropic':
         specifier: workspace:*
         version: link:../../packages/llm-anthropic
+      '@wukong/llm-google':
+        specifier: workspace:*
+        version: link:../../packages/llm-google
       '@wukong/llm-openai':
         specifier: workspace:*
         version: link:../../packages/llm-openai
