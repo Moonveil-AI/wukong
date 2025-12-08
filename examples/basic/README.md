@@ -53,7 +53,10 @@ pnpm build
 
 ```bash
 cd examples/basic
-pnpm install
+
+# Create the data directory for SQLite database
+mkdir -p data
+
 pnpm dev
 ```
 
@@ -214,12 +217,21 @@ cd /Users/shan/wukong
 pnpm build
 ```
 
+### Error: "Cannot open database because the directory does not exist"
+
+The `data` directory must exist before running:
+
+```bash
+mkdir -p data
+```
+
 ### Database Issues
 
 The database is automatically created at `./data/wukong.db` on first run. If you want to reset it:
 
 ```bash
 rm -rf ./data
+mkdir -p data
 # Run the example again to recreate
 ```
 
