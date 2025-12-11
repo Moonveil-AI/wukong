@@ -134,8 +134,8 @@ export class ToolRegistry {
    * Expects tool files to export a default Tool object or a function that returns a Tool.
    */
   private async defaultLoader(filePath: string): Promise<Tool> {
-    // Dynamic import
-    const module = await import(filePath);
+    // Dynamic import - paths discovered at runtime via directory scanning
+    const module = await import(/* @vite-ignore */ filePath);
 
     // Support both default export and named export
     const exported = module.default || module.tool || module;
