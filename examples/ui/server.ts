@@ -102,7 +102,7 @@ async function main() {
   console.log('🚀 Starting Wukong UI Backend Server\n');
 
   // 1. Initialize database
-  const dbPath = process.env.DATABASE_PATH || './data/wukong-ui.db';
+  const dbPath = process.env['DATABASE_PATH'] || './data/wukong-ui.db';
   console.log(`📦 Database: ${dbPath}`);
 
   // Ensure the database directory exists
@@ -157,8 +157,8 @@ async function main() {
   // 3. Create Wukong Server
   console.log('\n🎭 Starting Wukong Server...');
 
-  const port = Number.parseInt(process.env.PORT || '3001', 10);
-  const host = process.env.HOST || 'localhost';
+  const port = Number.parseInt(process.env['PORT'] || '3001', 10);
+  const host = process.env['HOST'] || 'localhost';
 
   const server = new WukongServer({
     port,
