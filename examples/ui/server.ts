@@ -150,7 +150,13 @@ async function main() {
   }
 
   if (llmAdapters.length === 0) {
-    console.error('\n❌ No LLM adapters available! Please set API keys in .env file.');
+    const rootEnvPath = join(__dirname, '../../.env');
+    console.error('\n❌ No LLM adapters available!');
+    console.error(`   Please create a .env file in the workspace root: ${rootEnvPath}`);
+    console.error('   You can copy from env.example and add at least one API key:');
+    console.error('   - ANTHROPIC_API_KEY=sk-ant-...');
+    console.error('   - OPENAI_API_KEY=sk-...');
+    console.error('   - GEMINI_API_KEY=...\n');
     process.exit(1);
   }
 
