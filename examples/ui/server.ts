@@ -207,7 +207,7 @@ async function main() {
   console.log(`\n📍 HTTP API:    http://${host}:${port}/api`);
   console.log(`📍 WebSocket:   ws://${host}:${port}${info.websocket ? '/ws' : ' (disabled)'}`);
   console.log(`📍 SSE:         http://${host}:${port}${info.sse ? '/events' : ' (disabled)'}`);
-  console.log('\n🎨 Frontend:    http://localhost:5173 (run "pnpm dev" in another terminal)');
+  console.log('\n🎨 Frontend:    http://localhost:3000 (run "pnpm dev" in another terminal)');
   console.log('\n💡 Press Ctrl+C to stop');
 
   // Handle graceful shutdown

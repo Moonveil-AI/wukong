@@ -72,7 +72,7 @@ pnpm dev:all
 
 This will start:
 - Backend server on `http://localhost:3001`
-- Frontend dev server on `http://localhost:5173`
+- Frontend dev server on `http://localhost:3000`
 
 **Option B: Run separately**
 
@@ -88,7 +88,7 @@ pnpm dev
 
 ### 4. Open in Browser
 
-Navigate to `http://localhost:5173` and start chatting with the agent!
+Navigate to `http://localhost:3000` and start chatting with the agent!
 
 ## Architecture
 
