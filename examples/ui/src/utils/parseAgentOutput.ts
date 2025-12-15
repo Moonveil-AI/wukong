@@ -5,9 +5,9 @@
 export interface ParsedAgentOutput {
   action: 'CallTool' | 'Finish' | 'AskUser' | string;
   reasoning?: string;
-  selected_tool?: string;
+  selectedTool?: string;
   parameters?: Record<string, any>;
-  message_to_user?: string;
+  messageToUser?: string;
 }
 
 export interface ParsedMessage {
@@ -22,10 +22,13 @@ export interface ParsedMessage {
 export function parseAgentMessage(content: string): ParsedMessage {
   const finalOutputRegex = /<final_output>\s*([\s\S]*?)\s*<\/final_output>/g;
   const outputs: ParsedAgentOutput[] = [];
-  let match: RegExpExecArray | null;
 
   // Extract all final_output blocks
-  while ((match = finalOutputRegex.exec(content)) !== null) {
+  for (
+    let match = finalOutputRegex.exec(content);
+    match !== null;
+    match = finalOutputRegex.exec(content)
+  ) {
     try {
       const jsonStr = match[1].trim();
       const parsed = JSON.parse(jsonStr);
@@ -52,14 +55,14 @@ export function formatOutput(output: ParsedAgentOutput): string {
   const parts: string[] = [];
 
   // Add the user message if present
-  if (output.message_to_user) {
-    parts.push(output.message_to_user);
+  if (output.messageToUser) {
+    parts.push(output.messageToUser);
   }
 
   // Add tool execution info
-  if (output.action === 'CallTool' && output.selected_tool) {
-    parts.push(`\n🔧 Using tool: ${output.selected_tool}`);
-    
+  if (output.action === 'CallTool' && output.selectedTool) {
+    parts.push(`\n🔧 Using tool: ${output.selectedTool}`);
+
     if (output.parameters) {
       const paramStr = Object.entries(output.parameters)
         .map(([key, value]) => `  ${key}: ${JSON.stringify(value)}`)
@@ -69,7 +72,7 @@ export function formatOutput(output: ParsedAgentOutput): string {
   }
 
   // Add reasoning in a subtle way
-  if (output.reasoning && !output.message_to_user) {
+  if (output.reasoning && !output.messageToUser) {
     parts.push(`💭 ${output.reasoning}`);
   }
 
@@ -81,12 +84,11 @@ export function formatOutput(output: ParsedAgentOutput): string {
  */
 export function formatAllOutputs(parsed: ParsedMessage): string {
   const formatted = parsed.outputs.map(formatOutput).filter(Boolean).join('\n\n');
-  
+
   // If there's display text (text outside of final_output tags), include it
   if (parsed.displayText) {
     return formatted ? `${parsed.displayText}\n\n${formatted}` : parsed.displayText;
   }
-  
+
   return formatted;
 }
-

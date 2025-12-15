@@ -48,7 +48,7 @@ const calculatorTool = {
     },
     required: ['operation', 'a', 'b'],
   },
-  handler: async (params: any) => {
+  handler: (params: any) => {
     const { operation, a, b } = params;
 
     let result: number;

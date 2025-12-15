@@ -5,8 +5,8 @@ import {
   ExecutionPlan,
   type ExecutionStep,
   PlanPreview,
-  ThemeProvider,
   type ThemeMode,
+  ThemeProvider,
   ThinkingBox,
   type Todo,
   TodoList,
@@ -171,10 +171,10 @@ function AgentUI() {
                 // Only set streaming to true if it hasn't been explicitly set to false
                 // Once agent:complete sets it to false, don't re-enable it
                 const shouldStream = msg.streaming === undefined || msg.streaming === true;
-                return { 
-                  ...msg, 
+                return {
+                  ...msg,
                   content: msg.content + event.text,
-                  streaming: shouldStream
+                  streaming: shouldStream,
                 };
               }
               return msg;

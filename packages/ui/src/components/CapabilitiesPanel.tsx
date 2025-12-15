@@ -63,8 +63,8 @@ export const CapabilitiesPanel: React.FC<CapabilitiesPanelProps> = ({
                   <span style={styles.sectionTitle}>Can Do</span>
                 </div>
                 <ul style={styles.list}>
-                  {(capability.can || []).map((item, itemIndex) => (
-                    <li key={`${item}-${itemIndex}`} style={styles.listItem}>
+                  {(capability.can || []).map((item) => (
+                    <li key={item} style={styles.listItem}>
                       {item}
                     </li>
                   ))}
@@ -78,8 +78,8 @@ export const CapabilitiesPanel: React.FC<CapabilitiesPanelProps> = ({
                     <span style={styles.sectionTitle}>Cannot Do</span>
                   </div>
                   <ul style={styles.list}>
-                    {(capability.cannot || []).map((item, itemIndex) => (
-                      <li key={`${item}-${itemIndex}`} style={styles.listItem}>
+                    {(capability.cannot || []).map((item) => (
+                      <li key={item} style={styles.listItem}>
                         {item}
                       </li>
                     ))}

@@ -143,15 +143,15 @@ interface ExampleCardProps {
   onMouseLeave: () => void;
 }
 
-const ExampleCard: React.FC<ExampleCardProps> = ({ 
-  example, 
-  onClick, 
+const ExampleCard: React.FC<ExampleCardProps> = ({
+  example,
+  onClick,
   styles,
   isHovered,
   onMouseEnter,
   onMouseLeave,
 }) => {
-  const cardStyle = isHovered 
+  const cardStyle = isHovered
     ? { ...styles.exampleCard, ...styles.exampleCardHover }
     : styles.exampleCard;
 
