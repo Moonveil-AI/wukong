@@ -91,13 +91,11 @@ export class WukongClient {
     });
 
     const data: ApiResponse<SessionInfo> = await response.json();
-    console.log('API Response:', data);
 
     if (!(data.success && data.data)) {
       throw new Error(data.error?.message || 'Failed to create session');
     }
 
-    console.log('Returning session data:', data.data);
     return data.data;
   }
 
@@ -231,8 +229,6 @@ export class WukongClient {
         this.ws = new WebSocket(`${this.wsUrl}/ws`);
 
         this.ws.onopen = () => {
-          console.log('WebSocket connected');
-
           // Authenticate with session ID
           this.ws?.send(
             JSON.stringify({
@@ -259,7 +255,6 @@ export class WukongClient {
         };
 
         this.ws.onclose = () => {
-          console.log('WebSocket disconnected');
           this.ws = null;
         };
       } catch (error) {
@@ -313,7 +308,6 @@ export class WukongClient {
     // Disconnect any existing SSE connection first
     this.disconnectSSE();
 
-    console.log('Connecting to SSE with session ID:', sessionId);
     this.eventSource = new EventSource(`${this.baseUrl}/events/${sessionId}`);
 
     // Listen to all event types

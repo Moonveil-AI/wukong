@@ -1,5 +1,5 @@
 import type React from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTheme } from '../theme';
 import type { Theme } from '../theme/types';
 
@@ -33,9 +33,10 @@ export const ExamplePrompts: React.FC<ExamplePromptsProps> = ({
   className = '',
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null);
   const { theme } = useTheme();
 
-  const styles = getStyles(theme, layout);
+  const styles = useMemo(() => getStyles(theme, layout), [theme, layout]);
 
   // Group examples by category
   const examplesByCategory = examples.reduce(
@@ -103,6 +104,9 @@ export const ExamplePrompts: React.FC<ExamplePromptsProps> = ({
                   example={example}
                   onClick={() => handleExampleClick(example)}
                   styles={styles}
+                  isHovered={hoveredCard === example.id}
+                  onMouseEnter={() => setHoveredCard(example.id)}
+                  onMouseLeave={() => setHoveredCard(null)}
                 />
               ))}
             </div>
@@ -117,6 +121,9 @@ export const ExamplePrompts: React.FC<ExamplePromptsProps> = ({
               example={example}
               onClick={() => handleExampleClick(example)}
               styles={styles}
+              isHovered={hoveredCard === example.id}
+              onMouseEnter={() => setHoveredCard(example.id)}
+              onMouseLeave={() => setHoveredCard(null)}
             />
           ))}
         </div>
@@ -131,14 +138,30 @@ interface ExampleCardProps {
   example: ExamplePrompt;
   onClick: () => void;
   styles: ReturnType<typeof getStyles>;
+  isHovered: boolean;
+  onMouseEnter: () => void;
+  onMouseLeave: () => void;
 }
 
-const ExampleCard: React.FC<ExampleCardProps> = ({ example, onClick, styles }) => {
+const ExampleCard: React.FC<ExampleCardProps> = ({ 
+  example, 
+  onClick, 
+  styles,
+  isHovered,
+  onMouseEnter,
+  onMouseLeave,
+}) => {
+  const cardStyle = isHovered 
+    ? { ...styles.exampleCard, ...styles.exampleCardHover }
+    : styles.exampleCard;
+
   return (
     <button
       type="button"
       onClick={onClick}
-      style={styles.exampleCard}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      style={cardStyle}
       aria-label={`Try example: ${example.title}`}
     >
       {example.icon && <span style={styles.exampleIcon}>{example.icon}</span>}
@@ -184,12 +207,12 @@ function getStyles(theme: Theme, layout: 'list' | 'grid' | 'compact') {
       color: theme.colors.textSecondary,
       cursor: 'pointer',
       fontSize: `${theme.typography.fontSize.sm}px`,
-      transition: 'all 0.2s',
+      transition: 'background-color 0.2s, border 0.2s, color 0.2s',
     },
     categoryButtonActive: {
       backgroundColor: theme.colors.primary,
       color: '#ffffff',
-      borderColor: theme.colors.primary,
+      border: `1px solid ${theme.colors.primary}`,
     },
     categorySection: {
       marginBottom: `${theme.spacing.lg}px`,
@@ -218,9 +241,15 @@ function getStyles(theme: Theme, layout: 'list' | 'grid' | 'compact') {
       borderRadius: `${theme.borderRadius.sm}px`,
       border: `1px solid ${theme.colors.border}`,
       cursor: 'pointer',
-      transition: 'all 0.2s',
+      transition: 'background-color 0.2s, border 0.2s, transform 0.2s, box-shadow 0.2s',
       textAlign: 'left' as const,
       width: '100%',
+    },
+    exampleCardHover: {
+      backgroundColor: theme.colors.surface,
+      border: `1px solid ${theme.colors.primary}`,
+      transform: 'translateY(-2px)',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
     },
     exampleIcon: {
       fontSize: `${theme.typography.fontSize.xl}px`,

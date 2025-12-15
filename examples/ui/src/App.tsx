@@ -15,6 +15,7 @@ import {
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import { type AgentEvent, type WukongClient, getClient } from './api/client';
+import { formatAllOutputs, parseAgentMessage } from './utils/parseAgentOutput';
 
 // Message types for the chat interface
 interface Message {
@@ -100,8 +101,6 @@ function AgentUI() {
 
         // Create a session
         const session = await client.createSession('ui-user');
-        console.log('Session response:', session);
-        console.log('Session ID:', session.id);
         if (!isActive) return;
         setCurrentSessionId(session.id);
 
@@ -158,8 +157,6 @@ function AgentUI() {
 
   // Handle agent events
   const handleAgentEvent = useCallback((event: AgentEvent) => {
-    console.log('Agent event:', event);
-
     switch (event.type) {
       case 'llm:started':
         setShowThinking(true);
@@ -169,11 +166,19 @@ function AgentUI() {
       case 'llm:streaming':
         if (event.text && currentMessageIdRef.current) {
           setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === currentMessageIdRef.current
-                ? { ...msg, content: msg.content + event.text }
-                : msg,
-            ),
+            prev.map((msg) => {
+              if (msg.id === currentMessageIdRef.current) {
+                // Only set streaming to true if it hasn't been explicitly set to false
+                // Once agent:complete sets it to false, don't re-enable it
+                const shouldStream = msg.streaming === undefined || msg.streaming === true;
+                return { 
+                  ...msg, 
+                  content: msg.content + event.text,
+                  streaming: shouldStream
+                };
+              }
+              return msg;
+            }),
           );
         }
         break;
@@ -190,7 +195,6 @@ function AgentUI() {
         break;
 
       case 'step:started':
-        console.log('Step started:', event.step);
         // Update thinking box with step info
         if (event.step.reasoning) {
           setCurrentThinking(event.step.reasoning);
@@ -199,7 +203,6 @@ function AgentUI() {
         break;
 
       case 'step:completed':
-        console.log('Step completed:', event.step);
         break;
 
       case 'tool:executing': {
@@ -228,12 +231,11 @@ function AgentUI() {
         setIsExecuting(false);
         setShowThinking(false);
 
-        // Add final result message if needed
-        if (event.result && currentMessageIdRef.current) {
+        // Always turn off streaming when agent completes
+        if (currentMessageIdRef.current) {
+          const targetId = currentMessageIdRef.current;
           setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg,
-            ),
+            prev.map((msg) => (msg.id === targetId ? { ...msg, streaming: false } : msg)),
           );
         }
         currentMessageIdRef.current = null;
@@ -543,37 +545,44 @@ function AgentUI() {
 
           {/* Messages */}
           <div className="messages-container">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`message message-${message.role}`}
-                style={{
-                  backgroundColor:
-                    message.role === 'user'
-                      ? `${theme.colors.primary}15`
-                      : message.role === 'system'
-                        ? `${theme.colors.warning}15`
-                        : 'transparent',
-                }}
-              >
-                <div className="message-header">
-                  <span className="message-role" style={{ color: theme.colors.textSecondary }}>
-                    {message.role === 'user'
-                      ? '👤 You'
-                      : message.role === 'assistant'
-                        ? '🐒 Agent'
-                        : '💡 System'}
-                  </span>
-                  <span className="message-time" style={{ color: theme.colors.textSecondary }}>
-                    {message.timestamp.toLocaleTimeString()}
-                  </span>
+            {messages.map((message) => {
+              // Parse agent messages to extract structured output
+              const isAssistant = message.role === 'assistant';
+              const parsed = isAssistant ? parseAgentMessage(message.content) : null;
+              const displayContent = parsed ? formatAllOutputs(parsed) : message.content;
+
+              return (
+                <div
+                  key={message.id}
+                  className={`message message-${message.role}`}
+                  style={{
+                    backgroundColor:
+                      message.role === 'user'
+                        ? `${theme.colors.primary}15`
+                        : message.role === 'system'
+                          ? `${theme.colors.warning}15`
+                          : 'transparent',
+                  }}
+                >
+                  <div className="message-header">
+                    <span className="message-role" style={{ color: theme.colors.textSecondary }}>
+                      {message.role === 'user'
+                        ? '👤 You'
+                        : message.role === 'assistant'
+                          ? '🐒 Agent'
+                          : '💡 System'}
+                    </span>
+                    <span className="message-time" style={{ color: theme.colors.textSecondary }}>
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                  <div className="message-content" style={{ color: theme.colors.text }}>
+                    {displayContent}
+                    {message.streaming && <span className="cursor-blink">▊</span>}
+                  </div>
                 </div>
-                <div className="message-content" style={{ color: theme.colors.text }}>
-                  {message.content}
-                  {message.streaming && <span className="cursor-blink">▊</span>}
-                </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Tool executions */}
             {toolExecutions.length > 0 && (
