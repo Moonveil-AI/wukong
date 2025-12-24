@@ -218,7 +218,7 @@ Respond with ONLY the number (1, 2, 3, etc.) of the most appropriate model. Do n
         }
       }
     } catch {
-      // If selection fails, fall back to first model
+      // If selection fails, fall back to first model by going to the end to "return 0"
     }
 
     return 0;
