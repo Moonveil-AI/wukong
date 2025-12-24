@@ -20,7 +20,8 @@ import { OpenAIAdapter } from '@wukong/llm-openai';
 const calculatorTool = {
   metadata: {
     name: 'calculator',
-    description: 'Perform basic mathematical calculations (add, subtract, multiply, divide)',
+    description:
+      'Perform basic math operations. Parameters: operation ("add", "subtract", "multiply", or "divide"), a (first number), b (second number). Example: {"operation": "multiply", "a": 15, "b": 8} returns 120.',
     version: '1.0.0',
     category: 'data' as const,
     riskLevel: 'low' as const,

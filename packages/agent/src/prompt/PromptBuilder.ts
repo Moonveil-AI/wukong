@@ -88,15 +88,15 @@ export class PromptBuilder {
     const enableToolExecutor = context.enableToolExecutor ?? this.options.enableToolExecutor;
 
     const sections = [
-      this.buildOverviewSection(context),
+      this.buildOverviewSection(),
       this.buildRoleSection(),
+      this.buildMainProcedureSection(context.agentType),
+      this.buildCommunicationStyleSection(),
       this.buildAvailableActionsSection(context.agentType),
       this.buildDiscardingStepsSection(),
-      this.buildMainProcedureSection(context.agentType),
-      this.buildOutputFormatSection(),
-      this.buildCommunicationStyleSection(),
       this.buildToolSelectionGuidelinesSection(context.tools),
       this.buildCurrentContextSection(context, enableToolExecutor),
+      this.buildOutputFormatSection(),
     ];
 
     return sections.filter(Boolean).join('\n\n---\n\n');
@@ -105,20 +105,15 @@ export class PromptBuilder {
   /**
    * Build overview section
    */
-  private buildOverviewSection(context: PromptContext): string {
-    const companyName = context.companyName || this.options.companyName;
-
-    return `# Overview
-
-## Your Company
-You work at ${companyName}. Your role is to help users accomplish their goals using available tools.`;
+  private buildOverviewSection(): string {
+    return `# Agent Overview`
   }
 
   /**
    * Build role section
    */
   private buildRoleSection(): string {
-    return `## Role
+    return `## Agent Role
 You are an AI Agent that can:
 - Understand user goals
 - Search knowledge base for relevant information
@@ -311,7 +306,7 @@ Your response MUST be valid JSON wrapped in XML tags:
       categories.get(category)?.push(tool);
     }
 
-    let guidelines = '# Tool Selection Guidelines\n\n';
+    let guidelines = '# Agent\'s Tool Selection Guidelines\n\n';
 
     // Add category-specific guidelines when there are multiple categories
     if (categories.size > 1) {
@@ -384,12 +379,23 @@ ${context.latestStep}
    */
   private formatToolsSection(tools: Tool[], enableToolExecutor: boolean): string {
     if (enableToolExecutor) {
-      // Tool Executor mode: only tool names and brief descriptions
+      // Tool Executor mode: include tool names, descriptions, and parameter schemas
       const toolsList = tools
-        .map((tool) => `- ${tool.metadata.name}: ${tool.metadata.description}`)
-        .join('\n');
+        .map((tool) => {
+          const params = tool.schema?.properties
+            ? Object.entries(tool.schema.properties)
+                .map(([key, value]: [string, any]) => {
+                  const required = tool.schema?.required?.includes(key) ? ' (required)' : '';
+                  const enumValues = value.enum ? ` [${value.enum.join(', ')}]` : '';
+                  return `    - ${key}: ${value.type}${enumValues}${required}`;
+                })
+                .join('\n')
+            : '    (no parameters)';
+          return `- **${tool.metadata.name}**: ${tool.metadata.description}\n  Parameters:\n${params}`;
+        })
+        .join('\n\n');
 
-      return `## Available Tools (Tool Executor Mode)
+      return `## Available Tools
 <all_tool_list>
 ${toolsList}
 </all_tool_list>`;
