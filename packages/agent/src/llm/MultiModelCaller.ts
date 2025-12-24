@@ -206,10 +206,7 @@ export class MultiModelCaller {
       Respond with ONLY the number (1, 2, 3, etc.) of the most appropriate model. Do not include any other text.`;
 
     try {
-      console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", query)
-      console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-
-    const response = await selectorModel.call(selectionPrompt, {
+      const response = await selectorModel.call(selectionPrompt, {
         //model: 'gemini-2.0-flash',
         maxTokens: 10,
         temperature: 0,
