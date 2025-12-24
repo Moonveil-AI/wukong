@@ -17,11 +17,39 @@
 import type { LLMAdapter, LLMCallOptions, LLMCallResponse } from '../types/adapters';
 
 /**
+ * LLM adapter with optional instruction for intelligent model selection
+ */
+export interface LLMAdapterWithInstruction {
+  /** Custom instruction describing when to use this model */
+  instruction: string;
+  /** The LLM adapter instance */
+  adapter: LLMAdapter;
+}
+
+/**
+ * Type for model input - supports both plain adapters and adapters with instructions
+ */
+export type LLMAdapterInput = LLMAdapter | LLMAdapterWithInstruction;
+
+/**
+ * Check if input is an adapter with instruction
+ */
+function isAdapterWithInstruction(input: LLMAdapterInput): input is LLMAdapterWithInstruction {
+  return (
+    typeof input === 'object' &&
+    input !== null &&
+    'instruction' in input &&
+    'adapter' in input &&
+    typeof (input as LLMAdapterWithInstruction).instruction === 'string'
+  );
+}
+
+/**
  * Configuration for MultiModelCaller
  */
 export interface MultiModelCallerConfig {
-  /** Array of LLM adapters to try in order */
-  models: LLMAdapter[];
+  /** Array of LLM adapters to try in order (supports both plain adapters and adapters with instructions) */
+  models: LLMAdapterInput[];
 
   /** Whether to validate responses */
   validateResponse?: boolean;
@@ -34,6 +62,9 @@ export interface MultiModelCallerConfig {
 
   /** Whether to extract JSON from responses */
   autoExtractJson?: boolean;
+
+  /** Enable intelligent model selection based on instructions (requires at least one adapter with instruction) */
+  enableIntelligentSelection?: boolean;
 }
 
 /**
@@ -81,6 +112,14 @@ interface ModelCallResult {
 }
 
 /**
+ * Normalized model entry with adapter and optional instruction
+ */
+interface NormalizedModelEntry {
+  adapter: LLMAdapter;
+  instruction?: string;
+}
+
+/**
  * Multi-Model LLM Caller
  *
  * Provides fallback mechanism for calling multiple LLM providers with automatic
@@ -88,6 +127,7 @@ interface ModelCallResult {
  */
 export class MultiModelCaller {
   private readonly config: Required<MultiModelCallerConfig>;
+  private readonly normalizedModels: NormalizedModelEntry[];
 
   constructor(config: MultiModelCallerConfig) {
     if (!config.models || config.models.length === 0) {
@@ -100,7 +140,88 @@ export class MultiModelCaller {
       maxRetriesPerModel: config.maxRetriesPerModel ?? 2,
       timeoutPerModel: config.timeoutPerModel ?? 120,
       autoExtractJson: config.autoExtractJson ?? false,
+      enableIntelligentSelection: config.enableIntelligentSelection ?? true,
     };
+
+    // Normalize models to a consistent format
+    this.normalizedModels = config.models.map((model) => {
+      if (isAdapterWithInstruction(model)) {
+        return { adapter: model.adapter, instruction: model.instruction };
+      }
+      return { adapter: model };
+    });
+  }
+
+  /**
+   * Check if any model has instructions configured
+   */
+  private hasInstructionModels(): boolean {
+    return this.normalizedModels.some((m) => m.instruction !== undefined);
+  }
+
+  /**
+   * Select the best model based on the user's query and model instructions
+   * Uses the first available model to compare the query against instructions
+   */
+  private async selectBestModel(query: string): Promise<number> {
+    // If intelligent selection is disabled or no models have instructions, use the first model
+    if (!this.config.enableIntelligentSelection || !this.hasInstructionModels()) {
+      return 0;
+    }
+
+    // Get models with instructions
+    const modelsWithInstructions = this.normalizedModels
+      .map((m, index) => ({ ...m, index }))
+      .filter((m): m is { adapter: LLMAdapter; instruction: string; index: number } =>
+        m.instruction !== undefined
+      );
+
+    // If no models have instructions, return first model
+    if (modelsWithInstructions.length === 0) {
+      return 0;
+    }
+
+    // If only one model has instructions, use it
+    if (modelsWithInstructions.length === 1) {
+      const singleModel = modelsWithInstructions[0];
+      return singleModel ? singleModel.index : 0;
+    }
+
+    // Use the first available model to select the best match
+    const firstModel = this.normalizedModels[0];
+    if (!firstModel) {
+      return 0;
+    }
+    const selectorModel = firstModel.adapter;
+
+    const selectionPrompt = `You are a model selector. Based on the user's query, select the most appropriate model from the following options.
+
+User Query: "${query}"
+
+Available Models:
+${modelsWithInstructions.map((m, i) => `${i + 1}. ${m.instruction}`).join('\n')}
+
+Respond with ONLY the number (1, 2, 3, etc.) of the most appropriate model. Do not include any other text.`;
+
+    try {
+      const response = await selectorModel.call(selectionPrompt, {
+        model: '', // Use default model
+        maxTokens: 10,
+        temperature: 0,
+      });
+
+      const selectedNumber = parseInt(response.text.trim(), 10);
+      if (selectedNumber >= 1 && selectedNumber <= modelsWithInstructions.length) {
+        const selected = modelsWithInstructions[selectedNumber - 1];
+        if (selected) {
+          return selected.index;
+        }
+      }
+    } catch {
+      // If selection fails, fall back to first model
+    }
+
+    return 0;
   }
 
   /**
@@ -118,20 +239,26 @@ export class MultiModelCaller {
   ): Promise<LLMCallResponse> {
     const errors: Array<{ modelIndex: number; error: Error }> = [];
 
-    for (let i = 0; i < this.config.models.length; i++) {
-      const model = this.config.models[i];
-      if (!model) {
+    // Try intelligent model selection first if enabled
+    const startIndex = await this.selectBestModel(prompt);
+    const modelOrder = this.getModelOrder(startIndex);
+
+    for (const i of modelOrder) {
+      const modelEntry = this.normalizedModels[i];
+      if (!modelEntry) {
         continue;
       }
 
+      const adapter = modelEntry.adapter;
+
       // Check if model supports streaming
-      if (typeof model.callWithStreaming !== 'function') {
+      if (typeof adapter.callWithStreaming !== 'function') {
         // Fall back to regular call
         continue;
       }
 
       try {
-        const response = await model.callWithStreaming(prompt, options);
+        const response = await adapter.callWithStreaming(prompt, options);
 
         // Validate response if enabled
         if (this.config.validateResponse) {
@@ -161,19 +288,39 @@ export class MultiModelCaller {
   }
 
   /**
+   * Get the order of models to try, starting from the given index
+   */
+  private getModelOrder(startIndex: number): number[] {
+    const order: number[] = [];
+    const length = this.normalizedModels.length;
+
+    // Add startIndex first, then the rest in order
+    for (let i = 0; i < length; i++) {
+      const index = (startIndex + i) % length;
+      order.push(index);
+    }
+
+    return order;
+  }
+
+  /**
    * Call LLM with automatic fallback
    */
   async call(prompt: string, options?: LLMCallOptions): Promise<LLMCallResponse> {
     const errors: Array<{ modelIndex: number; error: Error }> = [];
 
-    for (let i = 0; i < this.config.models.length; i++) {
-      const model = this.config.models[i];
-      if (!model) {
+    // Try intelligent model selection first if enabled
+    const startIndex = await this.selectBestModel(prompt);
+    const modelOrder = this.getModelOrder(startIndex);
+
+    for (const i of modelOrder) {
+      const modelEntry = this.normalizedModels[i];
+      if (!modelEntry) {
         continue;
       }
 
       try {
-        const result = await this.callWithRetry(model, prompt, options, i);
+        const result = await this.callWithRetry(modelEntry.adapter, prompt, options, i);
 
         if (result.success && result.response) {
           // Validate response if enabled
@@ -218,14 +365,21 @@ export class MultiModelCaller {
   ): Promise<LLMCallResponse> {
     const errors: Array<{ modelIndex: number; error: Error }> = [];
 
-    for (let i = 0; i < this.config.models.length; i++) {
-      const model = this.config.models[i];
-      if (!model) {
+    // Extract user message for model selection
+    const userMessage = messages.find((m) => m.role === 'user')?.content || '';
+
+    // Try intelligent model selection first if enabled
+    const startIndex = await this.selectBestModel(userMessage);
+    const modelOrder = this.getModelOrder(startIndex);
+
+    for (const i of modelOrder) {
+      const modelEntry = this.normalizedModels[i];
+      if (!modelEntry) {
         continue;
       }
 
       try {
-        const result = await this.callWithMessagesRetry(model, messages, options, i);
+        const result = await this.callWithMessagesRetry(modelEntry.adapter, messages, options, i);
 
         if (result.success && result.response) {
           // Validate response if enabled
@@ -546,22 +700,30 @@ export class MultiModelCaller {
    * Get model capabilities
    */
   getCapabilities(modelIndex: number): ReturnType<LLMAdapter['getCapabilities']> | null {
-    if (modelIndex < 0 || modelIndex >= this.config.models.length) {
+    if (modelIndex < 0 || modelIndex >= this.normalizedModels.length) {
       return null;
     }
 
-    const model = this.config.models[modelIndex];
-    if (!model) {
+    const modelEntry = this.normalizedModels[modelIndex];
+    if (!modelEntry) {
       return null;
     }
 
-    return model.getCapabilities();
+    return modelEntry.adapter.getCapabilities();
+  }
+
+  /**
+   * Get the number of models that have instructions configured
+   */
+  getInstructionModelCount(): number {
+    return this.normalizedModels.filter((m) => m.instruction !== undefined).length;
   }
 }
 
 /**
  * Create a multi-model caller with convenient defaults
+ * Supports both plain adapters and adapters with instructions
  */
-export function createMultiModelCaller(models: LLMAdapter[]): MultiModelCaller {
+export function createMultiModelCaller(models: LLMAdapterInput[]): MultiModelCaller {
   return new MultiModelCaller({ models });
 }

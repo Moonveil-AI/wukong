@@ -111,35 +111,55 @@ async function main() {
   const adapter = new LocalAdapter({ dbPath });
   console.log('✅ Storage adapter initialized\n');
 
-  // 2. Initialize LLM adapters (with automatic fallback)
+  // 2. Initialize LLM adapters (with automatic fallback and intelligent model selection)
   // API keys are automatically read from environment variables
-  console.log('🧠 Setting up LLM adapters...');
-  const llmAdapters = [];
+  //
+  // LLM adapters can be configured in two ways:
+  // A) Simple format (backward compatible): [new ClaudeAdapter(), new GeminiAdapter()]
+  // B) With instructions for intelligent selection:
+  //    [
+  //      { instruction: "Good at writing code", adapter: new ClaudeAdapter() },
+  //      { instruction: "Good at math calculations", adapter: new GeminiAdapter() }
+  //    ]
+  //
+  // When instructions are provided, the first available model will analyze the user's
+  // query and select the most appropriate model based on the instructions.
+  console.log('🧠 Setting up LLM adapters with intelligent model selection...');
+  // Using 'any' for the array since the built types may not be up-to-date during development
+  // In production, you can use: LLMAdapterInput[] from '@wukong/agent'
+  const llmAdapters: any[] = [];
 
-  // Try to initialize Claude Sonnet 4 (primary model)
+  // Try to initialize Claude Sonnet 4 (good at code and complex reasoning)
   try {
-    llmAdapters.push(
-      new ClaudeAdapter({
+    llmAdapters.push({
+      instruction: 'Best for writing code, complex reasoning, and detailed analysis',
+      adapter: new ClaudeAdapter({
         model: 'claude-sonnet-4-20250514',
       }),
-    );
-    console.log('  - Anthropic Claude Sonnet 4 (primary) ✅');
+    });
+    console.log('  - Anthropic Claude Sonnet 4 (code & reasoning) ✅');
   } catch (_error) {
     console.log('  - Anthropic Claude (skipped - no API key)');
   }
 
-  // Try to initialize Gemini 2.5 Pro
+  // Try to initialize Gemini 2.5 Pro (good at math and calculations)
   try {
-    llmAdapters.push(new GeminiAdapter());
-    console.log('  - Google Gemini 2.5 Pro (fallback) ✅');
+    llmAdapters.push({
+      instruction: 'Best for mathematical calculations, data analysis, and scientific tasks',
+      adapter: new GeminiAdapter(),
+    });
+    console.log('  - Google Gemini 2.5 Pro (math & science) ✅');
   } catch (_error) {
     console.log('  - Google Gemini (skipped - no API key)');
   }
 
-  // Try to initialize OpenAI (fallback model)
+  // Try to initialize OpenAI (general purpose fallback)
   try {
-    llmAdapters.push(new OpenAIAdapter());
-    console.log('  - OpenAI GPT-5 Mini (fallback) ✅');
+    llmAdapters.push({
+      instruction: 'General purpose assistant for tell jokes and funny stories.',
+      adapter: new OpenAIAdapter(),
+    });
+    console.log('  - OpenAI GPT-5 Mini (general purpose) ✅');
   } catch (_error) {
     console.log('  - OpenAI (skipped - no API key)');
   }

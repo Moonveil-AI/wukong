@@ -13,7 +13,11 @@ export { WukongEventEmitter, createEventEmitter } from './EventEmitter';
 
 // Export LLM utilities
 export { MultiModelCaller, createMultiModelCaller } from './llm/MultiModelCaller';
-export type { MultiModelCallerConfig } from './llm/MultiModelCaller';
+export type {
+  MultiModelCallerConfig,
+  LLMAdapterWithInstruction,
+  LLMAdapterInput,
+} from './llm/MultiModelCaller';
 
 // Export prompt building utilities
 export { PromptBuilder, createPromptBuilder } from './prompt/PromptBuilder';
