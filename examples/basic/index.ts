@@ -156,7 +156,7 @@ async function main() {
   // Try to initialize OpenAI (general purpose fallback)
   try {
     llmAdapters.push({
-      instruction: 'General purpose assistant for tell jokes and funny stories.',
+      instruction: 'General purpose assistant for telling jokes and funny stories.',
       adapter: new OpenAIAdapter(),
     });
     console.log('  - OpenAI GPT-5 Mini (general purpose) ✅');
@@ -275,7 +275,8 @@ async function main() {
   const executionStart = Date.now();
   try {
     const result = await agent.execute({
-      goal: 'Calculate the result of 15 multiplied by 8, then add 42 to it',
+      //goal: 'Calculate the result of 15 multiplied by 8, then add 42 to it',
+      goal: 'tell me a funny story about Japanese people.',
       maxSteps: 10,
       mode: 'auto', // Auto mode - no user confirmations needed
     });

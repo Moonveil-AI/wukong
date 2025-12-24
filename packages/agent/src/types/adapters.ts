@@ -629,8 +629,8 @@ export interface VectorAdapter {
  * LLM model configuration
  */
 export interface LLMModelConfig {
-  /** Model name */
-  model: string;
+  /** Model name (optional - adapter will use its default if not specified) */
+  model?: string;
 
   /** Temperature (0-1) */
   temperature?: number;

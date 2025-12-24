@@ -194,22 +194,23 @@ export class MultiModelCaller {
     }
     const selectorModel = firstModel.adapter;
 
+    // Extract goal description from query if wrapped in tags
+    const goalMatch = query.match(/<goal_description>([\s\S]*?)<\/goal_description>/);
+    const goalText = goalMatch?.[1]?.trim() || query;
+
     const selectionPrompt = `You are a model selector. Based on the user's query, select the most appropriate model from the following options.
-
-User Query: "${query}"
-
+User Query: "${goalText}"
 Available Models:
 ${modelsWithInstructions.map((m, i) => `${i + 1}. ${m.instruction}`).join('\n')}
 
 Respond with ONLY the number (1, 2, 3, etc.) of the most appropriate model. Do not include any other text.`;
 
     try {
-      const response = await selectorModel.call(selectionPrompt, {
-        model: '', // Use default model
+    const response = await selectorModel.call(selectionPrompt, {
+        //model: 'gemini-2.0-flash',
         maxTokens: 10,
         temperature: 0,
       });
-
       const selectedNumber = parseInt(response.text.trim(), 10);
       if (selectedNumber >= 1 && selectedNumber <= modelsWithInstructions.length) {
         const selected = modelsWithInstructions[selectedNumber - 1];
@@ -217,9 +218,9 @@ Respond with ONLY the number (1, 2, 3, etc.) of the most appropriate model. Do n
           return selected.index;
         }
       }
-    } catch {
+   } catch {
       // If selection fails, fall back to first model by going to the end to "return 0"
-    }
+   }
 
     return 0;
   }

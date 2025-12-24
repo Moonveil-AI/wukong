@@ -326,10 +326,12 @@ Your response MUST be valid JSON wrapped in XML tags:
       }
     }
 
+//1. **User-specified tool**: If user specifies a tool, use that tool
+
     // Add general guidelines
     guidelines += `## General Guidelines
 
-1. **User-specified tool**: If user specifies a tool, use that tool
+1. **User-specified tool**: If user specifies a tool, try to use that tool, but it's not required, if you think you don't have to use tools, then just use regular LLM calls.
 2. **Read documentation carefully**: Check tool parameters and requirements
 3. **Error handling**: If a tool fails, read the error and adjust parameters
 4. **Parallel execution**: Use CallToolsParallel for independent tasks

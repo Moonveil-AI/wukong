@@ -73,7 +73,7 @@ export class GeminiAdapter implements LLMAdapter {
 
     this.config = {
       apiKey: apiKey,
-      model: config.model || 'gemini-2.5-pro',
+      model: config.model || 'gemini-2.0-flash',
       temperature: config.temperature ?? 0.7,
       maxTokens: config.maxTokens ?? 8192,
       maxRetries: config.maxRetries ?? 3,
