@@ -20,7 +20,7 @@ import { OpenAIAdapter } from '@wukong/llm-openai';
 const calculatorTool = {
   metadata: {
     name: 'calculator',
-    description: 'Perform basic mathematical calculations (add, subtract, multiply, divide)',
+    description: 'Perform basic mathematical calculations (add(+), subtract(-), multiply(*), divide(/))',
     version: '1.0.0',
     category: 'data' as const,
     riskLevel: 'low' as const,
@@ -34,7 +34,7 @@ const calculatorTool = {
     properties: {
       operation: {
         type: 'string',
-        enum: ['add', 'subtract', 'multiply', 'divide'],
+        enum: ['add', 'subtract', 'multiply', 'divide', '+', '-', '*', '/'],
         description: 'The mathematical operation to perform',
       },
       a: {
@@ -63,6 +63,24 @@ const calculatorTool = {
         result = a * b;
         break;
       case 'divide':
+        if (b === 0) {
+          return {
+            success: false,
+            error: 'Cannot divide by zero',
+          };
+        }
+        result = a / b;
+        break;
+      case '+':
+        result = a + b;
+        break;
+      case '-':
+        result = a - b;
+        break;
+      case '*':
+        result = a * b;
+        break;
+      case '/':
         if (b === 0) {
           return {
             success: false,
@@ -189,94 +207,95 @@ async function main() {
   // 4. Set up event listeners for visibility with timing
   const stepTimings = new Map<number, number>();
 
-  agent.on('session:created', (event) => {
-    console.log(`📝 Session created: ${event.session.id}`);
-  });
+  // agent.on('session:created', (event) => {
+  //   console.log(`📝 Session created: ${event.session.id}`);
+  // });
 
-  agent.on('llm:started', (event) => {
-    stepTimings.set(event.stepId, Date.now());
-    console.log(`\n🤖 LLM call started for step ${event.stepId}`);
-    process.stdout.write('   ');
-  });
+  // agent.on('llm:started', (event) => {
+  //   stepTimings.set(event.stepId, Date.now());
+  //   console.log(`\n🤖 LLM call started for step ${event.stepId}`);
+  //   process.stdout.write('   ');
+  // });
 
-  // Real-time streaming output from LLM
-  agent.on('llm:streaming', (event: any) => {
-    // Display each chunk as it arrives
-    if (event.chunk?.text) {
-      process.stdout.write(event.chunk.text);
-    }
-  });
+  // // Real-time streaming output from LLM
+  // agent.on('llm:streaming', (event: any) => {
+  //   // Display each chunk as it arrives
+  //   if (event.chunk?.text) {
+  //     process.stdout.write(event.chunk.text);
+  //   }
+  // });
 
-  agent.on('llm:complete', (event) => {
-    const startTime = stepTimings.get(event.stepId);
-    const duration = startTime ? Date.now() - startTime : 0;
-    console.log('\n');
-    console.log(`✅ LLM call completed for step ${event.stepId} (${duration}ms)`);
-    console.log(`   Model: ${event.response?.model || 'unknown'}`);
-    console.log(
-      `   Tokens: ${event.response?.tokensUsed?.total || 0} (prompt: ${event.response?.tokensUsed?.prompt || 0}, completion: ${event.response?.tokensUsed?.completion || 0})`,
-    );
-  });
+  // agent.on('llm:complete', (event) => {
+  //   const startTime = stepTimings.get(event.stepId);
+  //   const duration = startTime ? Date.now() - startTime : 0;
+  //   console.log('\n');
+  //   console.log(`✅ LLM call completed for step ${event.stepId} (${duration}ms)`);
+  //   console.log(`   Model: ${event.response?.model || 'unknown'}`);
+  //   console.log(
+  //     `   Tokens: ${event.response?.tokensUsed?.total || 0} (prompt: ${event.response?.tokensUsed?.prompt || 0}, completion: ${event.response?.tokensUsed?.completion || 0})`,
+  //   );
+  // });
 
-  agent.on('step:started', (event) => {
-    console.log(`\n⚡ Step ${event.step.stepNumber} started`);
-    console.log(`   Action: ${event.step.action}`);
-    if (event.step.reasoning) {
-      console.log(`   Reasoning: ${event.step.reasoning}`);
-    }
-  });
+  // agent.on('step:started', (event) => {
+  //   console.log(`\n⚡ Step ${event.step.stepNumber} started`);
+  //   console.log(`   Action: ${event.step.action}`);
+  //   if (event.step.reasoning) {
+  //     console.log(`   Reasoning: ${event.step.reasoning}`);
+  //   }
+  // });
 
-  agent.on('step:completed', (event) => {
-    console.log(`✅ Step ${event.step.stepNumber} completed`);
-    if (event.step.stepResult) {
-      console.log(`   Result: ${JSON.stringify(event.step.stepResult, null, 2)}`);
-    }
-  });
+  // agent.on('step:completed', (event) => {
+  //   console.log(`✅ Step ${event.step.stepNumber} completed`);
+  //   if (event.step.stepResult) {
+  //     console.log(`   Result: ${JSON.stringify(event.step.stepResult, null, 2)}`);
+  //   }
+  // });
 
   const toolTimings = new Map<string, number>();
 
-  agent.on('tool:executing', (event) => {
-    const key = `${event.sessionId}-${event.toolName}`;
-    toolTimings.set(key, Date.now());
-    console.log(`\n🔧 Executing tool: ${event.toolName}`);
-    console.log('   Parameters:', JSON.stringify(event.parameters, null, 2));
-  });
+  // agent.on('tool:executing', (event) => {
+  //   const key = `${event.sessionId}-${event.toolName}`;
+  //   toolTimings.set(key, Date.now());
+  //   console.log(`\n🔧 Executing tool: ${event.toolName}`);
+  //   console.log('   Parameters:', JSON.stringify(event.parameters, null, 2));
+  // });
 
-  agent.on('tool:completed', (event) => {
-    const key = `${event.sessionId}-${event.toolName}`;
-    const startTime = toolTimings.get(key);
-    const duration = startTime ? Date.now() - startTime : 0;
-    console.log(`✅ Tool completed: ${event.toolName} (${duration}ms)`);
-    console.log(`   Success: ${event.result.success}`);
-    if (event.result.result) {
-      console.log('   Result:', JSON.stringify(event.result.result, null, 2));
-    }
-    if (event.result.error) {
-      console.error(`   Error: ${event.result.error}`);
-    }
-  });
+  // agent.on('tool:completed', (event) => {
+  //   const key = `${event.sessionId}-${event.toolName}`;
+  //   const startTime = toolTimings.get(key);
+  //   const duration = startTime ? Date.now() - startTime : 0;
+  //   console.log(`✅ Tool completed: ${event.toolName} (${duration}ms)`);
+  //   console.log(`   Success: ${event.result.success}`);
+  //   if (event.result.result) {
+  //     console.log('   Result:', JSON.stringify(event.result.result, null, 2));
+  //   }
+  //   if (event.result.error) {
+  //     console.error(`   Error: ${event.result.error}`);
+  //   }
+  // });
 
-  agent.on('task:failed', (event) => {
-    console.error(`\n❌ Task failed: ${event.error}`);
-    if (event.partialResult) {
-      console.error('   Partial result:', event.partialResult);
-    }
-  });
+  // agent.on('task:failed', (event) => {
+  //   console.error(`\n❌ Task failed: ${event.error}`);
+  //   if (event.partialResult) {
+  //     console.error('   Partial result:', event.partialResult);
+  //   }
+  // });
 
-  agent.on('error', (event) => {
-    console.error(`\n❌ Error event: ${event.error?.message || 'Unknown error'}`);
-    console.error('   Full event:', JSON.stringify(event, null, 2));
-  });
+  // agent.on('error', (event) => {
+  //   console.error(`\n❌ Error event: ${event.error?.message || 'Unknown error'}`);
+  //   console.error('   Full event:', JSON.stringify(event, null, 2));
+  // });
 
-  // 5. Execute a task
-  console.log('🎯 Executing task...\n');
-  console.log('━'.repeat(60));
+  // // 5. Execute a task
+  // console.log('🎯 Executing task...\n');
+  // console.log('━'.repeat(60));
 
   const executionStart = Date.now();
   try {
     const result = await agent.execute({
       //goal: 'Calculate the result of 15 multiplied by 8, then add 42 to it',
-      goal: 'tell me a funny story about Japanese people.',
+      // goal: 'tell me a funny story about Japanese people.',
+      goal: 'what is the result of 10 * 8 + 2',
       maxSteps: 10,
       mode: 'auto', // Auto mode - no user confirmations needed
     });

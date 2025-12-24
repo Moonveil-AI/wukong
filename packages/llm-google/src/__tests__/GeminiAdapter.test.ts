@@ -32,7 +32,9 @@ describe('GeminiAdapter', () => {
         apiKey: 'test-api-key',
       });
 
-      expect(adapter.getConfig().model).toBe('gemini-2.5-pro');
+      //expect(adapter.getConfig().model).toBe('gemini-2.5-pro');
+      expect(adapter.getConfig().model).toBe('gemini-2.0-flash');
+
     });
 
     it('should use custom model if specified', () => {

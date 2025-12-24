@@ -199,13 +199,16 @@ export class MultiModelCaller {
     const goalText = goalMatch?.[1]?.trim() || query;
 
     const selectionPrompt = `You are a model selector. Based on the user's query, select the most appropriate model from the following options.
-User Query: "${goalText}"
-Available Models:
-${modelsWithInstructions.map((m, i) => `${i + 1}. ${m.instruction}`).join('\n')}
+      User Query: "${goalText}"
+      Available Models:
+      ${modelsWithInstructions.map((m, i) => `${i + 1}. ${m.instruction}`).join('\n')}
 
-Respond with ONLY the number (1, 2, 3, etc.) of the most appropriate model. Do not include any other text.`;
+      Respond with ONLY the number (1, 2, 3, etc.) of the most appropriate model. Do not include any other text.`;
 
     try {
+      console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", query)
+      console.log("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+
     const response = await selectorModel.call(selectionPrompt, {
         //model: 'gemini-2.0-flash',
         maxTokens: 10,
