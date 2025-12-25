@@ -4,6 +4,7 @@
 
 import type { EventEmitter } from 'eventemitter3';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ToolExecutor } from '../../tools/ToolExecutor';
 import type { StorageAdapter } from '../../types/adapters';
 import type {
   AskUserAction,
@@ -476,6 +477,122 @@ describe('StepExecutor', () => {
       expect(result.error).toContain('Tool execution failed');
       expect(result.shouldContinue).toBe(false);
       expect(mockEventEmitter.emit).toHaveBeenCalledWith('step:failed', expect.any(Object));
+    });
+  });
+
+  describe('ToolExecutor integration', () => {
+    let mockToolExecutor: ToolExecutor;
+    let executorWithToolExecutor: StepExecutor;
+
+    beforeEach(() => {
+      mockToolExecutor = {
+        execute: vi.fn().mockResolvedValue({
+          success: true,
+          result: { data: 'validated result' },
+          summary: 'Tool executed with validation',
+        }),
+      } as unknown as ToolExecutor;
+
+      executorWithToolExecutor = new StepExecutor({
+        storageAdapter: mockStorageAdapter,
+        toolExecutor: mockToolExecutor,
+        eventEmitter: mockEventEmitter,
+        apiKeys: { TEST_KEY: 'test-value' },
+      });
+    });
+
+    it('should use ToolExecutor when provided for CallTool', async () => {
+      const action: CallToolAction = {
+        action: 'CallTool',
+        reasoning: 'Test with ToolExecutor',
+        selectedTool: 'test_tool',
+        parameters: { input: 'test' },
+      };
+
+      const result = await executorWithToolExecutor.execute(mockSession, action);
+
+      expect(result.success).toBe(true);
+      expect(mockToolExecutor.execute).toHaveBeenCalledWith({
+        tool: 'test_tool',
+        params: { input: 'test' },
+        context: expect.objectContaining({
+          sessionId: 'session-1',
+        }),
+      });
+    });
+
+    it('should use ToolExecutor for CallToolsParallel', async () => {
+      const action: CallToolsParallelAction = {
+        action: 'CallToolsParallel',
+        reasoning: 'Test parallel with ToolExecutor',
+        parallelTools: [
+          { toolId: 'tool-1', toolName: 'test_tool', parameters: { a: 1 } },
+          { toolId: 'tool-2', toolName: 'test_tool', parameters: { b: 2 } },
+        ],
+        waitStrategy: 'all',
+      };
+
+      const result = await executorWithToolExecutor.execute(mockSession, action);
+
+      expect(result.success).toBe(true);
+      expect(mockToolExecutor.execute).toHaveBeenCalledTimes(2);
+    });
+
+    it('should handle ToolExecutor validation errors', async () => {
+      (mockToolExecutor.execute as ReturnType<typeof vi.fn>).mockResolvedValue({
+        success: false,
+        error: 'Invalid parameters: missing required field',
+        canRetry: true,
+        suggestion: 'Check parameter types',
+      });
+
+      const action: CallToolAction = {
+        action: 'CallTool',
+        reasoning: 'Test validation error',
+        selectedTool: 'test_tool',
+        parameters: {},
+      };
+
+      const result = await executorWithToolExecutor.execute(mockSession, action);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Invalid parameters');
+    });
+
+    it('should fallback to toolRegistry when toolExecutor is not provided', async () => {
+      const action: CallToolAction = {
+        action: 'CallTool',
+        reasoning: 'Test fallback',
+        selectedTool: 'test_tool',
+        parameters: {},
+      };
+
+      // Use the original stepExecutor (without toolExecutor)
+      const result = await stepExecutor.execute(mockSession, action);
+
+      expect(result.success).toBe(true);
+      expect(mockToolRegistry.getTool).toHaveBeenCalledWith('test_tool');
+      expect(mockToolExecutor.execute).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when neither toolExecutor nor toolRegistry is provided', async () => {
+      const executorWithNothing = new StepExecutor({
+        storageAdapter: mockStorageAdapter,
+        eventEmitter: mockEventEmitter,
+        apiKeys: {},
+      });
+
+      const action: CallToolAction = {
+        action: 'CallTool',
+        reasoning: 'Test no executor',
+        selectedTool: 'test_tool',
+        parameters: {},
+      };
+
+      const result = await executorWithNothing.execute(mockSession, action);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Tool registry not configured');
     });
   });
 });
