@@ -6,6 +6,7 @@
 
 import type { EventEmitter } from 'eventemitter3';
 import type { AgentFork } from '../fork/AgentFork.js';
+import type { ToolExecutor } from '../tools/ToolExecutor.js';
 import type { StorageAdapter } from '../types/adapters.js';
 import type {
   AgentAction,
@@ -40,6 +41,9 @@ export interface StepExecutorOptions {
 
   /** Tool registry for tool lookup */
   toolRegistry?: ToolRegistry;
+
+  /** Tool executor for validated tool execution (optional, enables schema validation) */
+  toolExecutor?: ToolExecutor;
 
   /** Event emitter for step events */
   eventEmitter?: EventEmitter;
@@ -86,6 +90,7 @@ export interface StepExecutionResult {
 export class StepExecutor {
   private storageAdapter: StorageAdapter;
   private toolRegistry?: ToolRegistry;
+  private toolExecutor?: ToolExecutor;
   private eventEmitter?: EventEmitter;
   private apiKeys: Record<string, string>;
   private filesAdapter?: any;
@@ -94,6 +99,7 @@ export class StepExecutor {
   constructor(options: StepExecutorOptions) {
     this.storageAdapter = options.storageAdapter;
     this.toolRegistry = options.toolRegistry;
+    this.toolExecutor = options.toolExecutor;
     this.eventEmitter = options.eventEmitter;
     this.apiKeys = options.apiKeys || {};
     this.filesAdapter = options.filesAdapter;
@@ -242,15 +248,6 @@ export class StepExecutor {
    */
   private async executeCallTool(step: Step, action: CallToolAction): Promise<StepExecutionResult> {
     const { selectedTool, parameters } = action;
-    if (!this.toolRegistry) {
-      throw new Error('Tool registry not configured');
-    }
-
-    // Get tool from registry
-    const tool = this.toolRegistry.getTool(selectedTool);
-    if (!tool) {
-      throw new Error(`Tool not found: ${selectedTool}`);
-    }
 
     // Create tool context
     const context: ToolContext = {
@@ -260,8 +257,28 @@ export class StepExecutor {
       filesAdapter: this.filesAdapter,
     };
 
-    // Execute tool
-    const toolResult: ToolResult = await tool.handler(parameters, context);
+    let toolResult: ToolResult;
+
+    // Use ToolExecutor if available (provides schema validation and error handling)
+    if (this.toolExecutor) {
+      toolResult = await this.toolExecutor.execute({
+        tool: selectedTool,
+        params: parameters,
+        context,
+      });
+    } else {
+      // Fallback to direct tool execution (legacy behavior)
+      if (!this.toolRegistry) {
+        throw new Error('Tool registry not configured');
+      }
+
+      const tool = this.toolRegistry.getTool(selectedTool);
+      if (!tool) {
+        throw new Error(`Tool not found: ${selectedTool}`);
+      }
+
+      toolResult = await tool.handler(parameters, context);
+    }
 
     // Check if async tool
     if (toolResult.taskId) {
@@ -297,8 +314,9 @@ export class StepExecutor {
   ): Promise<StepExecutionResult> {
     const { parallelTools, waitStrategy } = action;
 
-    if (!this.toolRegistry) {
-      throw new Error('Tool registry not configured');
+    // Check that we have either toolExecutor or toolRegistry
+    if (!this.toolExecutor && !this.toolRegistry) {
+      throw new Error('Tool executor or tool registry not configured');
     }
 
     // Store parallel tool calls in database
@@ -319,15 +337,6 @@ export class StepExecutor {
 
     // Execute tools in parallel
     const toolPromises = parallelTools.map(async (toolCall) => {
-      const tool = this.toolRegistry?.getTool(toolCall.toolName);
-      if (!tool) {
-        return {
-          toolId: toolCall.toolId,
-          success: false,
-          error: `Tool not found: ${toolCall.toolName}`,
-        };
-      }
-
       const context: ToolContext = {
         sessionId: step.sessionId,
         stepId: step.id,
@@ -336,7 +345,27 @@ export class StepExecutor {
       };
 
       try {
-        const result = await tool.handler(toolCall.parameters, context);
+        let result: ToolResult;
+
+        // Use ToolExecutor if available (provides schema validation and error handling)
+        if (this.toolExecutor) {
+          result = await this.toolExecutor.execute({
+            tool: toolCall.toolName,
+            params: toolCall.parameters,
+            context,
+          });
+        } else {
+          // Fallback to direct tool execution (legacy behavior)
+          const tool = this.toolRegistry?.getTool(toolCall.toolName);
+          if (!tool) {
+            return {
+              toolId: toolCall.toolId,
+              success: false,
+              error: `Tool not found: ${toolCall.toolName}`,
+            };
+          }
+          result = await tool.handler(toolCall.parameters, context);
+        }
 
         // Update parallel tool call status
         const dbToolCall = parallelToolCalls.find((tc) => tc.toolId === toolCall.toolId);
