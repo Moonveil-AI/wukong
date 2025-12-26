@@ -102,7 +102,7 @@ export class WebSocketManager {
             sessionId,
           });
 
-          const result = await session.agent.execute({ goal, context });
+          const result = await session.agent.execute({ goal, context, sessionId });
 
           await this.sessionManager.updateStatus(sessionId, 'completed');
           this.sendEvent(ws, {

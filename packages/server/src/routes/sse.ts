@@ -261,9 +261,9 @@ export function setupSSERoutes(
         },
       });
 
-      // Execute in background
+      // Execute in background - pass sessionId to ensure history is saved to the right session
       try {
-        await session.agent.execute({ goal, context });
+        await session.agent.execute({ goal, context, sessionId });
         await sessionManager.updateStatus(sessionId, 'completed');
 
         // Final event already sent by agent:complete listener

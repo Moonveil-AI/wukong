@@ -20,8 +20,8 @@ const createMockStorageAdapter = (): StorageAdapter => {
     // Session operations
     createSession(data: any): Promise<Session> {
       const session: Session = {
-        id: `session-${sessionIdCounter++}`,
         ...data,
+        id: data.id || `session-${sessionIdCounter++}`,
         createdAt: new Date(),
         updatedAt: new Date(),
       };

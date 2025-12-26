@@ -67,8 +67,10 @@ export class LocalStorageAdapter implements StorageAdapter {
   // Session Operations
   // ==========================================
 
-  async createSession(session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'>): Promise<Session> {
-    const id = this.generateId('session');
+  async createSession(
+    session: Omit<Session, 'id' | 'createdAt' | 'updatedAt'> & { id?: string },
+  ): Promise<Session> {
+    const id = session.id || this.generateId('session');
     const now = new Date();
 
     const stmt = this._db.prepare(`

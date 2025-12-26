@@ -20,6 +20,9 @@ export interface CreateSessionOptions {
   /** User's goal */
   goal: string;
 
+  /** Session ID (optional - if provided, will use this ID instead of generating one) */
+  sessionId?: string;
+
   /** Initial goal (before modifications) */
   initialGoal?: string;
 
@@ -86,7 +89,23 @@ export class SessionManager {
    * Create a new session
    */
   async createSession(options: CreateSessionOptions): Promise<Session> {
+    // If sessionId is provided, check if session already exists
+    if (options.sessionId) {
+      const existingSession = await this.storage.getSession(options.sessionId);
+      if (existingSession) {
+        // Session exists, update it with new goal and return
+        return await this.storage.updateSession(options.sessionId, {
+          goal: options.goal,
+          initialGoal: options.initialGoal ?? options.goal,
+          status: 'active',
+          isRunning: false,
+        });
+      }
+    }
+
+    // Create new session (with provided sessionId if specified)
     const session = await this.storage.createSession({
+      id: options.sessionId,
       goal: options.goal,
       initialGoal: options.initialGoal ?? options.goal,
       userId: options.userId,
@@ -104,7 +123,7 @@ export class SessionManager {
       isRunning: false,
       isDeleted: false,
       status: 'active',
-    });
+    } as any);
 
     return session;
   }

@@ -5,3 +5,4 @@ export * from './useThinking';
 export * from './useFeedback';
 export * from './useMetrics';
 export * from './useHistory';
+export * from './useSessionPersistence';

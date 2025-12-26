@@ -178,9 +178,9 @@ export function setupRoutes(app: Express, context: RouteContext): void {
         logger.info('Execution started (async)', { sessionId });
         res.json(response);
 
-        // Execute in background
+        // Execute in background - pass sessionId to ensure history is saved to the right session
         session.agent
-          .execute({ goal, context })
+          .execute({ goal, context, sessionId })
           .then(async () => {
             await sessionManager.updateStatus(sessionId, 'completed');
             logger.info('Execution completed', { sessionId });
@@ -263,8 +263,8 @@ export function setupRoutes(app: Express, context: RouteContext): void {
         session.agent.on('tool:completed', onToolCompleted);
 
         try {
-          // Execute
-          const result = await session.agent.execute({ goal, context });
+          // Execute - pass sessionId to ensure history is saved to the right session
+          const result = await session.agent.execute({ goal, context, sessionId });
 
           await sessionManager.updateStatus(sessionId, 'completed');
           sendEvent('agent:complete', result);
@@ -345,10 +345,16 @@ export function setupRoutes(app: Express, context: RouteContext): void {
       // Note: getHistory expects just sessionId
       const history = await session.agent.getHistory?.(sessionId);
 
+      // Get session details from adapter to include goal
+      const adapter = session.agent.getAdapter();
+      const sessionDetails = await adapter.getSession(sessionId);
+
       const response: ApiResponse = {
         success: true,
         data: {
           sessionId,
+          goal: sessionDetails?.goal,
+          initialGoal: sessionDetails?.initialGoal,
           history: history || [],
           limit: Number.parseInt(limit as string, 10),
           offset: Number.parseInt(offset as string, 10),

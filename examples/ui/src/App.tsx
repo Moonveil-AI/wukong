@@ -10,6 +10,7 @@ import {
   ThinkingBox,
   type Todo,
   TodoList,
+  useSessionPersistence,
   useTheme,
 } from '@wukong/ui';
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react';
@@ -82,6 +83,12 @@ function AgentUI() {
   const [showThinking, setShowThinking] = useState(false);
   const [todos, setTodos] = useState<Todo[]>([]);
 
+  // Use session persistence hook from @wukong/ui
+  const { getPersistedSessionId, persistSessionId } = useSessionPersistence({
+    strategy: 'url',
+    queryParam: 'sessionId',
+  });
+
   // Initialize client and session
   useEffect(() => {
     let isActive = true; // Flag to prevent state updates after cleanup
@@ -99,10 +106,31 @@ function AgentUI() {
         await client.healthCheck();
         if (!isActive) return;
 
-        // Create a session
-        const session = await client.createSession('ui-user');
+        // Try to get session ID from URL first
+        const existingSessionId = getPersistedSessionId();
+        let session: { id: string };
+        let isRestoredSession = false;
+
+        if (existingSessionId) {
+          try {
+            // Try to restore existing session
+            session = await client.getSession(existingSessionId);
+            isRestoredSession = true;
+          } catch {
+            // Session doesn't exist or expired, create a new one
+            console.log('Session not found, creating new session');
+            session = await client.createSession('ui-user');
+          }
+        } else {
+          // No session ID in URL, create a new one
+          session = await client.createSession('ui-user');
+        }
+
         if (!isActive) return;
         setCurrentSessionId(session.id);
+
+        // Persist session ID (so refresh will restore this session)
+        persistSessionId(session.id);
 
         // Connect to SSE for streaming events (check isActive first)
         if (!isActive) return;
@@ -114,14 +142,76 @@ function AgentUI() {
         };
         client.on(eventHandler);
 
+        // Load history if this is a restored session
+        const restoredMessages: Message[] = [];
+        if (isRestoredSession) {
+          try {
+            const historyData = await client.getHistory(session.id);
+            if (!isActive) return;
+
+            const { goal, history } = historyData;
+
+            // Add the original user goal as the first message
+            if (goal) {
+              restoredMessages.push({
+                id: 'user-goal',
+                role: 'user',
+                content: goal,
+                timestamp: new Date(history[0]?.createdAt || Date.now()),
+              });
+            }
+
+            // Find the final response from the agent (the last completed step with a response)
+            // We look for steps with 'Finish' action or the last step with llmResponse
+            const completedSteps = history.filter(
+              (step: any) => !step.discarded && step.status === 'completed',
+            );
+
+            // Collect all assistant responses (llmResponse contains the raw LLM output)
+            // For a better UX, we show the final reasoning/response
+            for (const step of completedSteps) {
+              if (step.llmResponse) {
+                // Try to extract meaningful content from the response
+                // The response might be JSON with action/reasoning, or plain text
+                let content = step.llmResponse;
+
+                // Try to parse as JSON to extract reasoning or messageToUser
+                try {
+                  const parsed = JSON.parse(step.llmResponse);
+                  if (parsed.messageToUser) {
+                    content = parsed.messageToUser;
+                  } else if (parsed.reasoning) {
+                    content = parsed.reasoning;
+                  }
+                } catch {
+                  // Not JSON, use as-is
+                }
+
+                restoredMessages.push({
+                  id: `assistant-${step.id}`,
+                  role: 'assistant',
+                  content,
+                  timestamp: new Date(step.completedAt || step.createdAt),
+                  stepNumber: step.stepNumber,
+                });
+              }
+            }
+          } catch (historyError) {
+            console.error('Failed to load history:', historyError);
+          }
+        }
+
         setAgentStatus('ready');
         setMessages([
           {
             id: 'welcome',
             role: 'system',
-            content: `🐒 Welcome to Wukong Agent! Connected to backend server. Session ID: ${session.id}`,
+            content: isRestoredSession
+              ? `🐒 Welcome back to Wukong Agent! Restored session: ${session.id}`
+              : `🐒 Welcome to Wukong Agent! Connected to backend server. Session ID: ${session.id}`,
             timestamp: new Date(),
           },
+          ...restoredMessages,
         ]);
       } catch (error) {
         console.error('Failed to initialize client:', error);
@@ -147,7 +237,7 @@ function AgentUI() {
         clientRef.current.disconnect();
       }
     };
-  }, []);
+  }, [getPersistedSessionId, persistSessionId]);
 
   // Auto-scroll to bottom when new messages arrive
   // biome-ignore lint/correctness/useExhaustiveDependencies: We want to scroll when messages changes

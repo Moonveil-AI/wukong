@@ -582,6 +582,9 @@ export interface TaskOptions {
   /** User goal */
   goal: string;
 
+  /** Session ID (optional - if provided, will use/resume this session) */
+  sessionId?: string;
+
   /** Execution mode */
   mode?: 'interactive' | 'auto';
 

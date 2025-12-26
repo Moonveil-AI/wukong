@@ -177,17 +177,34 @@ export class WukongClient {
   }
 
   /**
-   * Get chat history
+   * History response with session info
    */
-  async getHistory(sessionId: string): Promise<any[]> {
+  async getHistory(sessionId: string): Promise<{
+    sessionId: string;
+    goal?: string;
+    initialGoal?: string;
+    history: any[];
+  }> {
     const response = await fetch(`${this.baseUrl}/api/sessions/${sessionId}/history`);
-    const data: ApiResponse<any[]> = await response.json();
+    const data: ApiResponse<{
+      sessionId: string;
+      goal?: string;
+      initialGoal?: string;
+      history: any[];
+      limit: number;
+      offset: number;
+    }> = await response.json();
 
     if (!(data.success && data.data)) {
       throw new Error(data.error?.message || 'Failed to get history');
     }
 
-    return data.data;
+    return {
+      sessionId: data.data.sessionId,
+      goal: data.data.goal,
+      initialGoal: data.data.initialGoal,
+      history: data.data.history,
+    };
   }
 
   /**

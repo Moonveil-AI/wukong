@@ -180,6 +180,7 @@ export class AutoAgent {
     try {
       // Create or resume session
       const session = await this.sessionManager.createSession({
+        sessionId: options.sessionId,
         goal: options.goal,
         agentType: 'AutoAgent',
         autoRun: true,

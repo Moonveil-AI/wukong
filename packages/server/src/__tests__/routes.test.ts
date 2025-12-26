@@ -32,6 +32,16 @@ class MockAgent extends EventEmitter {
       { role: 'assistant', content: 'Hi there!' },
     ];
   }
+
+  getAdapter() {
+    return {
+      getSession: async (_sessionId: string) => ({
+        id: _sessionId,
+        goal: 'Test goal',
+        initialGoal: 'Test goal',
+      }),
+    };
+  }
 }
 
 describe('REST API Routes', () => {
@@ -367,6 +377,8 @@ describe('REST API Routes', () => {
         success: true,
         data: {
           sessionId,
+          goal: 'Test goal',
+          initialGoal: 'Test goal',
           history: expect.any(Array),
           limit: 50,
           offset: 0,
