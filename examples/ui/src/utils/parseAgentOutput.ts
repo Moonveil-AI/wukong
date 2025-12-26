@@ -17,6 +17,21 @@ export interface ParsedMessage {
 }
 
 /**
+ * Convert snake_case keys to camelCase
+ * The agent outputs JSON with snake_case (e.g., message_to_user, selected_tool)
+ * but our TypeScript interface uses camelCase
+ */
+function normalizeOutput(parsed: Record<string, any>): ParsedAgentOutput {
+  return {
+    action: parsed.action,
+    reasoning: parsed.reasoning,
+    selectedTool: parsed.selected_tool ?? parsed.selectedTool,
+    parameters: parsed.parameters,
+    messageToUser: parsed.message_to_user ?? parsed.messageToUser,
+  };
+}
+
+/**
  * Parse message content containing <final_output> tags
  */
 export function parseAgentMessage(content: string): ParsedMessage {
@@ -32,7 +47,8 @@ export function parseAgentMessage(content: string): ParsedMessage {
     try {
       const jsonStr = match[1].trim();
       const parsed = JSON.parse(jsonStr);
-      outputs.push(parsed);
+      // Normalize snake_case keys to camelCase
+      outputs.push(normalizeOutput(parsed));
     } catch (error) {
       console.error('Failed to parse final_output JSON:', error);
     }

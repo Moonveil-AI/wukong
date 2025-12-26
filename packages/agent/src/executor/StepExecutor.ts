@@ -315,7 +315,7 @@ export class StepExecutor {
     const { parallelTools, waitStrategy } = action;
 
     // Check that we have either toolExecutor or toolRegistry
-    if (!this.toolExecutor && !this.toolRegistry) {
+    if (!(this.toolExecutor || this.toolRegistry)) {
       throw new Error('Tool executor or tool registry not configured');
     }
 

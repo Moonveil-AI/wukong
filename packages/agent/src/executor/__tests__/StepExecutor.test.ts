@@ -497,7 +497,7 @@ describe('StepExecutor', () => {
         storageAdapter: mockStorageAdapter,
         toolExecutor: mockToolExecutor,
         eventEmitter: mockEventEmitter,
-        apiKeys: { TEST_KEY: 'test-value' },
+        apiKeys: { testKey: 'test-value' },
       });
     });
 
