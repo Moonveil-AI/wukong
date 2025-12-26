@@ -20,6 +20,8 @@ import { AgentFork } from '../fork/AgentFork.js';
 import { PromptBuilder, type PromptContext } from '../prompt/PromptBuilder.js';
 import { ResponseParser } from '../prompt/ResponseParser.js';
 import { SessionManager } from '../session/SessionManager.js';
+import { ToolExecutor } from '../tools/ToolExecutor.js';
+import { ToolRegistry } from '../tools/ToolRegistry.js';
 import type { StorageAdapter } from '../types/adapters.js';
 import type { Session, Step, TaskOptions, TaskResult, Tool } from '../types/index.js';
 
@@ -135,12 +137,27 @@ export class AutoAgent {
       this.enableToolExecutor,
       this.companyName,
     );
+
+    // Create tool registry and executor for schema validation
+    const toolRegistry = new ToolRegistry({ path: '', autoDiscover: false });
+    for (const tool of this.tools) {
+      toolRegistry.register(tool);
+    }
+
+    const toolExecutor = this.enableToolExecutor
+      ? new ToolExecutor({
+          registry: toolRegistry,
+          enableToolExecutor: this.enableToolExecutor,
+        })
+      : undefined;
+
     this.stepExecutor = new StepExecutor({
       storageAdapter: this.storageAdapter,
       eventEmitter: this.eventEmitter,
       apiKeys: this.apiKeys,
       filesAdapter: this.filesAdapter,
       agentFork: this.agentFork,
+      toolExecutor,
       toolRegistry: {
         getTool: (name: string) => this.tools.find((t) => t.metadata.name === name) || null,
         listTools: () => this.tools,
