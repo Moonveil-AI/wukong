@@ -91,7 +91,6 @@ async function main() {
   console.log('🚀 Starting Wukong Agent Example\n');
 
   // 1. Initialize storage adapter (Local SQLite)
-  // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
   const dbPath = process.env['DATABASE_PATH'] || './data/wukong.db';
   console.log(`📦 Initializing local storage at: ${dbPath}`);
 

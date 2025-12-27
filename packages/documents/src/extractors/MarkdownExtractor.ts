@@ -13,18 +13,13 @@ export class MarkdownExtractor {
         filename,
         format: 'markdown',
         title:
-          // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
           (typeof frontmatter['title'] === 'string' ? frontmatter['title'] : undefined) ||
           this.extractTitle(markdownContent) ||
           filename,
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
         author: typeof frontmatter['author'] === 'string' ? frontmatter['author'] : undefined,
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
         tags: Array.isArray(frontmatter['tags']) ? (frontmatter['tags'] as string[]) : [],
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
         createdAt: frontmatter['date']
-          ? // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
-            new Date(frontmatter['date'] as string | number)
+          ? new Date(frontmatter['date'] as string | number)
           : undefined,
       };
 

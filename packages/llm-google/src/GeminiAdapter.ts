@@ -69,7 +69,6 @@ export class GeminiAdapter implements LLMAdapter {
 
   constructor(config: GeminiAdapterConfig = {}) {
     // Try to get API key from config or environment variable
-    // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
     const apiKey = config.apiKey || process.env['GEMINI_API_KEY'];
 
     if (!apiKey) {

@@ -20,7 +20,7 @@
         "noUselessFragments": "error",
         "noUselessTypeConstraint": "error",
         "useFlatMap": "warn",
-        "useLiteralKeys": "warn",
+        "useLiteralKeys": "off",
         "useOptionalChain": "warn",
         "useSimplifiedLogicExpression": "warn"
       },

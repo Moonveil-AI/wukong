@@ -6,21 +6,24 @@
 set -e
 
 FORCE=false
+VITEST_ONLY=false
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -f|--force) FORCE=true ;;
+        -v|--vitest-only) VITEST_ONLY=true ;;
         -h|--help)
-            echo "Usage: $0 [-f|--force] [-h|--help]"
+            echo "Usage: $0 [-f|--force] [-v|--vitest-only] [-h|--help]"
             echo ""
             echo "Options:"
-            echo "  -f, --force    Force kill all wukong processes without confirmation"
-            echo "  -h, --help     Display this help message"
+            echo "  -f, --force         Force kill all wukong processes without confirmation"
+            echo "  -v, --vitest-only   Only kill vitest worker processes (safe, no dev servers)"
+            echo "  -h, --help          Display this help message"
             echo ""
             echo "Description:"
-            echo "  This script cleans up orphaned node/vite processes."
-            echo "  It searches for node processes in the wukong directory."
+            echo "  This script cleans up orphaned node/vite/vitest processes."
+            echo "  Use --vitest-only for safe cleanup after tests."
             exit 0
             ;;
         *) echo "Unknown argument: $1"; exit 1 ;;
@@ -28,11 +31,21 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-echo "🔍 Searching for wukong-related processes..."
+if [ "$VITEST_ONLY" = true ]; then
+    echo "🔍 Searching for vitest worker processes..."
+else
+    echo "🔍 Searching for wukong-related processes..."
+fi
 echo ""
 
-# Find all node processes related to wukong
-WUKONG_PROCESSES=$(ps aux | grep -E "node.*wukong|vite" | grep -v grep | grep -v "$0" || true)
+# Find processes based on mode
+if [ "$VITEST_ONLY" = true ]; then
+    # Only vitest workers - safe for auto-cleanup
+    WUKONG_PROCESSES=$(ps aux | grep -E "node.*\(vitest" | grep -v grep | grep -v "$0" || true)
+else
+    # All wukong processes - requires confirmation
+    WUKONG_PROCESSES=$(ps aux | grep -E "node.*wukong|vite|vitest" | grep -v grep | grep -v "$0" || true)
+fi
 
 if [ -z "$WUKONG_PROCESSES" ]; then
     echo "✅ No orphaned processes found"
@@ -53,6 +66,11 @@ echo "Total: $PID_COUNT process(es)"
 echo ""
 
 # Check if we should kill them
+# Auto-confirm for vitest-only mode (safe)
+if [ "$VITEST_ONLY" = true ]; then
+    FORCE=true
+fi
+
 if [ "$FORCE" = false ]; then
     read -p "Do you want to kill these processes? (y/N): " -n 1 -r
     echo ""
@@ -77,7 +95,11 @@ done
 # Wait a bit and check if any processes are still running
 sleep 1
 
-REMAINING=$(ps aux | grep -E "node.*wukong|vite" | grep -v grep | grep -v "$0" || true)
+if [ "$VITEST_ONLY" = true ]; then
+    REMAINING=$(ps aux | grep -E "node.*\(vitest" | grep -v grep | grep -v "$0" || true)
+else
+    REMAINING=$(ps aux | grep -E "node.*wukong|vite|vitest" | grep -v grep | grep -v "$0" || true)
+fi
 
 if [ -n "$REMAINING" ]; then
     echo ""
@@ -96,7 +118,11 @@ echo ""
 echo "✅ Cleanup completed!"
 
 # Final check
-FINAL_CHECK=$(ps aux | grep -E "node.*wukong|vite" | grep -v grep | grep -v "$0" || true)
+if [ "$VITEST_ONLY" = true ]; then
+    FINAL_CHECK=$(ps aux | grep -E "node.*\(vitest" | grep -v grep | grep -v "$0" || true)
+else
+    FINAL_CHECK=$(ps aux | grep -E "node.*wukong|vite|vitest" | grep -v grep | grep -v "$0" || true)
+fi
 
 if [ -n "$FINAL_CHECK" ]; then
     echo ""

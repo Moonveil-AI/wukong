@@ -64,4 +64,3 @@ export type AgentEvent =
   | { type: 'agent:error'; sessionId: string; error: string };
 
 export type EventHandler = (event: AgentEvent) => void;
-

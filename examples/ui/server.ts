@@ -5,7 +5,6 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config } from 'dotenv';
 import { LocalAdapter, MigrationRunner } from '@wukong/adapter-local';
 import { WukongAgent } from '@wukong/agent';
 import { ClaudeAdapter } from '@wukong/llm-anthropic';
@@ -13,6 +12,7 @@ import { GeminiAdapter } from '@wukong/llm-google';
 import { OpenAIAdapter } from '@wukong/llm-openai';
 import { WukongServer } from '@wukong/server';
 import { calculatorTool } from '@wukong/tools-examples';
+import { config } from 'dotenv';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

@@ -17,6 +17,9 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist",
     "storybook": "storybook dev -p 6006",
@@ -31,14 +34,18 @@
     "@storybook/addon-onboarding": "^10.0.8",
     "@storybook/react": "^10.0.8",
     "@storybook/react-vite": "^10.0.8",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
     "@types/node": "^20.17.6",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
+    "jsdom": "^23.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "storybook": "^10.0.8",
     "tsup": "^8.3.5",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vitest": "^1.0.4"
   },
   "peerDependencies": {
     "react": ">=18.0.0",

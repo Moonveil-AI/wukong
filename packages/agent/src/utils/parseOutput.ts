@@ -116,4 +116,3 @@ export function formatAllAgentOutputs(parsed: ParsedMessage): string {
 
   return formatted;
 }
-

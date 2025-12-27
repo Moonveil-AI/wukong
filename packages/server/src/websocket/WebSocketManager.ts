@@ -123,7 +123,6 @@ export class WebSocketManager {
             details: {
               name: error.name,
               code: error.code,
-              // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for process.env
               stack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
             },
           });

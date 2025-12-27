@@ -191,9 +191,7 @@ export class AutoAgent {
         goal: options.goal,
         agentType: 'AutoAgent',
         autoRun: true,
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
         userId: options.context?.['userId'] as string | undefined,
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
         organizationId: options.context?.['organizationId'] as string | undefined,
       });
 
@@ -226,9 +224,7 @@ export class AutoAgent {
           knowledgeResults = await this.knowledgeBase.search(options.goal, {
             topK: 5,
             filters: {
-              // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
               userId: options.context?.['userId'],
-              // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
               organizationId: options.context?.['organizationId'],
             },
           });

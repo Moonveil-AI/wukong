@@ -178,9 +178,7 @@ export class InteractiveAgent {
         goal: options.goal,
         agentType: 'InteractiveAgent',
         autoRun: false,
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
         userId: options.context?.['userId'] as string | undefined,
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signature
         organizationId: options.context?.['organizationId'] as string | undefined,
       });
 

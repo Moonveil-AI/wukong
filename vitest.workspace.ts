@@ -8,6 +8,6 @@ export default defineWorkspace([
   'packages/adapter-local',
   'packages/documents',
   'packages/embeddings',
-  'packages/ui',
+  // 'packages/ui', // Excluded: presentation layer tests (React components/hooks)
   'packages/server',
 ]);

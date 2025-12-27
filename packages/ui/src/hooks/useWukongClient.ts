@@ -1,9 +1,9 @@
 /**
  * useWukongClient hook for React applications
- * 
+ *
  * Provides a high-level React hook for connecting to and interacting with a Wukong server.
  * Handles session management, real-time communication via SSE/WebSocket, and state management.
- * 
+ *
  * @example
  * ```typescript
  * function App() {
@@ -11,15 +11,15 @@
  *     apiUrl: 'http://localhost:3001',
  *     restoreSession: true
  *   });
- *   
+ *
  *   return <Chat messages={messages} onSend={sendMessage} />;
  * }
  * ```
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AgentEvent } from '@wukong/client';
 import { WukongClient } from '@wukong/client';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSessionPersistence } from './useSessionPersistence';
 
 export interface Message {
@@ -43,19 +43,19 @@ export interface ToolExecution {
 export interface UseWukongClientOptions {
   /** API server URL */
   apiUrl: string;
-  
+
   /** User ID for session creation */
   userId?: string;
-  
+
   /** Auto-connect on mount (default: true) */
   autoConnect?: boolean;
-  
+
   /** Restore previous session from URL/localStorage (default: false) */
   restoreSession?: boolean;
-  
+
   /** Session persistence strategy */
   persistenceStrategy?: 'url' | 'localStorage' | 'both';
-  
+
   /** Transport method */
   transport?: 'sse' | 'websocket';
 }
@@ -63,34 +63,34 @@ export interface UseWukongClientOptions {
 export interface UseWukongClientResult {
   /** Client instance */
   client: WukongClient | null;
-  
+
   /** Current session ID */
   sessionId: string | null;
-  
+
   /** Connection status */
   status: 'initializing' | 'ready' | 'error' | 'disconnected';
-  
+
   /** Error if any */
   error: string | null;
-  
+
   /** Chat messages */
   messages: Message[];
-  
+
   /** Whether agent is currently executing */
   isExecuting: boolean;
-  
+
   /** Send a message */
   sendMessage: (content: string) => Promise<void>;
-  
+
   /** Stop current execution */
   stopExecution: () => Promise<void>;
-  
+
   /** Disconnect and cleanup */
   disconnect: () => void;
-  
+
   /** Current thinking/reasoning text */
   currentThinking: string | null;
-  
+
   /** Tool executions */
   toolExecutions: ToolExecution[];
 }
@@ -107,15 +107,17 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
 
   const [client, setClient] = useState<WukongClient | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [status, setStatus] = useState<'initializing' | 'ready' | 'error' | 'disconnected'>('initializing');
+  const [status, setStatus] = useState<'initializing' | 'ready' | 'error' | 'disconnected'>(
+    'initializing',
+  );
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isExecuting, setIsExecuting] = useState(false);
   const [currentThinking, setCurrentThinking] = useState<string | null>(null);
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
-  
+
   const currentMessageIdRef = useRef<string | null>(null);
-  
+
   const { getPersistedSessionId, persistSessionId } = useSessionPersistence({
     strategy: persistenceStrategy,
     queryParam: 'sessionId',
@@ -124,7 +126,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
   // Initialize client and session
   useEffect(() => {
     if (!autoConnect) return;
-    
+
     let isActive = true;
     let currentClient: WukongClient | null = null;
 
@@ -145,11 +147,12 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
                   ? {
                       ...msg,
                       // Use fullText if available (complete text), otherwise append delta
-                      content: event.fullText !== undefined ? event.fullText : msg.content + event.text,
+                      content:
+                        event.fullText !== undefined ? event.fullText : msg.content + event.text,
                       streaming: true,
                     }
-                  : msg
-              )
+                  : msg,
+              ),
             );
           }
           break;
@@ -159,8 +162,8 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
           if (currentMessageIdRef.current) {
             setMessages((prev) =>
               prev.map((msg) =>
-                msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg
-              )
+                msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg,
+              ),
             );
           }
           break;
@@ -197,8 +200,8 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
             prev.map((tool) =>
               tool.name === event.toolName && tool.status === 'executing'
                 ? { ...tool, status: 'completed', result: event.result }
-                : tool
-            )
+                : tool,
+            ),
           );
           break;
 
@@ -208,8 +211,8 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
           if (currentMessageIdRef.current) {
             setMessages((prev) =>
               prev.map((msg) =>
-                msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg
-              )
+                msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg,
+              ),
             );
             currentMessageIdRef.current = null;
           }
@@ -237,7 +240,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
         const newClient = new WukongClient(apiUrl);
         currentClient = newClient;
         if (!isActive) return;
-        
+
         setClient(newClient);
 
         // Check health
@@ -247,7 +250,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
         // Try to restore session or create new one
         let session: { id: string };
         let isRestoredSession = false;
-        
+
         if (restoreSession) {
           const existingSessionId = getPersistedSessionId();
           if (existingSessionId) {
@@ -283,20 +286,24 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
           const historyData = await newClient.getHistory(session.id);
           if (isActive && historyData.history.length > 0) {
             const restoredMessages: Message[] = [];
-            
+
             // Helper function to extract goal from llmPrompt
             const extractGoalFromPrompt = (llmPrompt: string | undefined): string | null => {
               if (!llmPrompt) return null;
-              const match = llmPrompt.match(/<goal_description>\s*([\s\S]*?)\s*<\/goal_description>/);
+              const match = llmPrompt.match(
+                /<goal_description>\s*([\s\S]*?)\s*<\/goal_description>/,
+              );
               return match?.[1]?.trim() || null;
             };
 
             // Helper function to extract reasoning and action from llmResponse
-            const extractStepInfo = (llmResponse: string | undefined): { reasoning?: string; action?: string; messageToUser?: string } | null => {
+            const extractStepInfo = (
+              llmResponse: string | undefined,
+            ): { reasoning?: string; action?: string; messageToUser?: string } | null => {
               if (!llmResponse) return null;
               try {
                 const responseMatch = llmResponse.match(
-                  /<final_output>\s*([\s\S]*?)\s*<\/final_output>/
+                  /<final_output>\s*([\s\S]*?)\s*<\/final_output>/,
                 );
                 if (responseMatch?.[1]) {
                   const parsed = JSON.parse(responseMatch[1]);
@@ -314,14 +321,14 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
 
             // Track goals and build message history
             let lastGoal: string | null = null;
-            
+
             for (const step of historyData.history) {
               // Skip failed or discarded steps
               if (step.status !== 'completed' || step.discarded) continue;
 
               // Extract current goal from llmPrompt
               const currentGoal = extractGoalFromPrompt(step.llmPrompt);
-              
+
               // If goal changed, add a new user message
               if (currentGoal && currentGoal !== lastGoal) {
                 restoredMessages.push({
@@ -358,9 +365,10 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
                   }
                   if (step.stepResult && step.stepResult !== '{}') {
                     try {
-                      const result = typeof step.stepResult === 'string' 
-                        ? JSON.parse(step.stepResult) 
-                        : step.stepResult;
+                      const result =
+                        typeof step.stepResult === 'string'
+                          ? JSON.parse(step.stepResult)
+                          : step.stepResult;
                       if (typeof result === 'string') {
                         parts.push(`✅ Result: ${result}`);
                       }
@@ -368,7 +376,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
                       // Ignore parse errors
                     }
                   }
-                  
+
                   if (parts.length > 0) {
                     restoredMessages.push({
                       id: `assistant-step-${step.id}`,
@@ -390,12 +398,14 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
         if (!isActive) return;
         setStatus('ready');
         if (!isRestoredSession) {
-          setMessages([{
-            id: 'welcome',
-            role: 'system',
-            content: `🐒 Welcome to Wukong Agent! Session ID: ${session.id}`,
-            timestamp: new Date(),
-          }]);
+          setMessages([
+            {
+              id: 'welcome',
+              role: 'system',
+              content: `🐒 Welcome to Wukong Agent! Session ID: ${session.id}`,
+              timestamp: new Date(),
+            },
+          ]);
         }
       } catch (err) {
         console.error('Failed to initialize client:', err);
@@ -414,11 +424,19 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
         currentClient.disconnect();
       }
     };
-  }, [apiUrl, userId, autoConnect, restoreSession, transport, getPersistedSessionId, persistSessionId]);
+  }, [
+    apiUrl,
+    userId,
+    autoConnect,
+    restoreSession,
+    transport,
+    getPersistedSessionId,
+    persistSessionId,
+  ]);
 
   const sendMessage = useCallback(
     async (content: string) => {
-      if (!client || !sessionId || isExecuting) return;
+      if (!(client && sessionId) || isExecuting) return;
 
       const userMessage: Message = {
         id: `user-${Date.now()}`,
@@ -466,7 +484,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
         currentMessageIdRef.current = null;
       }
     },
-    [client, sessionId, isExecuting]
+    [client, sessionId, isExecuting],
   );
 
   const stopExecution = useCallback(async () => {
@@ -497,4 +515,3 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
     toolExecutions,
   };
 }
-

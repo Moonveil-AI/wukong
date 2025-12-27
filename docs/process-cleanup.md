@@ -6,11 +6,24 @@ This guide explains how to handle orphaned node/vite processes that may remain a
 
 ## Quick Solution
 
+### Automatic Cleanup (Recommended)
+
+**Vitest workers are now automatically cleaned up after tests!**
+
 ```bash
-# Interactive cleanup (recommended)
+pnpm test  # Automatically runs cleanup after completion
+```
+
+### Manual Cleanup
+
+```bash
+# Clean up vitest worker processes manually
+pnpm clean:vitest
+
+# Clean up all wukong processes (dev servers + vitest)
 pnpm clean:processes
 
-# Force cleanup (no confirmation)
+# Force cleanup all processes (no confirmation)
 pnpm clean:processes:force
 ```
 
@@ -38,7 +51,21 @@ Added proper timeout and cleanup settings:
 }
 ```
 
-### 2. Database Connection Handling (`migrations.test.ts`)
+**Note**: Despite these settings, vitest worker processes may still remain after tests complete, especially if tests run into memory issues or timeouts.
+
+### 2. Vitest Worker Cleanup Script (`scripts/cleanup-processes.sh --vitest-only`)
+
+The cleanup script with `--vitest-only` flag:
+- Finds only vitest worker processes (pattern: `node.*(vitest`)
+- Does NOT affect development servers
+- Automatically confirms (no prompt needed)
+- Gracefully terminates processes (SIGTERM)
+- Force kills if necessary (SIGKILL)
+- Safe to run anytime after tests
+
+**Auto-run**: This mode automatically runs after `pnpm test` via the `posttest` hook.
+
+### 3. Database Connection Handling (`migrations.test.ts`)
 
 All database operations now use `try-finally` blocks to ensure connections are closed:
 
@@ -51,14 +78,16 @@ try {
 }
 ```
 
-### 3. Process Cleanup Script (`scripts/cleanup-processes.sh`)
+### 4. Process Cleanup Script (`scripts/cleanup-processes.sh`)
 
 A bash script that:
-- Finds all wukong-related node/vite processes
+- Finds all wukong-related node/vite/vitest processes
 - Displays process details
 - Gracefully terminates processes (SIGTERM)
 - Force kills if necessary (SIGKILL)
 - Verifies cleanup completion
+
+**Warning**: This kills ALL wukong processes including development servers. Use `pnpm clean:vitest` for safer cleanup.
 
 ## Usage
 
@@ -70,23 +99,44 @@ pnpm dev
 
 # ... do your work ...
 
-# Stop with Ctrl+C
+# Run tests (vitest workers auto-cleanup after completion)
+pnpm test
 
-# Clean up orphaned processes
+# Stop development with Ctrl+C
+
+# If dev servers don't stop, clean up all processes
 pnpm clean:processes
+```
+
+### Watch Mode
+
+For test watch mode, cleanup doesn't run automatically (to avoid interrupting):
+
+```bash
+# Watch mode - no auto cleanup
+pnpm test:watch
+
+# Manually cleanup when needed
+pnpm clean:vitest
 ```
 
 ### Script Options
 
 ```bash
-# Show help
+# Clean vitest workers only (recommended)
+pnpm clean:vitest
+# or: bash scripts/cleanup-processes.sh --vitest-only
+
+# Show help for full cleanup
 bash scripts/cleanup-processes.sh --help
 
-# Interactive mode (default)
+# Interactive mode for full cleanup
 pnpm clean:processes
+# or: bash scripts/cleanup-processes.sh
 
-# Force mode (no confirmation)
+# Force mode for full cleanup (no confirmation)
 pnpm clean:processes:force
+# or: bash scripts/cleanup-processes.sh --force
 ```
 
 ### Manual Cleanup
@@ -95,13 +145,17 @@ If needed, you can manually clean up processes:
 
 ```bash
 # View all node processes
-ps aux | grep -E "node|vite" | grep -v grep
+ps aux | grep -E "node|vite|vitest" | grep -v grep
 
-# Kill by pattern
+# Kill by pattern (wukong processes)
 pkill -f wukong
+
+# Kill vitest specifically
+pkill -f vitest
 
 # Force kill
 pkill -9 -f wukong
+pkill -9 -f vitest
 
 # Kill by port
 lsof -ti:3000 | xargs kill
@@ -126,7 +180,10 @@ See [troubleshooting.md](./troubleshooting.md) for detailed troubleshooting step
 ## Related Files
 
 - `vitest.config.ts` - Test configuration
-- `scripts/cleanup-processes.sh` - Cleanup script
+- `scripts/cleanup-processes.sh` - **Unified cleanup script with multiple modes**
+  - `--vitest-only` flag for safe vitest cleanup (auto-run after tests)
+  - Default mode for full cleanup (interactive)
+  - `--force` flag for non-interactive full cleanup
 - `packages/adapter-local/src/__tests__/migrations.test.ts` - Database tests
 - `package.json` - Commands configuration
 

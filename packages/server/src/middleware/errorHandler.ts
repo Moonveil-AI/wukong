@@ -50,7 +50,6 @@ export function errorHandler(logger: ReturnType<typeof createLogger>) {
         code: errorCode,
         message: err.message || 'An unexpected error occurred',
         correlationId, // Include correlation ID for support
-        // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for process.env
         details: err.details || (process.env['NODE_ENV'] === 'development' ? err.stack : undefined),
       },
     };

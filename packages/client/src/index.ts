@@ -28,8 +28,8 @@ export function createWukongClient(baseUrl?: string) {
 export const version = '0.1.0';
 
 export default {
+  // biome-ignore lint/style/useNamingConvention: WukongClient is a class name and should be PascalCase
   WukongClient: Client,
   createWukongClient,
   version,
 };
-

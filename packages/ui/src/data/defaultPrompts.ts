@@ -51,4 +51,3 @@ export const calculatorPrompts: ExamplePrompt[] = [
     category: 'tools',
   },
 ];
-

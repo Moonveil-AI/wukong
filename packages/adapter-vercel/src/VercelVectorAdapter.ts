@@ -42,7 +42,6 @@ export class VercelVectorAdapter implements VectorAdapter {
 
     // Set connection URL if provided
     if (config.postgresUrl) {
-      // biome-ignore lint/complexity/useLiteralKeys: TypeScript requires bracket notation for index signatures
       process.env['POSTGRES_URL'] = config.postgresUrl;
     }
   }

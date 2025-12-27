@@ -17,6 +17,7 @@
     "build": "pnpm -r run build",
     "dev": "pnpm -r --parallel run dev",
     "test": "cross-env VITE_CJS_IGNORE_WARNING=true vitest run",
+    "posttest": "bash scripts/cleanup-processes.sh --vitest-only",
     "test:watch": "cross-env VITE_CJS_IGNORE_WARNING=true vitest",
     "test:ci": "cross-env VITE_CJS_IGNORE_WARNING=true vitest run",
     "lint": "biome check .",
@@ -27,6 +28,7 @@
     "clean": "pnpm -r run clean && rm -rf node_modules",
     "clean:processes": "bash scripts/cleanup-processes.sh",
     "clean:processes:force": "bash scripts/cleanup-processes.sh --force",
+    "clean:vitest": "bash scripts/cleanup-processes.sh --vitest-only",
     "prepare": "pnpm build"
   },
   "devDependencies": {

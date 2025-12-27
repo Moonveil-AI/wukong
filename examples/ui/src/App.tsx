@@ -1,14 +1,14 @@
+import { formatAllAgentOutputs, parseAgentOutput } from '@wukong/agent';
 import {
   CapabilitiesPanel,
   ExamplePrompts,
   ThemeProvider,
   ThinkingBox,
+  defaultExamplePrompts,
   useTheme,
   useWukongClient,
-  defaultExamplePrompts,
-  type ThemeMode,
 } from '@wukong/ui';
-import { parseAgentOutput, formatAllAgentOutputs } from '@wukong/agent';
+import type { FormEvent } from 'react';
 import { useState } from 'react';
 import './App.css';
 
@@ -43,7 +43,7 @@ function AgentUI() {
     return <div className="loading-screen">🔄 Connecting...</div>;
   }
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputValue.trim()) {
       sendMessage(inputValue.trim());
@@ -68,13 +68,25 @@ function AgentUI() {
         <div className="header-actions">
           <span style={{ color: theme.colors.textSecondary }}>Session: {sessionId}</span>
           <div className="theme-switcher">
-            <button onClick={() => setMode('light')} className={mode === 'light' ? 'active' : ''}>
+            <button
+              type="button"
+              onClick={() => setMode('light')}
+              className={mode === 'light' ? 'active' : ''}
+            >
               ☀️
             </button>
-            <button onClick={() => setMode('dark')} className={mode === 'dark' ? 'active' : ''}>
+            <button
+              type="button"
+              onClick={() => setMode('dark')}
+              className={mode === 'dark' ? 'active' : ''}
+            >
               🌙
             </button>
-            <button onClick={() => setMode('auto')} className={mode === 'auto' ? 'active' : ''}>
+            <button
+              type="button"
+              onClick={() => setMode('auto')}
+              className={mode === 'auto' ? 'active' : ''}
+            >
               🔄
             </button>
           </div>

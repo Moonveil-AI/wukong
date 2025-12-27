@@ -35,6 +35,7 @@ export const calculatorTool: Tool = {
     },
     required: ['operation', 'a', 'b'],
   },
+  // biome-ignore lint/suspicious/useAwait: Handler must be async to match ToolHandler signature
   handler: async (params: any) => {
     const { operation, a, b } = params;
 
@@ -72,4 +73,3 @@ export const calculatorTool: Tool = {
     };
   },
 };
-

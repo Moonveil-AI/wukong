@@ -388,4 +388,3 @@ export class WukongClient {
     this.eventHandlers.clear();
   }
 }
-
