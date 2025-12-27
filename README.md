@@ -5,6 +5,30 @@
 **Date**: 2025-11-11  
 **Tech Stack**: Next.js + TypeScript
 
+<!-- SYNC CONTRACT: When project structure, architecture, or conventions change, update this file and affected directory documentation before the work is considered complete. -->
+
+---
+
+## Project Structure
+
+This project follows the **Fractal Documentation Standard** - each directory contains a README describing its files, and each file contains header comments describing its dependencies and role. See [docs/self-referential-documentation.md](./docs/self-referential-documentation.md) for details.
+
+| Directory | Purpose |
+|-----------|---------|
+| `packages/agent` | Core agent library - execution engine, state management, events |
+| `packages/adapter-local` | SQLite-based local storage adapter |
+| `packages/adapter-vercel` | PostgreSQL-based Vercel/production adapter |
+| `packages/llm-*` | LLM provider implementations (Anthropic, OpenAI, Google) |
+| `packages/embeddings` | Vector embedding implementations |
+| `packages/documents` | Document processing and chunking |
+| `packages/server` | HTTP server for agent API |
+| `packages/ui` | React UI components for agent visualization |
+| `examples/*` | Example applications (basic, server, ui) |
+| `docs/design` | Detailed design documentation |
+| `docs/implementation` | Implementation guides and plans |
+| `docs/user-guide` | User-facing documentation |
+| `scripts/` | Utility scripts for project maintenance |
+
 ---
 
 ## Documentation Navigation

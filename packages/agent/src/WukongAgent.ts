@@ -1,4 +1,11 @@
 /**
+ * @file WukongAgent.ts
+ * @input Uses SessionManager, MultiModelCaller, AutoAgent, InteractiveAgent, EventEmitter, all adapter types
+ * @output Exports WukongAgent class (main API), WukongAgentConfig interface
+ * @position Entry point - main agent class that orchestrates all subsystems. Consumed by applications.
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * WukongAgent - Main agent class that ties everything together
  *
  * This is the primary entry point for using the Wukong agent framework.

@@ -1,4 +1,11 @@
 /**
+ * @file EventEmitter.ts
+ * @input Depends on eventemitter3 library, types/events.ts for event types
+ * @output Exports WukongEventEmitter class
+ * @position Core event system - consumed by all components for event emission and subscription
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * WukongEventEmitter - Type-safe event emitter for the Wukong Agent system
  *
  * This class extends EventEmitter3 to provide:

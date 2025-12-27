@@ -1,4 +1,11 @@
 /**
+ * @file GeminiAdapter.ts
+ * @input Depends on @google/generative-ai SDK, @wukong/agent (LLMAdapter interface, types)
+ * @output Exports GeminiAdapter class (implements LLMAdapter), GeminiAdapterConfig interface
+ * @position LLM provider integration - Google Gemini API implementation. Consumed by MultiModelCaller and WukongAgent.
+ *
+ * SYNC: When modified, update this header and /packages/llm-google/src/README.md
+ *
  * Google Gemini LLM Adapter Implementation
  *
  * This adapter provides integration with Google's Gemini API, supporting:

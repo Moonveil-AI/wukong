@@ -1,4 +1,11 @@
 /**
+ * @file LocalStorageAdapter.ts
+ * @input Depends on better-sqlite3, @wukong/agent (Session, Step, Checkpoint types)
+ * @output Exports LocalStorageAdapter class (implements StorageAdapter), LocalStorageAdapterConfig interface
+ * @position Core storage - SQLite-based session/step/checkpoint persistence. Consumed by LocalAdapter.
+ *
+ * SYNC: When modified, update this header and /packages/adapter-local/src/README.md
+ *
  * Local Storage Adapter
  *
  * Uses better-sqlite3 for local SQLite database storage

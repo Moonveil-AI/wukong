@@ -1,4 +1,11 @@
 /**
+ * @file AutoAgent.ts
+ * @input Depends on SessionManager, StepExecutor, PromptBuilder, ResponseParser, ToolRegistry, AgentFork, StopController
+ * @output Exports AutoAgent class, AutoAgentOptions, LLMCaller, KnowledgeBase interfaces
+ * @position Core agent mode - fully autonomous execution. Consumed by WukongAgent when mode='auto'.
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * Auto Agent
  *
  * An autonomous agent that runs continuously until completion without user interaction.

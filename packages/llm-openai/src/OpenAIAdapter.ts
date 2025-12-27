@@ -1,4 +1,11 @@
 /**
+ * @file OpenAIAdapter.ts
+ * @input Depends on openai SDK, tiktoken for token counting, @wukong/agent (LLMAdapter interface, types)
+ * @output Exports OpenAIAdapter class (implements LLMAdapter), OpenAIAdapterConfig interface
+ * @position LLM provider integration - OpenAI GPT API implementation. Consumed by MultiModelCaller and WukongAgent.
+ *
+ * SYNC: When modified, update this header and /packages/llm-openai/src/README.md
+ *
  * OpenAI LLM Adapter Implementation
  *
  * This adapter provides integration with OpenAI's Responses API for GPT-5 models:

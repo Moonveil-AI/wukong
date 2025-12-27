@@ -1,4 +1,11 @@
 /**
+ * @file SessionManager.ts
+ * @input Depends on types/adapters.ts (StorageAdapter), types/index.ts (Session, Step, Checkpoint types)
+ * @output Exports SessionManager class, CreateSessionOptions, ResumeSessionOptions interfaces
+ * @position Core session lifecycle - consumed by WukongAgent and both agent modes for state management
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * Session Manager
  *
  * Manages agent session lifecycle including:

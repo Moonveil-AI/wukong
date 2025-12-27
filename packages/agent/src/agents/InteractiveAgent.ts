@@ -1,4 +1,11 @@
 /**
+ * @file InteractiveAgent.ts
+ * @input Depends on SessionManager, StepExecutor, PromptBuilder, ResponseParser, ToolRegistry, StopController
+ * @output Exports InteractiveAgent class, InteractiveAgentOptions, LLMCaller interfaces
+ * @position Core agent mode - user-controlled step-by-step execution. Consumed by WukongAgent when mode='interactive'.
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * Interactive Agent
  *
  * An agent that requires user confirmation after each step.

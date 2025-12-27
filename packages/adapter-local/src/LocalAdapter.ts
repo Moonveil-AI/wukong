@@ -1,4 +1,11 @@
 /**
+ * @file LocalAdapter.ts
+ * @input Depends on LocalStorageAdapter, LocalCacheAdapter, LocalFilesAdapter, LocalVectorAdapter, @wukong/agent types
+ * @output Exports LocalAdapter class (implements CombinedAdapter), LocalAdapterConfig interface
+ * @position Entry point - factory for all local adapters. Consumed by applications using local SQLite storage.
+ *
+ * SYNC: When modified, update this header and /packages/adapter-local/src/README.md
+ *
  * Local Adapter
  *
  * Combined adapter that includes storage, cache, and files adapters

@@ -1,4 +1,11 @@
 /**
+ * @file PromptBuilder.ts
+ * @input Depends on types/index.ts (Step, Tool, KnowledgeResult types)
+ * @output Exports PromptBuilder class, PromptContext, PromptBuilderOptions interfaces
+ * @position Core prompt construction - builds structured prompts with context. Consumed by both agent modes.
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * Prompt Builder for constructing structured prompts for LLM
  *
  * This module builds complete prompts from context, including:

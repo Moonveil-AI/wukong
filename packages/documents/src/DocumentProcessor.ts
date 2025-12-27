@@ -1,3 +1,12 @@
+/**
+ * @file DocumentProcessor.ts
+ * @input Depends on extractors/* (PdfExtractor, DocxExtractor, etc.), types.ts (ExtractedDocument, ProcessorOptions)
+ * @output Exports DocumentProcessor class
+ * @position Document processing orchestrator - extracts text from various formats. Consumed by KnowledgeBaseManager.
+ *
+ * SYNC: When modified, update this header and /packages/documents/src/README.md
+ */
+
 import { DocxExtractor } from './extractors/DocxExtractor';
 import { HtmlExtractor } from './extractors/HtmlExtractor';
 import { MarkdownExtractor } from './extractors/MarkdownExtractor';

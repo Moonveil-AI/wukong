@@ -1,4 +1,11 @@
 /**
+ * @file ToolRegistry.ts
+ * @input Depends on types/index.ts (Tool, ToolsConfig types), node:fs and node:path for discovery
+ * @output Exports ToolRegistry class, ToolExecutorDefinition, ToolRegistryConfig interfaces
+ * @position Tool management - discovers and registers available tools. Consumed by WukongAgent and StepExecutor.
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * Tool Registry
  *
  * Discovers, registers, and manages available tools for agent execution.

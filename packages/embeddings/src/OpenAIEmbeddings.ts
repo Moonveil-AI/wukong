@@ -1,4 +1,11 @@
 /**
+ * @file OpenAIEmbeddings.ts
+ * @input Depends on openai SDK, types.ts (EmbeddingGenerator interface)
+ * @output Exports OpenAIEmbeddings class (implements EmbeddingGenerator), OpenAIEmbeddingConfig interface
+ * @position Embedding provider - OpenAI embeddings API. Consumed by KnowledgeBaseManager.
+ *
+ * SYNC: When modified, update this header and /packages/embeddings/src/README.md
+ *
  * @wukong/embeddings - OpenAI Embeddings
  */
 

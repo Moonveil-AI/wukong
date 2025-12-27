@@ -1,4 +1,11 @@
 /**
+ * @file StepExecutor.ts
+ * @input Depends on ToolExecutor, AgentFork, StorageAdapter, types for actions/steps
+ * @output Exports StepExecutor class, StepExecutorOptions, StepExecutionResult interfaces
+ * @position Core execution logic - executes individual steps (tool calls, LLM calls). Consumed by both agent modes.
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * Step Executor
  *
  * Executes individual steps including tool calls and LLM interactions.

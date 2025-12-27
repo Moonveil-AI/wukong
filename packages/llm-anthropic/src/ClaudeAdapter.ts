@@ -1,4 +1,11 @@
 /**
+ * @file ClaudeAdapter.ts
+ * @input Depends on @anthropic-ai/sdk, @wukong/agent (LLMAdapter interface, types)
+ * @output Exports ClaudeAdapter class (implements LLMAdapter), ClaudeAdapterConfig interface
+ * @position LLM provider integration - Claude API implementation. Consumed by MultiModelCaller and WukongAgent.
+ *
+ * SYNC: When modified, update this header and /packages/llm-anthropic/src/README.md
+ *
  * Anthropic Claude LLM Adapter Implementation
  *
  * This adapter provides integration with Anthropic's Claude API, supporting:

@@ -1,4 +1,11 @@
 /**
+ * @file KnowledgeBaseManager.ts
+ * @input Depends on @wukong/documents (DocumentProcessor, DocumentChunker), @wukong/embeddings (EmbeddingGenerator), types/adapters (VectorAdapter, FilesAdapter)
+ * @output Exports KnowledgeBaseManager class, KnowledgeBaseManagerOptions, IndexDocumentsOptions interfaces
+ * @position Knowledge base orchestration - coordinates document processing, embedding, and vector storage. Consumed by WukongAgent.
+ *
+ * SYNC: When modified, update this header and /packages/agent/src/README.md
+ *
  * Knowledge Base Manager
  *
  * High-level interface for indexing and searching knowledge.
