@@ -23,7 +23,8 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@wukong/agent": "workspace:*"
+    "@wukong/agent": "workspace:*",
+    "@wukong/client": "workspace:*"
   },
   "devDependencies": {
     "@storybook/addon-docs": "^10.0.8",

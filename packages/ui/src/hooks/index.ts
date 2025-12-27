@@ -6,3 +6,4 @@ export * from './useFeedback';
 export * from './useMetrics';
 export * from './useHistory';
 export * from './useSessionPersistence';
+export * from './useWukongClient';

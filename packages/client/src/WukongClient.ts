@@ -1,5 +1,5 @@
 /**
- * API Client for Wukong Backend
+ * Wukong API Client
  *
  * Provides methods to interact with the Wukong server via:
  * - REST API for session management
@@ -7,64 +7,29 @@
  * - Server-Sent Events (SSE) for streaming responses
  */
 
-export interface SessionInfo {
-  id: string;
-  userId: string;
-  createdAt: string;
-  lastActivityAt: string;
-  metadata?: Record<string, any>;
-}
-
-export interface ExecuteRequest {
-  goal: string;
-  maxSteps?: number;
-  mode?: 'auto' | 'confirm' | 'manual';
-}
-
-export interface ExecuteResponse {
-  success: boolean;
-  sessionId: string;
-  status: 'started' | 'running' | 'completed' | 'failed';
-}
-
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  error?: {
-    code: string;
-    message: string;
-    details?: any;
-  };
-}
-
-export interface Capability {
-  id: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-  category?: string;
-}
-
-/**
- * Event types from WebSocket/SSE
- */
-export type AgentEvent =
-  | { type: 'session:created'; session: SessionInfo }
-  | { type: 'llm:started'; stepId: number; model: string }
-  | { type: 'llm:streaming'; text: string; index: number; isFinal: boolean }
-  | { type: 'llm:complete'; stepId: number; response: any }
-  | { type: 'step:started'; step: any }
-  | { type: 'step:completed'; step: any }
-  | { type: 'tool:executing'; sessionId: string; toolName: string; parameters: any }
-  | { type: 'tool:completed'; sessionId: string; toolName: string; result: any }
-  | { type: 'agent:progress'; sessionId: string; progress: any }
-  | { type: 'agent:complete'; sessionId: string; result: any }
-  | { type: 'agent:error'; sessionId: string; error: string };
-
-export type EventHandler = (event: AgentEvent) => void;
+import type {
+  AgentEvent,
+  ApiResponse,
+  Capability,
+  EventHandler,
+  ExecuteRequest,
+  ExecuteResponse,
+  HistoryResponse,
+  SessionInfo,
+} from './types';
 
 /**
  * Wukong API Client
+ *
+ * @example
+ * ```typescript
+ * const client = new WukongClient('http://localhost:3001');
+ * await client.healthCheck();
+ * const session = await client.createSession();
+ * client.connectSSE(session.id);
+ * client.on((event) => console.log(event));
+ * await client.execute(session.id, { goal: 'Calculate 2+2' });
+ * ```
  */
 export class WukongClient {
   private baseUrl: string;
@@ -73,6 +38,10 @@ export class WukongClient {
   private eventSource: EventSource | null = null;
   private eventHandlers: Set<EventHandler> = new Set();
 
+  /**
+   * Create a new Wukong client
+   * @param baseUrl - The base URL of the Wukong server (default: http://localhost:3001)
+   */
   constructor(baseUrl = 'http://localhost:3001') {
     this.baseUrl = baseUrl;
     this.wsUrl = baseUrl.replace(/^http/, 'ws');
@@ -82,6 +51,8 @@ export class WukongClient {
 
   /**
    * Create a new session
+   * @param userId - User ID for the session (default: 'default-user')
+   * @returns Session information
    */
   async createSession(userId = 'default-user'): Promise<SessionInfo> {
     const response = await fetch(`${this.baseUrl}/api/sessions`, {
@@ -101,6 +72,8 @@ export class WukongClient {
 
   /**
    * Get session details
+   * @param sessionId - The session ID
+   * @returns Session information
    */
   async getSession(sessionId: string): Promise<SessionInfo> {
     const response = await fetch(`${this.baseUrl}/api/sessions/${sessionId}`);
@@ -115,6 +88,8 @@ export class WukongClient {
 
   /**
    * List all sessions for a user
+   * @param userId - The user ID
+   * @returns Array of session information
    */
   async listSessions(userId: string): Promise<SessionInfo[]> {
     const response = await fetch(`${this.baseUrl}/api/sessions?userId=${userId}`);
@@ -129,6 +104,7 @@ export class WukongClient {
 
   /**
    * Delete a session
+   * @param sessionId - The session ID to delete
    */
   async deleteSession(sessionId: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/api/sessions/${sessionId}`, {
@@ -144,6 +120,9 @@ export class WukongClient {
 
   /**
    * Execute a task (async - returns immediately)
+   * @param sessionId - The session ID
+   * @param request - Execution request parameters
+   * @returns Execution response
    */
   async execute(sessionId: string, request: ExecuteRequest): Promise<ExecuteResponse> {
     const response = await fetch(`${this.baseUrl}/api/sessions/${sessionId}/execute`, {
@@ -163,6 +142,7 @@ export class WukongClient {
 
   /**
    * Stop execution
+   * @param sessionId - The session ID
    */
   async stopExecution(sessionId: string): Promise<void> {
     const response = await fetch(`${this.baseUrl}/api/sessions/${sessionId}/stop`, {
@@ -177,23 +157,14 @@ export class WukongClient {
   }
 
   /**
-   * History response with session info
+   * Get session history
+   * @param sessionId - The session ID
+   * @returns History response with session info and steps
    */
-  async getHistory(sessionId: string): Promise<{
-    sessionId: string;
-    goal?: string;
-    initialGoal?: string;
-    history: any[];
-  }> {
+  async getHistory(sessionId: string): Promise<HistoryResponse> {
     const response = await fetch(`${this.baseUrl}/api/sessions/${sessionId}/history`);
-    const data: ApiResponse<{
-      sessionId: string;
-      goal?: string;
-      initialGoal?: string;
-      history: any[];
-      limit: number;
-      offset: number;
-    }> = await response.json();
+    const data: ApiResponse<HistoryResponse & { limit: number; offset: number }> =
+      await response.json();
 
     if (!(data.success && data.data)) {
       throw new Error(data.error?.message || 'Failed to get history');
@@ -209,6 +180,7 @@ export class WukongClient {
 
   /**
    * Get agent capabilities
+   * @returns Array of capabilities
    */
   async getCapabilities(): Promise<Capability[]> {
     const response = await fetch(`${this.baseUrl}/api/capabilities`);
@@ -223,6 +195,7 @@ export class WukongClient {
 
   /**
    * Health check
+   * @returns Health status
    */
   async healthCheck(): Promise<{ status: string; timestamp: string }> {
     const response = await fetch(`${this.baseUrl}/api/health`);
@@ -239,6 +212,8 @@ export class WukongClient {
 
   /**
    * Connect to WebSocket
+   * @param sessionId - The session ID for authentication
+   * @returns Promise that resolves when connected
    */
   connectWebSocket(sessionId: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -282,6 +257,7 @@ export class WukongClient {
 
   /**
    * Send message via WebSocket
+   * @param message - Message to send
    */
   sendWebSocketMessage(message: any): void {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
@@ -293,6 +269,7 @@ export class WukongClient {
 
   /**
    * Execute via WebSocket
+   * @param request - Execution request
    */
   executeViaWebSocket(request: ExecuteRequest): void {
     this.sendWebSocketMessage({
@@ -315,6 +292,7 @@ export class WukongClient {
 
   /**
    * Connect to SSE stream
+   * @param sessionId - The session ID
    */
   connectSSE(sessionId: string): void {
     if (!sessionId || sessionId === 'undefined') {
@@ -373,6 +351,7 @@ export class WukongClient {
 
   /**
    * Add event handler
+   * @param handler - Event handler function
    */
   on(handler: EventHandler): void {
     this.eventHandlers.add(handler);
@@ -380,13 +359,15 @@ export class WukongClient {
 
   /**
    * Remove event handler
+   * @param handler - Event handler function to remove
    */
   off(handler: EventHandler): void {
     this.eventHandlers.delete(handler);
   }
 
   /**
-   * Notify all handlers
+   * Notify all handlers of an event
+   * @private
    */
   private notifyHandlers(event: AgentEvent): void {
     for (const handler of this.eventHandlers) {
@@ -408,9 +389,3 @@ export class WukongClient {
   }
 }
 
-/**
- * Create a client instance (no singleton to avoid issues with React StrictMode)
- */
-export function getClient(baseUrl?: string): WukongClient {
-  return new WukongClient(baseUrl);
-}

@@ -15,6 +15,9 @@ export * from './hooks';
 // Providers
 export * from './providers';
 
+// Default data
+export { defaultExamplePrompts, calculatorPrompts } from './data/defaultPrompts';
+
 // Version
 export const version = '0.1.0';
 

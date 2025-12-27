@@ -160,6 +160,14 @@ export {
 } from './utils/sanitize';
 export type { SanitizeOptions } from './utils/sanitize';
 
+// Export output parsing utilities
+export {
+  parseAgentOutput,
+  formatAgentOutput,
+  formatAllAgentOutputs,
+} from './utils/parseOutput';
+export type { ParsedAgentOutput, ParsedMessage } from './utils/parseOutput';
+
 // Version
 export const version = '0.1.0';
 

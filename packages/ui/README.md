@@ -33,6 +33,8 @@ function App() {
 - 🌍 **i18n Ready**: Built-in internationalization support
 - 🎯 **TypeScript**: Full type safety and IntelliSense
 - 🚀 **Performance**: Optimized for production
+- 💬 **Client Integration**: Built-in `useWukongClient` hook for easy server connection
+- 📝 **Default Prompts**: Pre-configured example prompts for quick start
 
 ## Theme System
 
@@ -124,6 +126,60 @@ function MyComponent() {
       Current mode: {mode}
       <button onClick={() => setMode('dark')}>Switch to Dark</button>
     </div>
+  );
+}
+```
+
+## useWukongClient Hook
+
+Connect to a Wukong server with real-time communication:
+
+```tsx
+import { useWukongClient, defaultExamplePrompts } from '@wukong/ui';
+
+function App() {
+  const { messages, sendMessage, isExecuting, status } = useWukongClient({
+    apiUrl: 'http://localhost:3001',
+    restoreSession: true,
+    transport: 'sse'
+  });
+
+  if (status === 'error') return <div>Connection failed</div>;
+  if (status === 'initializing') return <div>Connecting...</div>;
+
+  return (
+    <div>
+      {messages.map(msg => (
+        <div key={msg.id}>{msg.content}</div>
+      ))}
+      <button onClick={() => sendMessage('Hello!')}>Send</button>
+    </div>
+  );
+}
+```
+
+## Default Example Prompts
+
+Use pre-configured example prompts:
+
+```tsx
+import { ExamplePrompts, defaultExamplePrompts, calculatorPrompts } from '@wukong/ui';
+
+function Sidebar() {
+  return (
+    <>
+      {/* Use default prompts */}
+      <ExamplePrompts 
+        examples={defaultExamplePrompts}
+        onSelect={(prompt) => console.log(prompt)}
+      />
+      
+      {/* Or use calculator-specific prompts */}
+      <ExamplePrompts 
+        examples={calculatorPrompts}
+        onSelect={(prompt) => console.log(prompt)}
+      />
+    </>
   );
 }
 ```

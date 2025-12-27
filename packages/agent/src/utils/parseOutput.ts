@@ -23,18 +23,20 @@ export interface ParsedMessage {
  */
 function normalizeOutput(parsed: Record<string, any>): ParsedAgentOutput {
   return {
-    action: parsed.action,
-    reasoning: parsed.reasoning,
-    selectedTool: parsed.selected_tool ?? parsed.selectedTool,
-    parameters: parsed.parameters,
-    messageToUser: parsed.message_to_user ?? parsed.messageToUser,
+    action: parsed['action'],
+    reasoning: parsed['reasoning'],
+    selectedTool: parsed['selected_tool'] ?? parsed['selectedTool'],
+    parameters: parsed['parameters'],
+    messageToUser: parsed['message_to_user'] ?? parsed['messageToUser'],
   };
 }
 
 /**
  * Parse message content containing <final_output> tags
+ * @param content - The message content to parse
+ * @returns Parsed message with extracted outputs
  */
-export function parseAgentMessage(content: string): ParsedMessage {
+export function parseAgentOutput(content: string): ParsedMessage {
   const finalOutputRegex = /<final_output>\s*([\s\S]*?)\s*<\/final_output>/g;
   const outputs: ParsedAgentOutput[] = [];
 
@@ -45,10 +47,12 @@ export function parseAgentMessage(content: string): ParsedMessage {
     match = finalOutputRegex.exec(content)
   ) {
     try {
-      const jsonStr = match[1].trim();
-      const parsed = JSON.parse(jsonStr);
-      // Normalize snake_case keys to camelCase
-      outputs.push(normalizeOutput(parsed));
+      const jsonStr = match[1]?.trim();
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
+        // Normalize snake_case keys to camelCase
+        outputs.push(normalizeOutput(parsed));
+      }
     } catch (error) {
       console.error('Failed to parse final_output JSON:', error);
     }
@@ -66,8 +70,10 @@ export function parseAgentMessage(content: string): ParsedMessage {
 
 /**
  * Format a parsed output into a readable message
+ * @param output - The parsed output to format
+ * @returns Formatted string
  */
-export function formatOutput(output: ParsedAgentOutput): string {
+export function formatAgentOutput(output: ParsedAgentOutput): string {
   const parts: string[] = [];
 
   // Add the user message if present
@@ -97,9 +103,11 @@ export function formatOutput(output: ParsedAgentOutput): string {
 
 /**
  * Format all outputs from a parsed message
+ * @param parsed - The parsed message
+ * @returns Formatted string with all outputs
  */
-export function formatAllOutputs(parsed: ParsedMessage): string {
-  const formatted = parsed.outputs.map(formatOutput).filter(Boolean).join('\n\n');
+export function formatAllAgentOutputs(parsed: ParsedMessage): string {
+  const formatted = parsed.outputs.map(formatAgentOutput).filter(Boolean).join('\n\n');
 
   // If there's display text (text outside of final_output tags), include it
   if (parsed.displayText) {
@@ -108,3 +116,4 @@ export function formatAllOutputs(parsed: ParsedMessage): string {
 
   return formatted;
 }
+

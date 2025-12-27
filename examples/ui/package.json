@@ -14,11 +14,13 @@
   "dependencies": {
     "@wukong/ui": "workspace:*",
     "@wukong/agent": "workspace:*",
+    "@wukong/client": "workspace:*",
     "@wukong/adapter-local": "workspace:*",
     "@wukong/server": "workspace:*",
     "@wukong/llm-anthropic": "workspace:*",
     "@wukong/llm-google": "workspace:*",
     "@wukong/llm-openai": "workspace:*",
+    "@wukong/tools-examples": "workspace:*",
     "dotenv": "^16.4.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
