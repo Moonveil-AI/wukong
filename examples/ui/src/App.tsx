@@ -135,8 +135,11 @@ function AgentUI() {
 
           <div className="messages-container">
             {messages.map((message) => {
+              // Parse all assistant messages, passing streaming flag to handle incomplete blocks
               const parsed =
-                message.role === 'assistant' ? parseAgentOutput(message.content) : null;
+                message.role === 'assistant'
+                  ? parseAgentOutput(message.content, message.streaming)
+                  : null;
               const displayContent = parsed ? formatAllAgentOutputs(parsed) : message.content;
 
               return (
@@ -164,7 +167,7 @@ function AgentUI() {
                       {message.timestamp.toLocaleTimeString()}
                     </span>
                   </div>
-                  <div style={{ color: theme.colors.text }}>
+                  <div className="message-content" style={{ color: theme.colors.text }}>
                     {displayContent}
                     {message.streaming && <span className="cursor-blink">▊</span>}
                   </div>

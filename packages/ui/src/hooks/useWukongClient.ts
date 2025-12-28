@@ -117,6 +117,8 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
   const [toolExecutions, setToolExecutions] = useState<ToolExecution[]>([]);
 
   const currentMessageIdRef = useRef<string | null>(null);
+  const clientRef = useRef<WukongClient | null>(null);
+  const initializingRef = useRef(false);
 
   const { getPersistedSessionId, persistSessionId } = useSessionPersistence({
     strategy: persistenceStrategy,
@@ -136,7 +138,24 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
 
       switch (event.type) {
         case 'llm:started':
+          console.log(
+            '[useWukongClient] llm:started, currentMessageIdRef:',
+            currentMessageIdRef.current,
+          );
           setCurrentThinking('🤖 LLM is thinking...');
+          // Create a new message for this step if one doesn't exist
+          if (!currentMessageIdRef.current) {
+            const newMessage: Message = {
+              id: `assistant-${Date.now()}`,
+              role: 'assistant',
+              content: '',
+              timestamp: new Date(),
+              streaming: true,
+            };
+            console.log('[useWukongClient] Creating new message:', newMessage.id);
+            setMessages((prev) => [...prev, newMessage]);
+            currentMessageIdRef.current = newMessage.id;
+          }
           break;
 
         case 'llm:streaming':
@@ -158,28 +177,48 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
           break;
 
         case 'llm:complete':
+          console.log(
+            '[useWukongClient] llm:complete, currentMessageIdRef:',
+            currentMessageIdRef.current,
+          );
           setCurrentThinking(null);
           if (currentMessageIdRef.current) {
-            setMessages((prev) =>
-              prev.map((msg) =>
+            setMessages((prev) => {
+              const updated = prev.map((msg) =>
                 msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg,
-              ),
-            );
+              );
+              console.log(
+                '[useWukongClient] After llm:complete, streaming status:',
+                updated.map((m) => ({ id: m.id.substring(0, 20), streaming: m.streaming })),
+              );
+              return updated;
+            });
+            // Don't clear ref here - wait for agent:progress
           }
           break;
 
+        case 'agent:progress':
         case 'step:completed': {
-          // When a step completes, start a new message for the next step
-          // This creates visual separation between steps
-          const stepMessage: Message = {
-            id: `step-${event.step?.id || Date.now()}`,
-            role: 'assistant',
-            content: '',
-            timestamp: new Date(),
-            streaming: true,
-          };
-          setMessages((prev) => [...prev, stepMessage]);
-          currentMessageIdRef.current = stepMessage.id;
+          // Mark the current message as no longer streaming
+          console.log(
+            '[useWukongClient] agent:progress received, currentMessageIdRef:',
+            currentMessageIdRef.current,
+          );
+          if (currentMessageIdRef.current) {
+            setMessages((prev) => {
+              const updated = prev.map((msg) =>
+                msg.id === currentMessageIdRef.current ? { ...msg, streaming: false } : msg,
+              );
+              console.log(
+                '[useWukongClient] After agent:progress, streaming status:',
+                updated.map((m) => ({ id: m.id.substring(0, 20), streaming: m.streaming })),
+              );
+              return updated;
+            });
+            // Clear the ref so the next llm:started will create a new message
+            console.log('[useWukongClient] Clearing currentMessageIdRef');
+            currentMessageIdRef.current = null;
+          }
           break;
         }
 
@@ -236,9 +275,18 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
     };
 
     const init = async () => {
+      // Prevent duplicate initialization (especially in React StrictMode)
+      if (initializingRef.current) {
+        console.log('[useWukongClient] Already initializing, skipping...');
+        return;
+      }
+
+      initializingRef.current = true;
+
       try {
         const newClient = new WukongClient(apiUrl);
         currentClient = newClient;
+        clientRef.current = newClient;
         if (!isActive) return;
 
         setClient(newClient);
@@ -336,6 +384,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
                   role: 'user',
                   content: currentGoal,
                   timestamp: new Date(step.createdAt),
+                  streaming: false,
                 });
                 lastGoal = currentGoal;
               }
@@ -350,6 +399,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
                     role: 'assistant',
                     content: stepInfo.messageToUser,
                     timestamp: new Date(step.completedAt || step.createdAt),
+                    streaming: false,
                   });
                 } else {
                   // For other steps, show reasoning and action
@@ -383,6 +433,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
                       role: 'assistant',
                       content: parts.join('\n\n'),
                       timestamp: new Date(step.completedAt || step.createdAt),
+                      streaming: false,
                     });
                   }
                 }
@@ -404,6 +455,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
               role: 'system',
               content: `🐒 Welcome to Wukong Agent! Session ID: ${session.id}`,
               timestamp: new Date(),
+              streaming: false,
             },
           ]);
         }
@@ -412,6 +464,8 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
         if (!isActive) return;
         setStatus('error');
         setError(err instanceof Error ? err.message : 'Unknown error');
+      } finally {
+        initializingRef.current = false;
       }
     };
 
@@ -419,10 +473,13 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
 
     return () => {
       isActive = false;
+      initializingRef.current = false;
       if (currentClient) {
         currentClient.off(handleEvent);
         currentClient.disconnect();
       }
+      // Clear client ref on cleanup
+      clientRef.current = null;
     };
   }, [
     apiUrl,
@@ -443,6 +500,7 @@ export function useWukongClient(options: UseWukongClientOptions): UseWukongClien
         role: 'user',
         content,
         timestamp: new Date(),
+        streaming: false,
       };
 
       setMessages((prev) => [...prev, userMessage]);

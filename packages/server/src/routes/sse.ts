@@ -10,6 +10,7 @@ import type { createLogger } from '../utils/logger.js';
  */
 export class SSEManager {
   private connections = new Map<string, Response>();
+  private cleanupFunctions = new Map<string, () => void>();
   private logger: ReturnType<typeof createLogger>;
 
   constructor(logger: ReturnType<typeof createLogger>) {
@@ -19,7 +20,10 @@ export class SSEManager {
   /**
    * Register a new SSE connection
    */
-  connect(sessionId: string, res: Response): void {
+  connect(sessionId: string, res: Response, cleanup?: () => void): void {
+    // Disconnect any existing connection first
+    this.disconnect(sessionId);
+
     // Set up SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -28,6 +32,11 @@ export class SSEManager {
 
     // Store connection first (before sending events)
     this.connections.set(sessionId, res);
+
+    // Store cleanup function if provided
+    if (cleanup) {
+      this.cleanupFunctions.set(sessionId, cleanup);
+    }
 
     // Handle client disconnect
     res.on('close', () => {
@@ -48,6 +57,14 @@ export class SSEManager {
     if (res) {
       res.end();
       this.connections.delete(sessionId);
+
+      // Call cleanup function to remove event listeners
+      const cleanup = this.cleanupFunctions.get(sessionId);
+      if (cleanup) {
+        cleanup();
+        this.cleanupFunctions.delete(sessionId);
+      }
+
       this.logger.info('SSE connection closed', { sessionId });
     }
   }
@@ -123,61 +140,101 @@ export class SSEManager {
 
 /**
  * Set up agent event listeners for SSE streaming
+ * Returns cleanup function to remove listeners
  */
 export function setupAgentSSEListeners(
   agent: WukongAgent,
   sessionId: string,
   sseManager: SSEManager,
-): void {
+): () => void {
+  // LLM started
+  const onLLMStarted = (data: any) => {
+    sseManager.sendEvent(sessionId, 'llm:started', {
+      stepId: data.stepId,
+      model: data.model,
+      promptTokens: data.promptTokens,
+    });
+  };
+
   // LLM streaming
-  agent.on('llm:streaming', (data) => {
+  const onLLMStreaming = (data: any) => {
     sseManager.sendEvent(sessionId, 'llm:streaming', {
       text: data.chunk.text,
       fullText: data.chunk.fullText,
       index: data.chunk.index,
       isFinal: data.chunk.isFinal,
     });
-  });
+  };
+
+  // LLM complete
+  const onLLMComplete = (data: any) => {
+    sseManager.sendEvent(sessionId, 'llm:complete', {
+      stepId: data.stepId,
+      response: data.response,
+    });
+  };
 
   // Tool execution
-  agent.on('tool:executing', (data) => {
+  const onToolExecuting = (data: any) => {
     sseManager.sendEvent(sessionId, 'tool:executing', {
       tool: data.toolName,
       parameters: data.parameters,
       description: data.description,
     });
-  });
+  };
 
-  agent.on('tool:completed', (data) => {
+  const onToolCompleted = (data: any) => {
     sseManager.sendEvent(sessionId, 'tool:completed', {
       tool: data.toolName,
       result: data.result,
       durationMs: data.durationMs,
     });
-  });
+  };
 
   // Progress updates
-  agent.on('step:completed', (data) => {
+  const onStepCompleted = (data: any) => {
     sseManager.sendEvent(sessionId, 'agent:progress', {
       step: data.step.id,
       message: `Completed step ${data.step.id}`,
     });
-  });
+  };
 
   // Completion
-  agent.on('task:completed', (data) => {
+  const onTaskCompleted = (data: any) => {
     sseManager.sendEvent(sessionId, 'agent:complete', {
       result: data.result,
     });
-  });
+  };
 
   // Errors
-  agent.on('task:failed', (data) => {
+  const onTaskFailed = (data: any) => {
     sseManager.sendEvent(sessionId, 'agent:error', {
       error: data.error || 'Unknown error',
       partialResult: data.partialResult,
     });
-  });
+  };
+
+  // Add listeners
+  agent.on('llm:started', onLLMStarted);
+  agent.on('llm:streaming', onLLMStreaming);
+  agent.on('llm:complete', onLLMComplete);
+  agent.on('tool:executing', onToolExecuting);
+  agent.on('tool:completed', onToolCompleted);
+  agent.on('step:completed', onStepCompleted);
+  agent.on('task:completed', onTaskCompleted);
+  agent.on('task:failed', onTaskFailed);
+
+  // Return cleanup function
+  return () => {
+    agent.off('llm:started', onLLMStarted);
+    agent.off('llm:streaming', onLLMStreaming);
+    agent.off('llm:complete', onLLMComplete);
+    agent.off('tool:executing', onToolExecuting);
+    agent.off('tool:completed', onToolCompleted);
+    agent.off('step:completed', onStepCompleted);
+    agent.off('task:completed', onTaskCompleted);
+    agent.off('task:failed', onTaskFailed);
+  };
 }
 
 /**
@@ -206,11 +263,11 @@ export function setupSSERoutes(
         throw errors.notFound(`Session ${sessionId} not found`);
       }
 
-      // Establish SSE connection
-      sseManager.connect(sessionId, res);
+      // Set up agent event listeners and get cleanup function
+      const cleanup = setupAgentSSEListeners(session.agent, sessionId, sseManager);
 
-      // Set up agent event listeners
-      setupAgentSSEListeners(session.agent, sessionId, sseManager);
+      // Establish SSE connection with cleanup function
+      sseManager.connect(sessionId, res, cleanup);
 
       logger.info('SSE stream started', { sessionId });
     } catch (error) {
